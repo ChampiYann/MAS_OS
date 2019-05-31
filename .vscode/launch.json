@@ -1,0 +1,43 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - Launch",
+            "request": "launch",
+            "mainClass": "Launch",
+            "projectName": "MAS_OS"
+        },
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - HelloWorld",
+            "request": "launch",
+            "mainClass": "HelloWorld",
+            "projectName": "MAS_OS"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch) with Arguments Prompt",
+            "request": "launch",
+            "mainClass": "jade.Boot",
+            "args": "${command:SpecifyProgramArgs}"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch) - Current File",
+            "request": "launch",
+            "mainClass": "jade.Boot",
+            "args": "-agents agent1:${fileBasenameNoExtension}"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch) - Current File With GUI",
+            "request": "launch",
+            "mainClass": "jade.Boot",
+            "args": "-gui -agents agent1:${fileBasenameNoExtension}"
+        }
+    ]
+}
