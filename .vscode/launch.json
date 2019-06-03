@@ -9,14 +9,8 @@
             "name": "CodeLens (Launch) - Launch",
             "request": "launch",
             "mainClass": "Launch",
-            "projectName": "MAS_OS"
-        },
-        {
-            "type": "java",
-            "name": "CodeLens (Launch) - HelloWorld",
-            "request": "launch",
-            "mainClass": "HelloWorld",
-            "projectName": "MAS_OS"
+            "projectName": "MAS_OS",
+            "env": {"DISPLAY": "localhost:10.0"}
         },
         {
             "type": "java",

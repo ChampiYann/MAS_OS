@@ -14,20 +14,25 @@ public class Launch {
         ContainerController cc = rt.createMainContainer(p);
 
         try {
-            // Initiae RMA (gui)
+            // Initiate RMA (gui)
             AgentController rma = cc.createNewAgent("rma", "jade.tools.rma.rma", null);
-            // Fre up GUI
+            // Fire up GUI
             rma.start();
+            // Initiate central
+            AgentController central = cc.createNewAgent("central", "centralAgent", null);
+            // Fire up central
+            central.start();
         } catch (StaleProxyException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
-        // Create a new agent, a DummyAgent
-        // and pass it a reference to an Object
+        // Create 5 new osAgents
         int numOS = 5;
         AgentController[] OSAgents = new AgentController[numOS];
 
+        // Set arguments
+        // All OS will have 3 lanes
         String lanes = "3";
         String upstream;
         String downstream;
@@ -36,6 +41,7 @@ public class Launch {
             upstream = "agent"+ Integer.toString(i+2);
             downstream = "agent" + Integer.toString(i);
             name = "agent" + Integer.toString(i+1);
+            // Concatenate arguments
             Object agentArgs[] = new Object[3];
             agentArgs[0] = lanes;
             agentArgs[1] = upstream;

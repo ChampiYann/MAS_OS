@@ -16,8 +16,6 @@
 import java.util.Date;
 import java.util.Random;
 import java.util.Vector;
-import java.util.concurrent.TimeUnit;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -86,14 +84,6 @@ public class osAgent extends GuiAgent {
             System.out.println("OS " + getAID().getName() + " configured with " + lanes + " lanes and upstream agent "
                     + upstream.getLocalName());
 
-            // TODO remove this piece
-            // try {
-            // wait(100);
-            // } catch (InterruptedException e) {
-            // // TODO Auto-generated catch block
-            // e.printStackTrace();
-            // }
-
             // Declare central agent
             central = getAID("central");
 
@@ -102,7 +92,7 @@ public class osAgent extends GuiAgent {
             myGui.setVisible(true);
 
             // Add query behaviour for downstream neighbour
-            addBehaviour(new DownstreamCommunicationBehaviour(this, downstream, 2000));
+            addBehaviour(new DownstreamCommunicationBehaviour(this, downstream, 4000));
 
             // Set message template to listen to when upstream query comes in
             MessageTemplate queryTemplate = MessageTemplate.and(
@@ -125,9 +115,13 @@ public class osAgent extends GuiAgent {
             // Add cyclic behaviour that changes displayed measure
             addBehaviour(new UpdateMSI());
 
-            doWait(1000);
-            // Add behaviour simulting traffic passing by
-            addBehaviour(new TrafficSensing(this, 4000));
+            // Add behaviour simulting traffic passing by but delay it by 1 second
+            addBehaviour(new WakerBehaviour(this, 2000) {
+                @Override
+                protected void onWake() {
+                    myAgent.addBehaviour(new TrafficSensing(myAgent, 4000));
+                }
+            });
 
         } else {
             // Make agent terminate immediately
@@ -183,8 +177,12 @@ public class osAgent extends GuiAgent {
                         // For every lane we read the asociated symbol downstream
                         for (int i = 0; i < lanes; i++) {
                             JSONObject content = new JSONObject();
-                            content.put("symbol", messageSymbols.getInt(i) + 1);
-                            // Change the next state for the downstream desired sate
+                            if (messageSymbols.getInt(i) == Measure.ARROW_L) {
+                                content.put("symbol", Measure.BLANK);
+                            } else {
+                                content.put("symbol", messageSymbols.getInt(i) + 1);
+                            }
+                            // Change the next state for the downstream desired state
                             try {
                                 matrix[i].changeDesiredState(inform, content, 3);
                             } catch (JSONException e) {
@@ -376,7 +374,7 @@ public class osAgent extends GuiAgent {
             JSONArray congestion = new JSONArray();
 
             for (int i = 0; i < lanes; i++) {
-                if (rand.nextInt(100) >= 80) {
+                if (rand.nextInt(100) >= 90) {
                     System.out.println("Congestion detected!");
                     congestion.put(true);
                 } else {
@@ -390,13 +388,12 @@ public class osAgent extends GuiAgent {
             myAgent.addBehaviour(new AchieveREInitiator(myAgent, msg) {
                 // This function handles the response from the request
                 protected void handleInform(ACLMessage inform) {
-                    System.out.println("Agent " + inform.getSender().getName() + " performed the request");
+                    // System.out.println("Agent " + inform.getSender().getName() + " performed the request");
                 }
 
                 // This function handles the "refuse" responses
                 protected void handleRefuse(ACLMessage refuse) {
-                    System.out.println(
-                            "Agent " + refuse.getSender().getName() + " refused to perform the requested action");
+                    System.out.println("Agent " + refuse.getSender().getName() + " refused to perform the requested action");
                 }
 
                 // This function handles the "failure" and "does not exist" responses
@@ -405,8 +402,7 @@ public class osAgent extends GuiAgent {
                         // FAILURE notification from the JADE runtime: the receiver does not exist
                         System.out.println("Responder does not exist");
                     } else {
-                        System.out.println(
-                                "Agent " + failure.getSender().getName() + " failed to perform the requested action");
+                        System.out.println("Agent " + failure.getSender().getName() + " failed to perform the requested action");
                     }
                 }
 
@@ -455,7 +451,6 @@ public class osAgent extends GuiAgent {
 
             } else {
                 symbol = Measure.BLANK;
-                // throw new JSONException("symbol-out-of-bounds");
             }
                 switch (select) {
                 case CENTRAL:
