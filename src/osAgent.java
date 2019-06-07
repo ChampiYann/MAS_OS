@@ -363,9 +363,9 @@ public class osAgent extends GuiAgent {
         @Override
         protected void onTick() {
             // setup message to be sent
-            ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+            ACLMessage msg = new ACLMessage(ACLMessage.REQUEST_WHEN);
             msg.addReceiver(myAgent.getAID());
-            msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+            msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST_WHEN);
             msg.setOntology(CONG);
             // We want to receive a reply in 2 time the period
             msg.setReplyByDate(new Date(System.currentTimeMillis() + 2 * T));
@@ -415,6 +415,70 @@ public class osAgent extends GuiAgent {
             });
         }
 
+    }
+
+
+    /**
+     * UpstreamRequestBehaviour(symbol, lane)
+     * UpstreamRequestBehaviour(message content)
+     */
+
+
+    public class UpstreamRequestBehaviour extends SimpleBehaviour {
+
+        AID receiver;
+        ACLMessage msg;
+
+        public UpstreamRequestBehaviour (int symbol, int lane) {
+            receiver = upstream;
+            msg = new ACLMessage(ACLMessage.REQUEST_WHEN);
+            msg.addReceiver(receiver);
+            msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST_WHEN);
+            msg.setOntology(SIG);
+            // We want to receive a reply in 2 time the period
+            msg.setReplyByDate(new Date(System.currentTimeMillis() + 2000));
+
+            JSONObject messageContent = new JSONObject();
+            messageContent.put("symbol", symbol);
+            messageContent.put("lane", lane);
+
+            msg.setContent(messageContent.toString());
+        }
+
+        @Override
+        public void action() {
+            myAgent.addBehaviour(new AchieveREInitiator(myAgent, msg) {
+                @Override
+                protected void handleAgree(ACLMessage agree) {
+                    super.handleAgree(agree);
+                }
+
+                @Override
+                protected void handleInform(ACLMessage inform) {
+                    super.handleInform(inform);
+                }
+
+                @Override
+                protected void handleRefuse(ACLMessage refuse) {
+                    super.handleRefuse(refuse);
+                }
+
+                @Override
+                protected void handleFailure(ACLMessage failure) {
+                    super.handleFailure(failure);
+                }
+
+                @Override
+                protected void handleAllResultNotifications(Vector resultNotifications) {
+                    super.handleAllResultNotifications(resultNotifications);
+                }
+            });
+        }
+
+        @Override
+        public boolean done() {
+            return false;
+        }
     }
 
     public class MSI {
