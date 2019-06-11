@@ -52,7 +52,7 @@ public class osAgent extends GuiAgent {
     private static final String SIG = "SIGNALLING";
 
     // GUI
-    transient protected osGui myGui;
+    // transient protected osGui myGui;
 
     // Behaviour
     private Behaviour Request;
@@ -95,8 +95,8 @@ public class osAgent extends GuiAgent {
             central = getAID("central");
 
             // Set up the gui
-            myGui = new osGui(this);
-            myGui.setVisible(true);
+            // myGui = new osGui(this);
+            // myGui.setVisible(true);
 
             // Add query behaviour for downstream neighbour
             // addBehaviour(new DownstreamCommunicationBehaviour(this, downstream, 4000));
@@ -154,7 +154,7 @@ public class osAgent extends GuiAgent {
             ACLMessage agree = request.createReply();
             agree.setPerformative(ACLMessage.AGREE);
 
-            System.out.println("received message from "+request.getSender().toString());
+            System.out.println("received message from "+request.getSender().getLocalName());
 
             if (request.getSender().equals(myAgent.getAID())) {
                 JSONObject messageContent = new JSONObject(request.getContent());
@@ -218,7 +218,7 @@ public class osAgent extends GuiAgent {
 
             try {
                 matrix[1].updateState();
-                myGui.update(matrix[1].getState().getSymbolString(),1);
+                // myGui.update(matrix[1].getState().getSymbolString(),1);
                 return inform;
             } catch (JSONException e) {
                 // TODO: handle exception
@@ -268,7 +268,7 @@ public class osAgent extends GuiAgent {
             msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST_WHEN);
             msg.setOntology(SIG);
             // We want to receive a reply in 2 time the period
-            msg.setReplyByDate(new Date(System.currentTimeMillis() + 2000));
+            msg.setReplyByDate(new Date(System.currentTimeMillis() + 1000));
 
             JSONObject messageContent = new JSONObject();
             messageContent.put("lane", lane);
@@ -304,7 +304,10 @@ public class osAgent extends GuiAgent {
 
                 @Override
                 protected void handleAllResultNotifications(Vector resultNotifications) {
-                    super.handleAllResultNotifications(resultNotifications);
+                    if (resultNotifications.size() < 1) {
+                        System.out.println("Timeout expired");
+                        responseFlag = 2;
+                    }
                 }
             });
         }
@@ -335,7 +338,7 @@ public class osAgent extends GuiAgent {
 
             msg.setContent(messageContent.toString());
 
-            System.out.println("sending message to self: "+getAID().toString());
+            System.out.println("sending message to self: "+getLocalName());
         }
 
         @Override
@@ -363,7 +366,10 @@ public class osAgent extends GuiAgent {
 
                 @Override
                 protected void handleAllResultNotifications(Vector resultNotifications) {
-                    super.handleAllResultNotifications(resultNotifications);
+                    if (resultNotifications.size() < 1) {
+                        System.out.println("Timeout expired");
+                        responseFlag = 2;
+                    }
                 }
             });
         }
