@@ -14,7 +14,6 @@ public class Measure {
     static final int F_70       = 5;
     static final int BLANK      = 6;
 
-
     private static final String[] symbols = new String[7];
     static {
         symbols[BLANK] = "";

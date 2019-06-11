@@ -19,6 +19,7 @@ import java.util.Vector;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.omg.CORBA.Request;
 
 import jade.core.AID;
 import jade.core.Agent;
@@ -53,6 +54,12 @@ public class osAgent extends GuiAgent {
     // GUI
     transient protected osGui myGui;
 
+    // Behaviour
+    private Behaviour Request;
+
+    // Communication
+    private int responseFlag = 0;
+
     /**
      * This function sets up the agent by setting the number of lanes and neighbour
      * based on input arguments. Then declare the MSI's and add behaviours of that
@@ -73,7 +80,7 @@ public class osAgent extends GuiAgent {
             matrix = new MSI[lanes];
             for (int i = 0; i < lanes; i++) {
                 try {
-                    matrix[i] = new MSI();
+                    matrix[i] = new MSI(this);
                 } catch (Exception e) {
                     // TODO: handle exception
                     System.out.println("Exception in the creation of matrix");
@@ -81,8 +88,8 @@ public class osAgent extends GuiAgent {
             }
 
             // Print message stating that the configuration was succefull
-            System.out.println("OS " + getAID().getName() + " configured with " + lanes + " lanes and upstream agent "
-                    + upstream.getLocalName());
+            System.out.println("OS " + getAID().getName() + " configured with " + lanes + " lanes, upstream agent "
+                    + upstream.getLocalName() + " and downstream agent " + downstream.getLocalName());
 
             // Declare central agent
             central = getAID("central");
@@ -92,7 +99,7 @@ public class osAgent extends GuiAgent {
             myGui.setVisible(true);
 
             // Add query behaviour for downstream neighbour
-            addBehaviour(new DownstreamCommunicationBehaviour(this, downstream, 4000));
+            // addBehaviour(new DownstreamCommunicationBehaviour(this, downstream, 4000));
 
             // Set message template to listen to when upstream query comes in
             MessageTemplate queryTemplate = MessageTemplate.and(
@@ -102,24 +109,24 @@ public class osAgent extends GuiAgent {
                     MessageTemplate.MatchSender(upstream));
 
             // Add listen behaviour to respond to upstream query
-            addBehaviour(new UpstreamCommunicationBehaviour(this, upstreamTemplate));
+            // addBehaviour(new UpstreamCommunicationBehaviour(this, upstreamTemplate));
 
             // Set message template for requests from central and sensors
             MessageTemplate requestTemplate = MessageTemplate.and(
-                    MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST),
-                    MessageTemplate.MatchPerformative(ACLMessage.REQUEST));
+                    MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST_WHEN),
+                    MessageTemplate.MatchPerformative(ACLMessage.REQUEST_WHEN));
 
             // Add listen behaviour to repond to requests from central and sensors
             addBehaviour(new RequestBehaviour(this, requestTemplate));
 
             // Add cyclic behaviour that changes displayed measure
-            addBehaviour(new UpdateMSI());
+            // addBehaviour(new UpdateMSI());
 
             // Add behaviour simulting traffic passing by but delay it by 1 second
-            addBehaviour(new WakerBehaviour(this, 2000) {
+            addBehaviour(new WakerBehaviour(this, 1000) {
                 @Override
                 protected void onWake() {
-                    myAgent.addBehaviour(new TrafficSensing(myAgent, 4000));
+                    myAgent.addBehaviour(new TrafficSensing(myAgent, 2000));
                 }
             });
 
@@ -135,138 +142,6 @@ public class osAgent extends GuiAgent {
         System.out.println("OS " + getAID().getName() + " terminating.");
     }
 
-    /**
-     * This class extends the ticker behaviour to query the MSIs from its downstream
-     * neighbour
-     */
-    public class DownstreamCommunicationBehaviour extends TickerBehaviour {
-
-        // This will be the downstream neighbour
-        private AID receiver;
-
-        private long T;
-
-        // Constructor for this class
-        public DownstreamCommunicationBehaviour(Agent a, AID downstream, long period) {
-            super(a, period);
-            // TODO Auto-generated constructor stub
-            receiver = downstream;
-            T = period;
-        }
-
-        // This action is executed on every tick of the ticker
-        @Override
-        protected void onTick() {
-            // setup message to be sent
-            ACLMessage msg = new ACLMessage(ACLMessage.QUERY_REF);
-            msg.addReceiver(receiver);
-            msg.setProtocol(FIPANames.InteractionProtocol.FIPA_QUERY);
-            msg.setOntology(SIG);
-            // We want to receive a reply in 10 secs
-            msg.setReplyByDate(new Date(System.currentTimeMillis() + 2 * T));
-
-            // Add behaviour to send messages using the FIPA protocols
-            myAgent.addBehaviour(new AchieveREInitiator(myAgent, msg) {
-                // This function handles the response from the query
-                protected void handleInform(ACLMessage inform) {
-                    try {
-                        // Parse content to a JSON object
-                        JSONObject messageContent = new JSONObject(inform.getContent());
-                        // Get the array names "symbols"
-                        JSONArray messageSymbols = messageContent.getJSONArray("symbols");
-                        // For every lane we read the asociated symbol downstream
-                        for (int i = 0; i < lanes; i++) {
-                            JSONObject content = new JSONObject();
-                            if (messageSymbols.getInt(i) == Measure.ARROW_L) {
-                                content.put("symbol", Measure.BLANK);
-                            } else {
-                                content.put("symbol", messageSymbols.getInt(i) + 1);
-                            }
-                            // Change the next state for the downstream desired state
-                            try {
-                                matrix[i].changeDesiredState(inform, content, 3);
-                            } catch (JSONException e) {
-                                //TODO: handle exception
-                            }
-                        }
-                    } catch (JSONException e) {
-                        System.out.println("Error while parsing JSON.");
-                    }
-                }
-
-                // This function handles the "refuse" responses
-                protected void handleRefuse(ACLMessage refuse) {
-                    System.out.println(
-                            "Agent " + refuse.getSender().getName() + " refused to perform the requested action");
-                }
-
-                // This function handles the "failure" and "does not exist" responses
-                protected void handleFailure(ACLMessage failure) {
-                    if (failure.getSender().equals(myAgent.getAMS())) {
-                        // FAILURE notification from the JADE runtime: the receiver does not exist
-                        System.out.println("Responder does not exist");
-                    } else {
-                        System.out.println(
-                                "Agent " + failure.getSender().getName() + " failed to perform the requested action");
-                    }
-                }
-
-                // This function handles the "timeout" responses
-                protected void handleAllResultNotifications(Vector notifications) {
-                    if (notifications.size() < 1) {
-                        System.out.println("Timeout expired");
-                    }
-                }
-            });
-        }
-    }
-
-    public class UpstreamCommunicationBehaviour extends AchieveREResponder {
-
-        public UpstreamCommunicationBehaviour(Agent a, MessageTemplate mt) {
-            super(a, mt);
-            // TODO Auto-generated constructor stub
-        }
-
-        @Override
-        protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
-            ACLMessage agree = request.createReply();
-            agree.setPerformative(ACLMessage.AGREE);
-
-            if (request.getSender().equals(upstream)) {
-                if (request.getOntology().equals(SIG)) {
-                    return agree;
-                } else {
-                    // We refuse to perform the action
-                    System.out.println("Agent " + getLocalName() + ": Not understood");
-                    throw new NotUnderstoodException("check-failed");
-                }
-            } else {
-                throw new RefuseException("query-not-allowed");
-            }
-        }
-
-        @Override
-        protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response)
-                throws FailureException {
-            try {
-                JSONArray json_msi = new JSONArray();
-                for (int i = 0; i < lanes; i++) {
-                    json_msi.put(matrix[i].getState().getSymbol());
-                }
-                JSONObject json_message = new JSONObject().put("symbols", json_msi);
-
-                ACLMessage inform = request.createReply();
-                inform.setPerformative(ACLMessage.INFORM);
-                inform.setContent(json_message.toString());
-                return inform;
-            } catch (Exception e) {
-                System.out.println("Agent " + getLocalName() + ": Action failed");
-                throw new FailureException("unexpected-error");
-            }
-        }
-    }
-
     public class RequestBehaviour extends AchieveREResponder {
 
         public RequestBehaviour(Agent a, MessageTemplate mt) {
@@ -279,17 +154,57 @@ public class osAgent extends GuiAgent {
             ACLMessage agree = request.createReply();
             agree.setPerformative(ACLMessage.AGREE);
 
+            System.out.println("received message from "+request.getSender().toString());
+
             if (request.getSender().equals(myAgent.getAID())) {
-                if (request.getOntology().equals(CONG)) {
-                    return agree;
-                } else {
-                    throw new NotUnderstoodException("request-not-understood");
+                JSONObject messageContent = new JSONObject(request.getContent());
+                int lane = messageContent.getInt("lane");
+                try {
+                    matrix[lane].changeDesiredState(request, messageContent, 1);   
+                } catch (RefuseException e) {
+                    throw new RefuseException(e.getMessage());
                 }
-            } else if (request.getSender().equals(central)) {
-                if (request.getOntology().equals(SIG)) {
-                    return agree;
+                // check if we can display somrthing upstream
+                myAgent.addBehaviour(new UpstreamRequestBehaviour(lane, Measure.F_50));
+                while (responseFlag == 0) {}
+                switch(responseFlag) {
+                    case 1:
+                        responseFlag = 0;
+                        return agree;
+                    case 2:
+                        responseFlag = 0;
+                        throw new RefuseException("message");
+                    default:
+                        responseFlag = 0;
+                        throw new NotUnderstoodException("unknown-error");
+                }
+            } else if (request.getSender().equals(downstream)) {
+                JSONObject messageContent = new JSONObject(request.getContent());
+                int lane = messageContent.getInt("lane");
+                int symbol = messageContent.getInt("symbol");
+                // check if we can apply the desired thing on this lane
+                try {
+                    matrix[lane].changeDesiredState(request, messageContent, 1);   
+                } catch (RefuseException e) {
+                    throw new RefuseException(e.getMessage());
+                }
+                // check if we can display something upstream if needed
+                if (symbol < Measure.BLANK) {
+                    myAgent.addBehaviour(new UpstreamRequestBehaviour(lane, symbol+1));
+                    while (responseFlag == 0) {}
+                    switch(responseFlag) {
+                        case 1:
+                            responseFlag = 0;
+                            return agree;
+                        case 2:
+                            responseFlag = 0;
+                            throw new RefuseException("message");
+                        default:
+                            responseFlag = 0;
+                            throw new NotUnderstoodException("unknown-error");
+                    }   
                 } else {
-                    throw new NotUnderstoodException("request-not-understood");
+                    return agree;
                 }
             } else {
                 throw new RefuseException("request-not-allowed");
@@ -297,33 +212,13 @@ public class osAgent extends GuiAgent {
         }
 
         @Override
-        protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response)
-                throws FailureException {
+        protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
             ACLMessage inform = request.createReply();
             inform.setPerformative(ACLMessage.INFORM);
 
             try {
-                JSONObject messageContent = new JSONObject(request.getContent());
-                if (request.getOntology().equals(CONG)) {
-                    JSONArray messageCongestion = messageContent.getJSONArray(CONG);
-
-                    for (int i = 0; i < messageCongestion.length(); i++) {
-                        if (messageCongestion.getBoolean(i) == true) {
-                            JSONObject content = new JSONObject();
-                            content.put("symbol", Measure.NF_50);
-                            matrix[i].changeDesiredState(request, content, 2);
-                        } else {
-                            JSONObject content = new JSONObject();
-                            content.put("symbol", Measure.BLANK);
-                            matrix[i].changeDesiredState(request, content, 2);
-                        }
-                    }
-                } else {
-                    JSONArray messageMeasures = messageContent.getJSONArray("measures");
-                    for (int i = 0; i < messageMeasures.length(); i++) {
-                        matrix[i].changeDesiredState(request, messageMeasures.getJSONObject(i), 1);
-                    }
-                }
+                matrix[1].updateState();
+                myGui.update(matrix[1].getState().getSymbolString(),1);
                 return inform;
             } catch (JSONException e) {
                 // TODO: handle exception
@@ -332,27 +227,11 @@ public class osAgent extends GuiAgent {
         }
     }
 
-    /**
-     * This class has no end and keeps executing until destruction of the agent. It
-     * cyclicly calls the updateState method for matrix
-     */
-    public class UpdateMSI extends CyclicBehaviour {
-
-        // Only one function is defined for the action to be repeated
-        @Override
-        public void action() {
-            for (int i = 0; i < lanes; i++) {
-                matrix[i].updateState();
-                myGui.update(matrix[i].getState().getSymbolString(),i);
-            }
-        }
-
-    }
-
     public class TrafficSensing extends TickerBehaviour {
 
         private Random rand;
         private long T;
+        private SelfRequestBehaviour congestion;
 
         public TrafficSensing(Agent a, long period) {
             super(a, period);
@@ -362,87 +241,42 @@ public class osAgent extends GuiAgent {
 
         @Override
         protected void onTick() {
-            // setup message to be sent
-            ACLMessage msg = new ACLMessage(ACLMessage.REQUEST_WHEN);
-            msg.addReceiver(myAgent.getAID());
-            msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST_WHEN);
-            msg.setOntology(CONG);
-            // We want to receive a reply in 2 time the period
-            msg.setReplyByDate(new Date(System.currentTimeMillis() + 2 * T));
-
-            JSONObject messageContent = new JSONObject();
-            JSONArray congestion = new JSONArray();
-
-            for (int i = 0; i < lanes; i++) {
-                if (rand.nextInt(100) >= 90) {
+            // for (int i = 0; i < lanes; i++) {
+                if (rand.nextInt(100) >= 50) {
                     System.out.println("Congestion detected!");
-                    congestion.put(true);
+                    congestion = new SelfRequestBehaviour(1,Measure.NF_50);
+                    myAgent.addBehaviour(congestion);
                 } else {
-                    congestion.put(false);
+                    
                 }
-            }
-            messageContent.put(CONG, congestion);
-            msg.setContent(messageContent.toString());
-
-            // Add behaviour to send messages using the FIPA protocols
-            myAgent.addBehaviour(new AchieveREInitiator(myAgent, msg) {
-                // This function handles the response from the request
-                protected void handleInform(ACLMessage inform) {
-                    // System.out.println("Agent " + inform.getSender().getName() + " performed the request");
-                }
-
-                // This function handles the "refuse" responses
-                protected void handleRefuse(ACLMessage refuse) {
-                    System.out.println("Agent " + refuse.getSender().getName() + " refused to perform the requested action");
-                }
-
-                // This function handles the "failure" and "does not exist" responses
-                protected void handleFailure(ACLMessage failure) {
-                    if (failure.getSender().equals(myAgent.getAMS())) {
-                        // FAILURE notification from the JADE runtime: the receiver does not exist
-                        System.out.println("Responder does not exist");
-                    } else {
-                        System.out.println("Agent " + failure.getSender().getName() + " failed to perform the requested action");
-                    }
-                }
-
-                // This function handles the "timeout" responses
-                protected void handleAllResultNotifications(Vector notifications) {
-                    if (notifications.size() < 1) {
-                        System.out.println("Congestion notification timeout expired");
-                    }
-                }
-            });
+            // }
         }
-
     }
-
 
     /**
      * UpstreamRequestBehaviour(symbol, lane)
      * UpstreamRequestBehaviour(message content)
      */
 
-
     public class UpstreamRequestBehaviour extends SimpleBehaviour {
 
-        AID receiver;
         ACLMessage msg;
 
-        public UpstreamRequestBehaviour (int symbol, int lane) {
-            receiver = upstream;
+        public UpstreamRequestBehaviour (int lane, int symbol) {
             msg = new ACLMessage(ACLMessage.REQUEST_WHEN);
-            msg.addReceiver(receiver);
+            msg.addReceiver(upstream);
             msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST_WHEN);
             msg.setOntology(SIG);
             // We want to receive a reply in 2 time the period
             msg.setReplyByDate(new Date(System.currentTimeMillis() + 2000));
 
             JSONObject messageContent = new JSONObject();
-            messageContent.put("symbol", symbol);
             messageContent.put("lane", lane);
+            messageContent.put("symbol", symbol);
 
             msg.setContent(messageContent.toString());
+
+            System.out.println("sending message to "+upstream.getLocalName());
         }
 
         @Override
@@ -450,7 +284,7 @@ public class osAgent extends GuiAgent {
             myAgent.addBehaviour(new AchieveREInitiator(myAgent, msg) {
                 @Override
                 protected void handleAgree(ACLMessage agree) {
-                    super.handleAgree(agree);
+                    responseFlag = 1;
                 }
 
                 @Override
@@ -460,7 +294,7 @@ public class osAgent extends GuiAgent {
 
                 @Override
                 protected void handleRefuse(ACLMessage refuse) {
-                    super.handleRefuse(refuse);
+                    responseFlag = 2;
                 }
 
                 @Override
@@ -481,87 +315,62 @@ public class osAgent extends GuiAgent {
         }
     }
 
-    public class MSI {
-        /**
-         * This class represents the displays above the road that show the measures
-         * applied. They are initialized as BLANK
-         */
+    public class SelfRequestBehaviour extends SimpleBehaviour {
 
-        private Measure currentState;
-        private Measure centralState;
-        private Measure selfState;
-        private Measure downstreamState;
+        ACLMessage msg;
+        AID receiver;
 
-        private static final int CENTRAL = 1;
-        private static final int SELF = 2;
-        private static final int DOWNSTREAM = 3;
+        public SelfRequestBehaviour (int lane, int symbol) {
+            msg = new ACLMessage(ACLMessage.REQUEST_WHEN);
+            receiver = getAID();
+            msg.addReceiver(receiver);
+            msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST_WHEN);
+            msg.setOntology(SIG);
+            // We want to receive a reply in 2 time the period
+            msg.setReplyByDate(new Date(System.currentTimeMillis() + 1000));
 
-        public MSI() {
-            try {
-                currentState = new Measure();
-                centralState = new Measure();
-                selfState = new Measure();
-                downstreamState = new Measure();
-            } catch (Exception e) {
-                System.out.println("Exception in the creation of MSI");
-            }
+            JSONObject messageContent = new JSONObject();
+            messageContent.put("lane", lane);
+            messageContent.put("symbol", symbol);
+
+            msg.setContent(messageContent.toString());
+
+            System.out.println("sending message to self: "+getAID().toString());
         }
 
-        public void changeDesiredState(ACLMessage msg, JSONObject content, int select) throws JSONException {
-            long time = msg.getPostTimeStamp();
-            AID sender = msg.getSender();
-            int symbol = content.getInt("symbol");
-            if (symbol >= -1 && symbol < 7) {
-
-            } else {
-                symbol = Measure.BLANK;
-            }
-                switch (select) {
-                case CENTRAL:
-                    centralState.update(symbol, sender, time);
-                    break;
-                case SELF:
-                    selfState.update(symbol, sender, time);
-                    break;
-                case DOWNSTREAM:
-                    downstreamState.update(symbol, sender, time);
-                    break;
-                default:
-                    break;
+        @Override
+        public void action() {
+            myAgent.addBehaviour(new AchieveREInitiator(myAgent, msg) {
+                @Override
+                protected void handleAgree(ACLMessage agree) {
+                    responseFlag = 1;
                 }
-        }
 
-        public void updateState() {
-            if (centralState.isBlank()) {
-                if (downstreamState.getSymbol() != Measure.ARROW_L && downstreamState.getSymbol() != Measure.ARROW_R) {
-                    if (selfState.isBlank()) {
-                        currentState = downstreamState;
-                    } else {
-                        currentState = selfState;
-                    }
-                } else {
-                    currentState = downstreamState;
+                @Override
+                protected void handleInform(ACLMessage inform) {
+                    super.handleInform(inform);
                 }
-            } else {
-                currentState = centralState;
-            }
+
+                @Override
+                protected void handleRefuse(ACLMessage refuse) {
+                    responseFlag = 2;
+                }
+
+                @Override
+                protected void handleFailure(ACLMessage failure) {
+                    super.handleFailure(failure);
+                }
+
+                @Override
+                protected void handleAllResultNotifications(Vector resultNotifications) {
+                    super.handleAllResultNotifications(resultNotifications);
+                }
+            });
         }
 
-        public Measure getState() {
-            return currentState;
-        }
-
-        public Measure getState(int select) {
-            switch (select) {
-            case CENTRAL:
-                return centralState;
-            case SELF:
-                return selfState;
-            case DOWNSTREAM:
-                return downstreamState;
-            default:
-                return null;
-            }
+        @Override
+        public boolean done() {
+            return false;
         }
     }
 

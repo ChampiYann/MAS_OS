@@ -18,10 +18,10 @@ public class Launch {
             AgentController rma = cc.createNewAgent("rma", "jade.tools.rma.rma", null);
             // Fire up GUI
             rma.start();
-            // Initiate central
-            AgentController central = cc.createNewAgent("central", "centralAgent", null);
-            // Fire up central
-            central.start();
+            // // Initiate central
+            // AgentController central = cc.createNewAgent("central", "centralAgent", null);
+            // // Fire up central
+            // central.start();
         } catch (StaleProxyException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
