@@ -1,4 +1,5 @@
-import org.json.JSONException;
+import java.util.ArrayList;
+
 import org.json.JSONObject;
 
 import jade.core.AID;
@@ -51,7 +52,30 @@ class MSI {
     }
 
     public void updateState() {
-        currentState = centralState;
+        ArrayList<Maatregel> measures = outer.getMeasures();
+        Measure mr = new Measure();
+        for (int i = 0; i < measures.size(); i++) {
+            int type = measures.get(i).getType();
+            int iteration = measures.get(i).getIteration();
+            if (type == Maatregel.AIDet) {
+                switch (iteration) {
+                    case 3:
+                        mr.changeDesiredState(Measure.NF_50);
+                        break;
+                    case 2:
+                        mr.changeDesiredState(Measure.F_50);
+                    break;
+                    case 1:
+                        mr.changeDesiredState(Measure.F_70);
+                    break;
+                    default:
+                    break;
+                }
+            } else if (type == Maatregel.CROSS) {
+
+            }
+        }
+        currentState = mr;
     }
 
     public Measure getState() {

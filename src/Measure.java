@@ -41,6 +41,13 @@ public class Measure {
         time = msgTime;
     }
 
+    public void changeDesiredState(int sym) {
+
+        if (getSymbol() >= sym) {
+            symbol = sym;
+        }     
+    }
+
     public int getSymbol() {
         return symbol;
     }
