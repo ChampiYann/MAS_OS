@@ -16,7 +16,7 @@ public class Measure {
 
     private static final String[] symbols = new String[7];
     static {
-        symbols[BLANK] = "";
+        symbols[BLANK] = " ";
         symbols[NF_50] = "50";
         symbols[F_50] = "*50*";
         symbols[F_70] = "*70*";

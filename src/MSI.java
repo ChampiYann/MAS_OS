@@ -43,7 +43,7 @@ class MSI {
         } else {
             symbol = Measure.BLANK;
         }
-        if (currentState.getSymbol() > symbol && time > currentState.getTime()) {
+        if (currentState.getSymbol() >= symbol && time > currentState.getTime()) {
             centralState.update(symbol, sender, time);
         } else {
             throw new RefuseException("cannot-update");

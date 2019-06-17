@@ -19,7 +19,6 @@ import java.util.Vector;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.omg.CORBA.Request;
 
 import jade.core.AID;
 import jade.core.Agent;
@@ -33,6 +32,7 @@ import jade.gui.GuiEvent;
 import jade.lang.acl.*;
 import jade.proto.AchieveREInitiator;
 import jade.proto.AchieveREResponder;
+import jade.tools.sniffer.Message;
 
 public class osAgent extends GuiAgent {
 
@@ -52,13 +52,21 @@ public class osAgent extends GuiAgent {
     private static final String SIG = "SIGNALLING";
 
     // GUI
-    // transient protected osGui myGui;
+    transient protected osGui myGui;
 
     // Behaviour
     private Behaviour Request;
 
     // Communication
     private int responseFlag = 0;
+
+    // Message templates
+    private MessageTemplate requestTemplate;
+    private MessageTemplate responseTemplate;
+
+    // Message
+    private ACLMessage receivedRequest;
+    private ACLMessage sentRequest;
 
     /**
      * This function sets up the agent by setting the number of lanes and neighbour
@@ -95,40 +103,42 @@ public class osAgent extends GuiAgent {
             central = getAID("central");
 
             // Set up the gui
-            // myGui = new osGui(this);
-            // myGui.setVisible(true);
+            myGui = new osGui(this);
+            myGui.setVisible(true);
 
-            // Add query behaviour for downstream neighbour
-            // addBehaviour(new DownstreamCommunicationBehaviour(this, downstream, 4000));
+            this.requestTemplate = MessageTemplate.and(
+				MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST),
+				MessageTemplate.MatchPerformative(ACLMessage.REQUEST));
 
-            // Set message template to listen to when upstream query comes in
-            MessageTemplate queryTemplate = MessageTemplate.and(
-                    MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_QUERY),
-                    MessageTemplate.MatchPerformative(ACLMessage.QUERY_REF));
-            MessageTemplate upstreamTemplate = MessageTemplate.and(queryTemplate,
-                    MessageTemplate.MatchSender(upstream));
+            FSMBehaviour fsm = new FSMBehaviour(this);
+            fsm.registerFirstState(new waitMsg(), "wait for request");
+            fsm.registerState(new sendRequest(), "send request");
+            fsm.registerState(new waitResponse(), "wait for response");
+            fsm.registerState(new respondAgree(), "agree request");
+            fsm.registerState(new respondRefuse(), "refuse request");
 
-            // Add listen behaviour to respond to upstream query
-            // addBehaviour(new UpstreamCommunicationBehaviour(this, upstreamTemplate));
+            fsm.registerDefaultTransition("wait for request", "wait for request");
+            fsm.registerTransition("wait for request", "send request", 1);
+            fsm.registerTransition("wait for request", "refuse request", 2);
+            fsm.registerTransition("wait for request", "agree request", 3);
+            fsm.registerTransition("send request", "wait for response", 1);
+            fsm.registerTransition("wait for response", "wait for response", 0);
+            fsm.registerTransition("wait for response", "agree request", 1);
+            fsm.registerTransition("wait for response", "refuse request", 2);
+            fsm.registerTransition("agree request", "wait for request", 1);
+            fsm.registerTransition("refuse request", "wait for request", 1);
 
-            // Set message template for requests from central and sensors
-            MessageTemplate requestTemplate = MessageTemplate.and(
-                    MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST_WHEN),
-                    MessageTemplate.MatchPerformative(ACLMessage.REQUEST_WHEN));
-
-            // Add listen behaviour to repond to requests from central and sensors
-            addBehaviour(new RequestBehaviour(this, requestTemplate));
-
-            // Add cyclic behaviour that changes displayed measure
-            // addBehaviour(new UpdateMSI());
+            addBehaviour(fsm);
 
             // Add behaviour simulting traffic passing by but delay it by 1 second
-            addBehaviour(new WakerBehaviour(this, 1000) {
+            addBehaviour(new WakerBehaviour(this, 10000) {
                 @Override
                 protected void onWake() {
-                    myAgent.addBehaviour(new TrafficSensing(myAgent, 2000));
+                    myAgent.addBehaviour(new TrafficSensing(myAgent, 10000));
                 }
             });
+
+            addBehaviour(new updateGui());
 
         } else {
             // Make agent terminate immediately
@@ -142,241 +152,193 @@ public class osAgent extends GuiAgent {
         System.out.println("OS " + getAID().getName() + " terminating.");
     }
 
-    public class RequestBehaviour extends AchieveREResponder {
+    public class waitMsg extends OneShotBehaviour {
 
-        public RequestBehaviour(Agent a, MessageTemplate mt) {
-            super(a, mt);
-            // TODO Auto-generated constructor stub
+        private int exitValue;
+
+        @Override
+        public void action() {
+            exitValue = 0;
+            receivedRequest = receive(requestTemplate);
+            if (receivedRequest != null) {
+                System.out.println("request received at "+ getLocalName() + " from " + receivedRequest.getSender().getLocalName());
+                System.out.println("cue size at " + getLocalName() + " is " + getCurQueueSize());
+                JSONObject messageContent = new JSONObject(receivedRequest.getContent());
+                int lane = messageContent.getInt("lane");
+                try {
+                    matrix[lane].changeDesiredState(receivedRequest, messageContent, 1);
+                    System.out.println("desired state changed at " + getLocalName());
+                    if (matrix[lane].getState(1).getSymbol() == Measure.BLANK) {
+                        exitValue = 3;
+                    } else {
+                        exitValue = 1;
+                    }
+                } catch (RefuseException e) {
+                    exitValue = 2;
+                }
+            }
         }
 
         @Override
-        protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
-            ACLMessage agree = request.createReply();
-            agree.setPerformative(ACLMessage.AGREE);
+        public int onEnd() {
+            return exitValue;
+        }
+    }
 
-            System.out.println("received message from "+request.getSender().getLocalName());
+    public class sendRequest extends OneShotBehaviour {
 
-            if (request.getSender().equals(myAgent.getAID())) {
-                JSONObject messageContent = new JSONObject(request.getContent());
-                int lane = messageContent.getInt("lane");
-                try {
-                    matrix[lane].changeDesiredState(request, messageContent, 1);   
-                } catch (RefuseException e) {
-                    throw new RefuseException(e.getMessage());
-                }
-                // check if we can display somrthing upstream
-                myAgent.addBehaviour(new UpstreamRequestBehaviour(lane, Measure.F_50));
-                while (responseFlag == 0) {}
-                switch(responseFlag) {
-                    case 1:
-                        responseFlag = 0;
-                        return agree;
-                    case 2:
-                        responseFlag = 0;
-                        throw new RefuseException("message");
-                    default:
-                        responseFlag = 0;
-                        throw new NotUnderstoodException("unknown-error");
-                }
-            } else if (request.getSender().equals(downstream)) {
-                JSONObject messageContent = new JSONObject(request.getContent());
-                int lane = messageContent.getInt("lane");
-                int symbol = messageContent.getInt("symbol");
-                // check if we can apply the desired thing on this lane
-                try {
-                    matrix[lane].changeDesiredState(request, messageContent, 1);   
-                } catch (RefuseException e) {
-                    throw new RefuseException(e.getMessage());
-                }
-                // check if we can display something upstream if needed
-                if (symbol < Measure.BLANK) {
-                    myAgent.addBehaviour(new UpstreamRequestBehaviour(lane, symbol+1));
-                    while (responseFlag == 0) {}
-                    switch(responseFlag) {
-                        case 1:
-                            responseFlag = 0;
-                            return agree;
-                        case 2:
-                            responseFlag = 0;
-                            throw new RefuseException("message");
-                        default:
-                            responseFlag = 0;
-                            throw new NotUnderstoodException("unknown-error");
-                    }   
+        private int exitValue;
+
+        @Override
+        public void action() {
+            exitValue = 0;
+            System.out.println("sending request upstream at " + getLocalName() + " to " + upstream.getLocalName());
+            sentRequest = new ACLMessage(ACLMessage.REQUEST);
+            sentRequest.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+            sentRequest.addReceiver(upstream);
+            sentRequest.setReplyWith("request"+System.currentTimeMillis());
+
+            JSONObject messageContent = new JSONObject(receivedRequest.getContent());
+            int lane = messageContent.getInt("lane");
+            messageContent.put("symbol",matrix[lane].getState(1).getSymbol() + 1);
+
+            sentRequest.setContent(messageContent.toString());
+
+            send(sentRequest);
+
+            responseTemplate = MessageTemplate.and(MessageTemplate.MatchInReplyTo(sentRequest.getReplyWith()),
+                MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST));
+
+            exitValue = 1;
+        }
+
+        @Override
+        public int onEnd() {
+            return exitValue;
+        }
+    }
+
+    public class waitResponse extends OneShotBehaviour {
+
+        private int exitValue;
+
+        @Override
+        public void action() {
+            exitValue = 0;
+            ACLMessage responseMsg = receive(responseTemplate);
+            if (responseMsg != null) {
+                System.out.println("received response at " + getLocalName() + " from " + responseMsg.getSender().getLocalName());
+                if (responseMsg.getPerformative() == ACLMessage.AGREE) {
+                    matrix[1].updateState();
+                    exitValue = 1;
                 } else {
-                    return agree;
+                    exitValue = 2;
                 }
-            } else {
-                throw new RefuseException("request-not-allowed");
             }
         }
+        
+        @Override
+        public int onEnd() {
+            return exitValue;
+        }
+    }
+
+    public class respondAgree extends OneShotBehaviour {
+
+        private int exitValue;
 
         @Override
-        protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
-            ACLMessage inform = request.createReply();
-            inform.setPerformative(ACLMessage.INFORM);
+        public void action() {
+            exitValue = 0;
+            System.out.println("sending AGREE at " + getLocalName() + " to " + receivedRequest.getSender().getLocalName());
+            ACLMessage msg = new ACLMessage(ACLMessage.AGREE);
+            msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+            msg.addReceiver(receivedRequest.getSender());
+            msg.setInReplyTo(receivedRequest.getReplyWith());
+            
+            send(msg);
 
-            try {
-                matrix[1].updateState();
-                // myGui.update(matrix[1].getState().getSymbolString(),1);
-                return inform;
-            } catch (JSONException e) {
-                // TODO: handle exception
-                throw new FailureException("json-parsing-failure");
-            }
+            exitValue = 1;
+        }
+        
+        @Override
+        public int onEnd() {
+            return exitValue;
+        }
+    }
+
+    public class respondRefuse extends OneShotBehaviour {
+
+        private int exitValue;
+
+        @Override
+        public void action() {
+            exitValue = 0;
+            System.out.println("sending REFUSE at " + getLocalName() + " to " + receivedRequest.getSender().getLocalName());
+            ACLMessage msg = new ACLMessage(ACLMessage.REFUSE);
+            msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+            msg.addReceiver(receivedRequest.getSender());
+            msg.setInReplyTo(receivedRequest.getReplyWith());
+            
+            send(msg);
+
+            exitValue = 1;
+        }
+        
+        @Override
+        public int onEnd() {
+            return exitValue;
         }
     }
 
     public class TrafficSensing extends TickerBehaviour {
 
         private Random rand;
-        private long T;
-        private SelfRequestBehaviour congestion;
 
         public TrafficSensing(Agent a, long period) {
             super(a, period);
             rand = new Random();
-            T = period;
         }
 
         @Override
         protected void onTick() {
             // for (int i = 0; i < lanes; i++) {
-                if (rand.nextInt(100) >= 50) {
+                if (rand.nextInt(100) >= 80) {
                     System.out.println("Congestion detected!");
-                    congestion = new SelfRequestBehaviour(1,Measure.NF_50);
-                    myAgent.addBehaviour(congestion);
+                    ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+                    msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+                    msg.addReceiver(myAgent.getAID());
+
+                    JSONObject messageContent = new JSONObject();
+                    messageContent.put("lane",1);
+                    messageContent.put("symbol",Measure.NF_50);
+
+                    msg.setContent(messageContent.toString());
+
+                    send(msg);
                 } else {
-                    
+                    ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+                    msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+                    msg.addReceiver(myAgent.getAID());
+
+                    JSONObject messageContent = new JSONObject();
+                    messageContent.put("lane",1);
+                    messageContent.put("symbol",Measure.BLANK);
+
+                    msg.setContent(messageContent.toString());
+
+                    send(msg);
                 }
             // }
         }
     }
 
-    /**
-     * UpstreamRequestBehaviour(symbol, lane)
-     * UpstreamRequestBehaviour(message content)
-     */
-
-    public class UpstreamRequestBehaviour extends SimpleBehaviour {
-
-        ACLMessage msg;
-
-        public UpstreamRequestBehaviour (int lane, int symbol) {
-            msg = new ACLMessage(ACLMessage.REQUEST_WHEN);
-            msg.addReceiver(upstream);
-            msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST_WHEN);
-            msg.setOntology(SIG);
-            // We want to receive a reply in 2 time the period
-            msg.setReplyByDate(new Date(System.currentTimeMillis() + 1000));
-
-            JSONObject messageContent = new JSONObject();
-            messageContent.put("lane", lane);
-            messageContent.put("symbol", symbol);
-
-            msg.setContent(messageContent.toString());
-
-            System.out.println("sending message to "+upstream.getLocalName());
-        }
-
+    public class updateGui extends CyclicBehaviour {
         @Override
         public void action() {
-            myAgent.addBehaviour(new AchieveREInitiator(myAgent, msg) {
-                @Override
-                protected void handleAgree(ACLMessage agree) {
-                    responseFlag = 1;
-                }
-
-                @Override
-                protected void handleInform(ACLMessage inform) {
-                    super.handleInform(inform);
-                }
-
-                @Override
-                protected void handleRefuse(ACLMessage refuse) {
-                    responseFlag = 2;
-                }
-
-                @Override
-                protected void handleFailure(ACLMessage failure) {
-                    super.handleFailure(failure);
-                }
-
-                @Override
-                protected void handleAllResultNotifications(Vector resultNotifications) {
-                    if (resultNotifications.size() < 1) {
-                        System.out.println("Timeout expired");
-                        responseFlag = 2;
-                    }
-                }
-            });
-        }
-
-        @Override
-        public boolean done() {
-            return false;
-        }
-    }
-
-    public class SelfRequestBehaviour extends SimpleBehaviour {
-
-        ACLMessage msg;
-        AID receiver;
-
-        public SelfRequestBehaviour (int lane, int symbol) {
-            msg = new ACLMessage(ACLMessage.REQUEST_WHEN);
-            receiver = getAID();
-            msg.addReceiver(receiver);
-            msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST_WHEN);
-            msg.setOntology(SIG);
-            // We want to receive a reply in 2 time the period
-            msg.setReplyByDate(new Date(System.currentTimeMillis() + 1000));
-
-            JSONObject messageContent = new JSONObject();
-            messageContent.put("lane", lane);
-            messageContent.put("symbol", symbol);
-
-            msg.setContent(messageContent.toString());
-
-            System.out.println("sending message to self: "+getLocalName());
-        }
-
-        @Override
-        public void action() {
-            myAgent.addBehaviour(new AchieveREInitiator(myAgent, msg) {
-                @Override
-                protected void handleAgree(ACLMessage agree) {
-                    responseFlag = 1;
-                }
-
-                @Override
-                protected void handleInform(ACLMessage inform) {
-                    super.handleInform(inform);
-                }
-
-                @Override
-                protected void handleRefuse(ACLMessage refuse) {
-                    responseFlag = 2;
-                }
-
-                @Override
-                protected void handleFailure(ACLMessage failure) {
-                    super.handleFailure(failure);
-                }
-
-                @Override
-                protected void handleAllResultNotifications(Vector resultNotifications) {
-                    if (resultNotifications.size() < 1) {
-                        System.out.println("Timeout expired");
-                        responseFlag = 2;
-                    }
-                }
-            });
-        }
-
-        @Override
-        public boolean done() {
-            return false;
+            for (int i = 0; i < 3; i++) {
+                myGui.update(matrix[i].getState().getSymbolString(),i);
+            }
         }
     }
 
