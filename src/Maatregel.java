@@ -4,7 +4,7 @@ import jade.core.AID;
 
 public class Maatregel {
 
-    static final int AIDet        = 0;
+    static final int AIDet      = 0;
     static final int CROSS      = 1;
 
     private static final String[] Maatregels = new String[2];
@@ -21,10 +21,11 @@ public class Maatregel {
     private float start;
     private float end;
     private long ID;
+    private String road;
 
-    public Maatregel(int t, AID o){
+    public Maatregel(int t, Configuration config) {
         type = t;
-        origin = o;
+        origin = config.getAID;
 
         if (type == AIDet) {
             size = 3;
@@ -32,13 +33,14 @@ public class Maatregel {
             size = 3;
         }
         iteration = size;
-        start = 0;
-        end = 0;
+        start = config.location;
+        end = config.location;
+        road = config.road;
 
         ID = System.currentTimeMillis();
     }
 
-    public Maatregel(int t, AID o, int it, float st, float e) {
+    public Maatregel(int t, AID o, int it, float st, float e, String r) {
         type = t;
         origin = o;
 
@@ -50,6 +52,7 @@ public class Maatregel {
         iteration = it;
         start = st;
         end = e;
+        road = r;
 
         ID = System.currentTimeMillis();
     }
@@ -62,6 +65,7 @@ public class Maatregel {
         end = content.getFloat("end");
         ID = content.getLong("ID");
         iteration = content.getInt("iteration");
+        road = content.getString("road");
     }
 
     public int getType() {
@@ -89,14 +93,7 @@ public class Maatregel {
         content.put("start", start);
         content.put("end", end);
         content.put("ID",ID);
+        content.put("road", road);
         return content;
-    }
-
-    public void send() {
-        
-    }
-
-    public void cancel() {
-
     }
 }

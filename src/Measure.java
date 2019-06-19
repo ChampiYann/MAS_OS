@@ -12,17 +12,19 @@ public class Measure {
     static final int NF_50      = 3;
     static final int F_50       = 4;
     static final int F_70       = 5;
-    static final int BLANK      = 6;
+    static final int NF_90      = 6;
+    static final int BLANK      = 7;
 
-    private static final String[] symbols = new String[7];
+    private static final String[] symbols = new String[BLANK+1];
     static {
-        symbols[BLANK] = " ";
-        symbols[NF_50] = "50";
-        symbols[F_50] = "*50*";
-        symbols[F_70] = "*70*";
-        symbols[X] = "X";
-        symbols[ARROW_L] = "->";
-        symbols[ARROW_R] = "<-";
+        symbols[BLANK]      = " ";
+        symbols[NF_50]      = "50";
+        symbols[F_50]       = "*50*";
+        symbols[F_70]       = "*70*";
+        symbols[X]          = "X";
+        symbols[ARROW_L]    = "->";
+        symbols[ARROW_R]    = "<-";
+        symbols[NF_90]      = "90";
     }
 
     private int symbol;

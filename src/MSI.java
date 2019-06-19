@@ -72,7 +72,19 @@ class MSI {
                     break;
                 }
             } else if (type == Maatregel.CROSS) {
-
+                switch (iteration) {
+                    case 3:
+                        mr.changeDesiredState(Measure.X);
+                        break;
+                    case 2:
+                        mr.changeDesiredState(Measure.ARROW_L);
+                    break;
+                    case 1:
+                        mr.changeDesiredState(Measure.NF_90);
+                    break;
+                    default:
+                    break;
+                }
             }
         }
         currentState = mr;
