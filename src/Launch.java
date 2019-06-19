@@ -36,13 +36,9 @@ public class Launch {
         // Set arguments
         // All OS will have 3 lanes
         String lanes = "3";
-        String upstream;
-        String downstream;
         String name;
         String[] configurations = {"RW009 58,0 +85 1 HR R","RW009 58,4 +60 1 HR R","RW009 58,8 +60 1 HR R","RW009 59,2 +60 1 HR R","RW009 59,8 +41 1 HR R"};
         for (int i = 0; i < numOS; i++) {
-            upstream = "agent"+ Integer.toString(i+2);
-            downstream = "agent" + Integer.toString(i);
             name = "agent" + Integer.toString(i+1);
             // Concatenate arguments
             Object agentArgs[] = new Object[2];
