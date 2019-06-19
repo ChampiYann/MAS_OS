@@ -239,22 +239,17 @@ public class osAgent extends GuiAgent {
             // TODO Auto-generated constructor stub
         }
 
-        @Override
-        protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
-            ACLMessage msg = request.createReply();
-            msg.setPerformative(ACLMessage.AGREE);
-            return msg;
-        }
+        // @Override
+        // protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
+        //     ACLMessage msg = request.createReply();
+        //     msg.setPerformative(ACLMessage.AGREE);
+        //     return msg;
+        // }
 
         @Override
         protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
             ACLMessage msg = request.createReply();
 
-            if (request.getSender().equals(central)) {
-                System.out.println("CANCEL received from central");
-                // msg.setPerformative(ACLMessage.INFORM);
-                // return msg;
-            } 
             JSONObject msgContent = new JSONObject(request.getContent());
             try {
                 int mr = getMaatregel(msgContent.getLong("ID"));
@@ -283,12 +278,12 @@ public class osAgent extends GuiAgent {
             // TODO Auto-generated constructor stub
         }
 
-        @Override
-        protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
-            ACLMessage msg = request.createReply();
-            msg.setPerformative(ACLMessage.AGREE);
-            return msg;
-        }
+        // @Override
+        // protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
+        //     ACLMessage msg = request.createReply();
+        //     msg.setPerformative(ACLMessage.AGREE);
+        //     return msg;
+        // }
 
         @Override
         protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
@@ -343,27 +338,26 @@ public class osAgent extends GuiAgent {
 
                         // Create measure
                         Maatregel mt = new Maatregel(Maatregel.AIDet,local);
-                        measures.add(mt);
                         ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
                         newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
                         newMsg.setOntology("ADD");
                         newMsg.setContent(mt.toJSON().toString());
-                        newMsg.addReceiver(upstream.getAID);
+                        newMsg.addReceiver(local.getAID);
                         myAgent.addBehaviour(new SendMeasure(myAgent,newMsg));
                     } else {
                         congestion = false;
+                        System.out.println("Congestion cleared!");
+
+                        // Cancel measure
                         try {
-                            System.out.println("Congestion cleared!");
-                            int mr = getMaatregel(Maatregel.AIDet,myAgent.getAID());
+                            int mr = getMaatregel(Maatregel.AIDet,local.getAID);
                             Maatregel mt = measures.get(mr);
                             ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
                             newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
                             newMsg.setOntology("CANCEL");
                             newMsg.setContent(mt.toJSON().toString());
-                            newMsg.addReceiver(upstream.getAID);
+                            newMsg.addReceiver(local.getAID);
                             myAgent.addBehaviour(new SendMeasure(myAgent,newMsg));
-    
-                            measures.remove(mr);
                         } catch (NoMaatregel e) {
                             //TODO: handle exception
                         }

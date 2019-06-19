@@ -34,7 +34,7 @@ public class Maatregel {
         }
         iteration = size;
         start = config.location;
-        end = config.location;
+        end = config.location + (float)0.001;
         road = config.road;
 
         ID = System.currentTimeMillis();
@@ -86,7 +86,7 @@ public class Maatregel {
 
     public JSONObject toJSON() {
         JSONObject content = new JSONObject();
-        content.put("origin", origin);
+        content.put("origin", origin.getName());
         content.put("type", type);
         content.put("size", size);
         content.put("iteration", iteration);
