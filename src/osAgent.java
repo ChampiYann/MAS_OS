@@ -41,16 +41,10 @@ public class osAgent extends GuiAgent {
     // Number of lanes controlled by the OS
     private int lanes;
 
-    // Configuration (km specification for now)
-    private String configuration;
-    private String road;
-    private float location;
-    private String side;
-
     // AIDs for the neighbours of the OS and the central
     private Configuration upstream;
     private Configuration local;
-    private AID downstream;
+    private Configuration downstream;
     private AID central;
 
     // MSIs for this OS
@@ -62,7 +56,12 @@ public class osAgent extends GuiAgent {
     // Measures
     private ArrayList<Maatregel> measures = new ArrayList<Maatregel>();
 
+    // Flags
     private boolean congestion = false;
+
+    // Ontology
+    private String CANCEL = "CANCEL";
+    private String ADD = "ADD";
 
     /**
      * This function sets up the agent by setting the number of lanes and neighbour
@@ -77,8 +76,7 @@ public class osAgent extends GuiAgent {
         Object[] args = getArguments();
         if (args != null && args.length > 0) {
             lanes = Integer.parseInt((String) args[0]);
-            downstream = getAID((String) args[2]);
-            configuration =(String)args[3];
+            String configuration =(String)args[1];
 
             // Setup MSIs
             matrix = new MSI[lanes];
@@ -96,7 +94,8 @@ public class osAgent extends GuiAgent {
 
             // Create new upstrem configuration
             upstream = new Configuration(this);
-            upstream.getAID = getAID((String) args[1]);
+
+            downstream = new Configuration(this);
 
             // Create new local configuration
             local = new Configuration(this);
@@ -107,85 +106,111 @@ public class osAgent extends GuiAgent {
             myGui.setVisible(true);
 
             // Setup configuration based on BPS
+            // Extract road ID
             Pattern roadPattern = Pattern.compile("\\w{2}\\d{3}");
             Matcher roadMatcher = roadPattern.matcher(configuration);
             roadMatcher.find();
-            road = roadMatcher.group();
-            local.road = road;
-
+            local.road = roadMatcher.group();
+            // Extract km reading
             Pattern kmPattern = Pattern.compile("(?<=\\s)\\d{1,3},\\d");
             Matcher kmMatcher = kmPattern.matcher(configuration);
             kmMatcher.find();
             Pattern hmPattern = Pattern.compile("(?<=[+-])\\d{1,3}");
             Matcher hmMatcher = hmPattern.matcher(configuration);
             if (hmMatcher.find()) {
-                location = Float.parseFloat(kmMatcher.group().replaceAll(",", ".")) + Float.parseFloat(hmMatcher.group())/1000;
-                local.location = location;
+                local.location = Float.parseFloat(kmMatcher.group().replaceAll(",", ".")) + Float.parseFloat(hmMatcher.group())/1000;
             } else {
-                location = Float.parseFloat(kmMatcher.group().replaceAll(",", "."));
-                local.location = location;
+                local.location = Float.parseFloat(kmMatcher.group().replaceAll(",", "."));
             }
-
+            // Extract road side
             Pattern sidePattern = Pattern.compile("(?<=\\s)[LRlr]");
             Matcher sideMatcher = sidePattern.matcher(configuration);
             sideMatcher.find();
-            side = sideMatcher.group();
-            local.side = side;
+            local.side = sideMatcher.group();
 
             try {
-            TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
-			final AID topic = topicHelper.createTopic("central");
-			topicHelper.register(topic);
+                TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
+                final AID topicCentral = topicHelper.createTopic("CENTRAL");
+                topicHelper.register(topicCentral);
+            } catch (ServiceException e) {
+                System.out.println("Wrong configuration for " + getAID().getName());
+                doDelete();
+            }
 
             MessageTemplate requestTemplate = MessageTemplate.and(
 				MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST),
                 MessageTemplate.MatchPerformative(ACLMessage.REQUEST));
 
             MessageTemplate AddTemplate = MessageTemplate.and(requestTemplate,
-                MessageTemplate.MatchOntology("ADD"));
+                MessageTemplate.MatchOntology(ADD));
             MessageTemplate CancelTemplate = MessageTemplate.and(requestTemplate,
-                MessageTemplate.MatchOntology("CANCEL"));
+                MessageTemplate.MatchOntology(CANCEL));
 
             addBehaviour(new AddResponder(this, AddTemplate));
 
             addBehaviour(new CancelResponder(this, CancelTemplate));
-            } catch (ServiceException e) {}
 
-            // COnfiguration response
-            MessageTemplate requestTemplate = MessageTemplate.and(
-				MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST),
-                MessageTemplate.MatchPerformative(ACLMessage.REQUEST));
-            MessageTemplate ConfigTemplate = MessageTemplate.and(requestTemplate,
-                MessageTemplate.MatchOntology("CONFIGURATION"));
-            addBehaviour(new AchieveREResponder(this, ConfigTemplate) {
-                @Override
-                protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
-                    ACLMessage result = request.createReply();
-                    result.setPerformative(ACLMessage.INFORM);
-                    result.setContent(configToJSON());
-                    return result;
-                }
-            });
+            try {
+                TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
+                final AID topicConfiguration = topicHelper.createTopic("CONFIGURATION");
+                topicHelper.register(topicConfiguration);
 
-            // COnfiguration request
-            addBehaviour(new WakerBehaviour(this, 20000) {
-                @Override
-                protected void onWake() {
-                    ACLMessage configurationRequest = new ACLMessage(ACLMessage.REQUEST);
-                    configurationRequest.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-                    configurationRequest.setOntology("CONFIGURATION");
-                    configurationRequest.setReplyByDate(new Date(System.currentTimeMillis() + 5000));
-                    configurationRequest.addReceiver(upstream.getAID);
-                    myAgent.addBehaviour(new AchieveREInitiator(myAgent, configurationRequest) {
-                        @Override
-                        protected void handleInform(ACLMessage inform) {
-                            String messageContent = inform.getContent();
-                            upstream.getConfigFromJSON(messageContent);
-                            System.out.println("upstream configuration is " + messageContent);
+                // COnfiguration response
+                MessageTemplate ConfigTemplate = MessageTemplate.and(requestTemplate,
+                    MessageTemplate.MatchOntology("CONFIGURATION"));
+                addBehaviour(new AchieveREResponder(this, ConfigTemplate) {
+                    @Override
+                    protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
+                        ACLMessage result = request.createReply();
+                        result.setPerformative(ACLMessage.AGREE);
+                        return result;
+                    }
+                    @Override
+                    protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
+                        Configuration newConfig = new Configuration();
+                        newConfig.getConfigFromJSON(request.getContent());
+                        if (local.location - newConfig.location < local.location - upstream.location && local.location - newConfig.location > 0) {
+                            upstream.location = newConfig.location;
+                            upstream.road = newConfig.road;
+                            upstream.getAID = newConfig.getAID;
+                            upstream.side = upstream.side;
+
+                            System.out.println("upstream neighbour for " + local.getAID.getLocalName() + " is " + upstream.getAID.getLocalName());
+
+                            ACLMessage result = request.createReply();
+                            result.setPerformative(ACLMessage.INFORM);
+                            result.setContent(local.configToJSON());
+                            return result;
+                        } else {
+                            throw new FailureException("sub-optimal");
                         }
-                    });
-                }
-            });
+                    }
+                });
+
+                // COnfiguration request
+                addBehaviour(new WakerBehaviour(this, 5000) {
+                    @Override
+                    protected void onWake() {
+                        ACLMessage configurationRequest = new ACLMessage(ACLMessage.REQUEST);
+                        configurationRequest.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+                        configurationRequest.setOntology("CONFIGURATION");
+                        configurationRequest.setReplyByDate(new Date(System.currentTimeMillis() + 5000));
+                        configurationRequest.addReceiver(topicConfiguration);
+                        configurationRequest.setContent(local.configToJSON());
+                        myAgent.addBehaviour(new AchieveREInitiator(myAgent, configurationRequest) {
+                            @Override
+                            protected void handleInform(ACLMessage inform) {
+                                String messageContent = inform.getContent();
+                                downstream.getConfigFromJSON(messageContent);
+                                System.out.println("downstream neighbour for " + local.getAID.getLocalName() + " is " + downstream.getAID.getLocalName());
+                            }
+                        });
+                    }
+                });
+            } catch (ServiceException e) {
+                System.out.println("Wrong configuration for " + getAID().getName());
+                doDelete();
+            }
 
             // Add behaviour simulting traffic passing by but delay it by 1 second
             addBehaviour(new WakerBehaviour(this, 10000) {
@@ -198,9 +223,9 @@ public class osAgent extends GuiAgent {
             addBehaviour(new updateGui(this, 500));
 
             // Print message stating that the configuration was succefull
-            System.out.println("OS " + getAID().getLocalName() + " configured on road " + road + " at km " + location +
-                " on side " + side + " with " + lanes + " lanes, upstream agent "
-                + upstream.getAID.getLocalName() + " and downstream agent " + downstream.getLocalName());
+            System.out.println("OS " + getAID().getLocalName() + " configured on road " + local.road + " at km " + local.location +
+                " on side " + local.side + " with " + lanes + " lanes");
+                // + ", upstream agent " + upstream.getAID.getLocalName() + " and downstream agent " + downstream.getAID.getLocalName());
 
         } else {
             // Make agent terminate immediately
@@ -214,37 +239,12 @@ public class osAgent extends GuiAgent {
         System.out.println("OS " + getAID().getName() + " terminating.");
     }
 
-    public class SendMeasure extends AchieveREInitiator{
-
-        public SendMeasure(Agent a, ACLMessage msg) {
-            super(a, msg);
-            // TODO Auto-generated constructor stub
-        }
-
-        @Override
-        protected void handleAgree(ACLMessage agree) {
-            super.handleAgree(agree);
-        }
-
-        @Override
-        protected void handleFailure(ACLMessage failure) {
-            super.handleFailure(failure);
-        }
-    }
-
     public class CancelResponder extends AchieveREResponder {
 
         public CancelResponder(Agent a, MessageTemplate mt) {
             super(a, mt);
             // TODO Auto-generated constructor stub
         }
-
-        // @Override
-        // protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
-        //     ACLMessage msg = request.createReply();
-        //     msg.setPerformative(ACLMessage.AGREE);
-        //     return msg;
-        // }
 
         @Override
         protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
@@ -254,12 +254,7 @@ public class osAgent extends GuiAgent {
             try {
                 int mr = getMaatregel(msgContent.getLong("ID"));
                 Maatregel mt = measures.get(mr);
-                ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
-                newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-                newMsg.setOntology("CANCEL");
-                newMsg.setContent(mt.toJSON().toString());
-                newMsg.addReceiver(upstream.getAID);
-                myAgent.addBehaviour(new SendMeasure(myAgent,newMsg));
+                sendMeasure (upstream, CANCEL, mt.toJSON().toString());
 
                 measures.remove(mr);
                 
@@ -278,41 +273,25 @@ public class osAgent extends GuiAgent {
             // TODO Auto-generated constructor stub
         }
 
-        // @Override
-        // protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
-        //     ACLMessage msg = request.createReply();
-        //     msg.setPerformative(ACLMessage.AGREE);
-        //     return msg;
-        // }
-
         @Override
         protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
             ACLMessage msg = request.createReply();
 
             JSONObject msgContent = new JSONObject(request.getContent());
             int it = msgContent.getInt("iteration");
-            if (((msgContent.getFloat("start") >= location &&
-            msgContent.getFloat("start") < upstream.location &&
-            msgContent.getFloat("end") > location) || 
-            (msgContent.getFloat("end") >= location &&
+            if (((msgContent.getFloat("start") >= local.location &&
+            msgContent.getFloat("start") > upstream.location &&
+            msgContent.getFloat("end") < local.location) || 
+            (msgContent.getFloat("end") <= local.location &&
             msgContent.getFloat("end") < upstream.location &&
-            msgContent.getFloat("start") < location)) && msgContent.getString("road").equals(road)) {
+            msgContent.getFloat("start") > local.location)) && 
+            msgContent.getString("road").equals(local.road)) {
                 measures.add(new Maatregel(msgContent));
-                ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
-                newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-                newMsg.setOntology("ADD");
-                newMsg.setContent(msgContent.toString());
-                newMsg.addReceiver(upstream.getAID);
-                myAgent.addBehaviour(new SendMeasure(myAgent,newMsg));
+                sendMeasure (upstream, ADD, msgContent.toString());
             } else if (it - 1 != 0 && !request.getSender().equals(central) && !request.getSender().equals(getAID())) {
                 msgContent.put("iteration", it - 1);
                 measures.add(new Maatregel(msgContent));
-                ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
-                newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-                newMsg.setOntology("ADD");
-                newMsg.setContent(msgContent.toString());
-                newMsg.addReceiver(upstream.getAID);
-                myAgent.addBehaviour(new SendMeasure(myAgent,newMsg));
+                sendMeasure (upstream, ADD, msgContent.toString());
             }
             msg.setPerformative(ACLMessage.INFORM);
             return msg;
@@ -330,39 +309,28 @@ public class osAgent extends GuiAgent {
 
         @Override
         protected void onTick() {
-            // for (int i = 0; i < lanes; i++) {
-                if (rand.nextInt(100) >= 80) {
-                    if (congestion == false) {
-                        congestion = true;
-                        System.out.println("Congestion detected!");
+            if (rand.nextInt(100) >= 80) {
+                if (congestion == false) {
+                    congestion = true;
+                    System.out.println("Congestion detected!");
 
-                        // Create measure
-                        Maatregel mt = new Maatregel(Maatregel.AIDet,local);
-                        ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
-                        newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-                        newMsg.setOntology("ADD");
-                        newMsg.setContent(mt.toJSON().toString());
-                        newMsg.addReceiver(local.getAID);
-                        myAgent.addBehaviour(new SendMeasure(myAgent,newMsg));
-                    } else {
-                        congestion = false;
-                        System.out.println("Congestion cleared!");
+                    // Create measure
+                    Maatregel mt = new Maatregel(Maatregel.AIDet,local);
+                    sendMeasure (local, ADD, mt.toJSON().toString());
+                } else {
+                    congestion = false;
+                    System.out.println("Congestion cleared!");
 
-                        // Cancel measure
-                        try {
-                            int mr = getMaatregel(Maatregel.AIDet,local.getAID);
-                            Maatregel mt = measures.get(mr);
-                            ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
-                            newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-                            newMsg.setOntology("CANCEL");
-                            newMsg.setContent(mt.toJSON().toString());
-                            newMsg.addReceiver(local.getAID);
-                            myAgent.addBehaviour(new SendMeasure(myAgent,newMsg));
-                        } catch (NoMaatregel e) {
-                            //TODO: handle exception
-                        }
+                    // Cancel measure
+                    try {
+                        int mr = getMaatregel(Maatregel.AIDet,local.getAID);
+                        Maatregel mt = measures.get(mr);
+                        sendMeasure (local, CANCEL, mt.toJSON().toString());;
+                    } catch (NoMaatregel e) {
+                        //TODO: handle exception
                     }
-                } else {}
+                }
+            } else {}
         }
     }
 
@@ -383,8 +351,17 @@ public class osAgent extends GuiAgent {
     }
 
     @Override
-    protected void onGuiEvent(GuiEvent ev) {
+    protected void onGuiEvent (GuiEvent ev) {
 
+    }
+
+    public void sendMeasure (Configuration config, String ont, String content) {
+        ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
+        newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+        newMsg.setOntology(ont);
+        newMsg.setContent(content);
+        newMsg.addReceiver(config.getAID);
+        this.addBehaviour(new AchieveREInitiator(this, newMsg));
     }
 
     public int getMaatregel (int t, AID o) throws NoMaatregel {
@@ -415,13 +392,5 @@ public class osAgent extends GuiAgent {
 
     public ArrayList<Maatregel> getMeasures() {
         return measures;
-    }
-
-    public String configToJSON() {
-        JSONObject content = new JSONObject();
-        content.put("road", road);
-        content.put("location", location);
-        content.put("side", side);
-        return content.toString();
     }
 }

@@ -25,9 +25,9 @@ public class centralAgent extends Agent {
 
         try{
         TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
-		final AID topic = topicHelper.createTopic("central");
+		final AID topic = topicHelper.createTopic("CENTRAL");
 
-        addBehaviour(new WakerBehaviour(this, 60000) {
+        addBehaviour(new WakerBehaviour(this, 30000) {
             @Override
             protected void onWake() {
                 myAgent.addBehaviour(new TickerBehaviour(myAgent,10000) {
@@ -36,7 +36,7 @@ public class centralAgent extends Agent {
                     protected void onTick() {
                         if (sw == false) {
                             sw = true;
-                            Maatregel mt = new Maatregel(Maatregel.CROSS, getAID(), 3, (float)58.5, (float)59.0, "RW009");
+                            Maatregel mt = new Maatregel(Maatregel.CROSS, getAID(), 3, (float)59.0, (float)58.5, "RW009");
                             measures.add(mt);
                             ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
                             newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);

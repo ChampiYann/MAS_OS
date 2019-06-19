@@ -45,11 +45,9 @@ public class Launch {
             downstream = "agent" + Integer.toString(i);
             name = "agent" + Integer.toString(i+1);
             // Concatenate arguments
-            Object agentArgs[] = new Object[4];
+            Object agentArgs[] = new Object[2];
             agentArgs[0] = lanes;
-            agentArgs[1] = upstream;
-            agentArgs[2] = downstream;
-            agentArgs[3] = configurations[i];
+            agentArgs[1] = configurations[numOS-1-i];
             try {
                 // Initiae osAgent
                 OSAgents[i] = cc.createNewAgent(name, "osAgent", agentArgs);

@@ -34,7 +34,7 @@ public class Maatregel {
         }
         iteration = size;
         start = config.location;
-        end = config.location + (float)0.001;
+        end = config.location - (float)0.001;
         road = config.road;
 
         ID = System.currentTimeMillis();
