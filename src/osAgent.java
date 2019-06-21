@@ -58,7 +58,6 @@ public class osAgent extends GuiAgent {
 
     // Flags
     private boolean congestion = false;
-    private boolean sendingHB = true;
 
     // Ontology
     private String CANCEL = "CANCEL";
@@ -68,9 +67,6 @@ public class osAgent extends GuiAgent {
     private AID topicConfiguration;
 
     // Retries
-    final static private int MAX_TRIES = 2;
-    private int retryUpstream = 0;
-    private int retryDownstream = 0;
     private long timeUpstream = 0;
     private long timeDownstream = 0;
 
@@ -126,15 +122,21 @@ public class osAgent extends GuiAgent {
             roadMatcher.find();
             local.road = roadMatcher.group();
             // Extract km reading
-            Pattern kmPattern = Pattern.compile("(?<=\\s)\\d{1,3},\\d");
+            Pattern kmPattern = Pattern.compile("(?<=\\s)\\d{1,3}[,\\.]\\d");
             Matcher kmMatcher = kmPattern.matcher(configuration);
             kmMatcher.find();
             Pattern hmPattern = Pattern.compile("(?<=[+-])\\d{1,3}");
             Matcher hmMatcher = hmPattern.matcher(configuration);
+            String kmDot;
+            try {
+                kmDot = kmMatcher.group().replaceAll(",", ".");
+            } catch (Exception e) {
+                kmDot = kmMatcher.group();
+            }
             if (hmMatcher.find()) {
-                local.location = Float.parseFloat(kmMatcher.group().replaceAll(",", ".")) + Float.parseFloat(hmMatcher.group())/1000;
+                local.location = Float.parseFloat(kmDot) + Float.parseFloat(hmMatcher.group())/1000;
             } else {
-                local.location = Float.parseFloat(kmMatcher.group().replaceAll(",", "."));
+                local.location = Float.parseFloat(kmDot);
             }
             // Extract road side
             Pattern sidePattern = Pattern.compile("(?<=\\s)[LRlr]");
@@ -175,10 +177,9 @@ public class osAgent extends GuiAgent {
                 addBehaviour(new AchieveREResponder(this, ConfigTemplate) {
                     @Override
                     protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
-                        ACLMessage result = request.createReply();
-                        result.setPerformative(ACLMessage.AGREE);
-                        return result;
+                        return null;
                     }
+                    
                     @Override
                     protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
                         Configuration newConfig = new Configuration();
@@ -188,13 +189,15 @@ public class osAgent extends GuiAgent {
                             upstream.location = newConfig.location;
                             upstream.road = newConfig.road;
                             upstream.getAID = newConfig.getAID;
-                            upstream.side = upstream.side;
+                            upstream.side = newConfig.side;
+
+                            timeUpstream = System.currentTimeMillis();
 
                             System.out.println("upstream neighbour for " + local.getAID.getLocalName() + " is " + upstream.getAID.getLocalName());
 
                             for (int i = 0; i < measures.size(); i++) {
-                                    sendMeasure(upstream, ADD, measures.get(i).toJSON().toString());
-                                }
+                                sendMeasure(upstream, ADD, measures.get(i).toJSON().toString());
+                            }
 
                             ACLMessage result = request.createReply();
                             result.setPerformative(ACLMessage.INFORM);
@@ -239,11 +242,9 @@ public class osAgent extends GuiAgent {
                         MessageTemplate.MatchOntology("HB"));
                     ACLMessage HBResponse = myAgent.receive(HBTemplate);
                     if (HBResponse == null) {
-                        if (System.currentTimeMillis()-timeUpstream > (long)4000) {
+                        if (System.currentTimeMillis()-timeUpstream > (long)2000) {
                             System.out.println("Upstream down at " + local.getAID.getLocalName());
-                            if (upstream.getAID != null) {
-                                upstream = new Configuration();
-                            }
+                            upstream = new Configuration();
                         }
                     } else {
                         timeUpstream = System.currentTimeMillis();
@@ -265,7 +266,7 @@ public class osAgent extends GuiAgent {
                         myAgent.send(HBResponse);
                         timeDownstream = System.currentTimeMillis();
                     } else {
-                        if (System.currentTimeMillis()-timeDownstream > (long)4000) {
+                        if (System.currentTimeMillis()-timeDownstream > (long)2000) {
                             System.out.println("Downstream down at " + local.getAID.getLocalName());
                             SendConfig();
                             for (int i = 0; i < measures.size(); i++) {
@@ -307,6 +308,11 @@ public class osAgent extends GuiAgent {
         }
 
         @Override
+        protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
+            return null;
+        }
+
+        @Override
         protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
             ACLMessage msg = request.createReply();
 
@@ -329,6 +335,11 @@ public class osAgent extends GuiAgent {
         public AddResponder(Agent a, MessageTemplate mt) {
             super(a, mt);
             // TODO Auto-generated constructor stub
+        }
+
+        @Override
+        protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
+            return null;
         }
 
         @Override
@@ -441,6 +452,7 @@ public class osAgent extends GuiAgent {
             protected void handleFailure(ACLMessage failure) {
             }
         });
+        timeDownstream = System.currentTimeMillis();
     }   
 
     public int getMaatregel (int t, AID o) throws NoMaatregel {

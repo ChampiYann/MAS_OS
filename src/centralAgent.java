@@ -69,7 +69,7 @@ public class centralAgent extends Agent {
         TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
 		final AID topic = topicHelper.createTopic("CENTRAL");
 
-        addBehaviour(new WakerBehaviour(this, 30000) {
+        addBehaviour(new WakerBehaviour(this, 10000) {
             @Override
             protected void onWake() {
                 myAgent.addBehaviour(new TickerBehaviour(myAgent,30000) {
@@ -116,7 +116,8 @@ public class centralAgent extends Agent {
     @Override
     protected void takeDown() {
 		// Printout a dismissal message
-		System.out.println("Central terminating.");
+        System.out.println("Central terminating.");
+        myGui.dispose();
     }
 
     public class SendMeasure extends AchieveREInitiator{

@@ -34,7 +34,7 @@ public class Launch {
         String lanes = "3";
         String name;
         String[] configurations = {
-            "RW009 56,2 +10 1 HR R",
+            "RW009 56.2 +10 1 HR R",
             "RW009 56,6 +60 1 HR R",
             "RW009 57,2 +85 1 HR R",
             "RW009 57,5 +10 1 HR R",
