@@ -72,7 +72,7 @@ public class centralAgent extends Agent {
         addBehaviour(new WakerBehaviour(this, 30000) {
             @Override
             protected void onWake() {
-                myAgent.addBehaviour(new TickerBehaviour(myAgent,10000) {
+                myAgent.addBehaviour(new TickerBehaviour(myAgent,30000) {
                 
                     @Override
                     protected void onTick() {

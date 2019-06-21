@@ -58,6 +58,7 @@ public class osAgent extends GuiAgent {
 
     // Flags
     private boolean congestion = false;
+    private boolean sendingHB = true;
 
     // Ontology
     private String CANCEL = "CANCEL";
@@ -66,10 +67,12 @@ public class osAgent extends GuiAgent {
     // Topic
     private AID topicConfiguration;
 
-    // retries
+    // Retries
     final static private int MAX_TRIES = 2;
     private int retryUpstream = 0;
     private int retryDownstream = 0;
+    private long timeUpstream = 0;
+    private long timeDownstream = 0;
 
     /**
      * This function sets up the agent by setting the number of lanes and neighbour
@@ -109,6 +112,8 @@ public class osAgent extends GuiAgent {
             local = new Configuration(this);
             local.getAID = getAID();
             local.lanes = lanes;
+            timeUpstream = System.currentTimeMillis();
+            timeDownstream = System.currentTimeMillis();
 
             // Set up the gui
             myGui = new osGui(this);
@@ -177,6 +182,7 @@ public class osAgent extends GuiAgent {
                     @Override
                     protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
                         Configuration newConfig = new Configuration();
+
                         newConfig.getConfigFromJSON(request.getContent());
                         if (local.location - newConfig.location < local.location - upstream.location && local.location - newConfig.location > 0) {
                             upstream.location = newConfig.location;
@@ -185,6 +191,10 @@ public class osAgent extends GuiAgent {
                             upstream.side = upstream.side;
 
                             System.out.println("upstream neighbour for " + local.getAID.getLocalName() + " is " + upstream.getAID.getLocalName());
+
+                            for (int i = 0; i < measures.size(); i++) {
+                                    sendMeasure(upstream, ADD, measures.get(i).toJSON().toString());
+                                }
 
                             ACLMessage result = request.createReply();
                             result.setPerformative(ACLMessage.INFORM);
@@ -211,33 +221,37 @@ public class osAgent extends GuiAgent {
             addBehaviour(new updateGui(this, 500));
 
             addBehaviour(new TickerBehaviour(this,1000){
-            
                 @Override
                 protected void onTick() {
                     ACLMessage HBRequest = new ACLMessage(ACLMessage.REQUEST);
                     HBRequest.setOntology("HB");
-                    HBRequest.setReplyByDate(new Date(System.currentTimeMillis() + 1000));
                     HBRequest.addReceiver(upstream.getAID);
 
                     myAgent.send(HBRequest);
-
-                    MessageTemplate HBTemplate = MessageTemplate.and(
-                        MessageTemplate.MatchPerformative(ACLMessage.INFORM),
-                        MessageTemplate.MatchOntology("HB"));
-                    ACLMessage HBResponse = myAgent.blockingReceive(HBTemplate, 500);
-                    if (HBResponse == null) {
-                        if (retryUpstream == MAX_TRIES) {
-                            System.out.println("Upstream down at " + local.getAID.getLocalName());
-                            upstream = new Configuration();
-                            retryUpstream = 0;
-                        } else {
-                            retryUpstream += 1; 
-                        }
-                    } else {}
                 }
             });
 
-            addBehaviour(new TickerBehaviour(this,1000) {
+            addBehaviour(new TickerBehaviour(this,200) {
+                @Override
+                protected void onTick() {
+                    MessageTemplate HBTemplate = MessageTemplate.and(
+                        MessageTemplate.MatchPerformative(ACLMessage.INFORM),
+                        MessageTemplate.MatchOntology("HB"));
+                    ACLMessage HBResponse = myAgent.receive(HBTemplate);
+                    if (HBResponse == null) {
+                        if (System.currentTimeMillis()-timeUpstream > (long)4000) {
+                            System.out.println("Upstream down at " + local.getAID.getLocalName());
+                            if (upstream.getAID != null) {
+                                upstream = new Configuration();
+                            }
+                        }
+                    } else {
+                        timeUpstream = System.currentTimeMillis();
+                    }
+                }
+            });
+
+            addBehaviour(new TickerBehaviour(this, 200) {
                 @Override
                 protected void onTick() {
                     MessageTemplate HBTemplate = MessageTemplate.and(
@@ -249,27 +263,20 @@ public class osAgent extends GuiAgent {
                         HBResponse.setOntology("HB");
                         HBResponse.addReceiver(HBRequest.getSender());
                         myAgent.send(HBResponse);
+                        timeDownstream = System.currentTimeMillis();
                     } else {
-                        if (retryDownstream == MAX_TRIES) {
+                        if (System.currentTimeMillis()-timeDownstream > (long)4000) {
                             System.out.println("Downstream down at " + local.getAID.getLocalName());
                             SendConfig();
-                            int c = -1;
-                            int l = -1;
-                            try {
-                                c = getMaatregel(central);
-                            } catch (NoMaatregel e) {}
-                            try {
-                                l = getMaatregel(local.getAID);
-                            } catch (NoMaatregel e) {}
                             for (int i = 0; i < measures.size(); i++) {
-                                if (i != c && i != l) {
-                                    sendMeasure (upstream, CANCEL, measures.get(i).toJSON().toString());
-                                    measures.remove(i);
+                                try {
+                                    if (getMaatregel(local.getAID) == i) {} else {
+                                        sendMeasure (local, CANCEL, measures.get(i).toJSON().toString());
+                                    }
+                                } catch (NoMaatregel e) {
+                                    sendMeasure (local, CANCEL, measures.get(i).toJSON().toString());
                                 }
                             }
-                            retryDownstream = 0;
-                        } else {
-                            retryDownstream += 1; 
                         }
                     }
                 }
@@ -289,6 +296,7 @@ public class osAgent extends GuiAgent {
     protected void takeDown() {
         // Printout a dismissal message
         System.out.println("OS " + getAID().getName() + " terminating.");
+        myGui.dispose();
     }
 
     public class CancelResponder extends AchieveREResponder {
