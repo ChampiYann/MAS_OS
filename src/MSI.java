@@ -1,10 +1,5 @@
 import java.util.ArrayList;
-
-import org.json.JSONObject;
-
-import jade.core.AID;
-import jade.domain.FIPAAgentManagement.RefuseException;
-import jade.lang.acl.ACLMessage;
+import java.util.Vector;
 
 class MSI {
     /**
@@ -15,48 +10,25 @@ class MSI {
     final osAgent outer;
 
     private Measure currentState;
-    private Measure centralState;
-    private Measure selfState;
-    private Measure downstreamState;
+    private int position;
 
-    private static final int CENTRAL = 1;
-    private static final int SELF = 2;
-    private static final int DOWNSTREAM = 3;
-
-    public MSI(osAgent outer) {
+    public MSI(osAgent outer, int p) {
         this.outer = outer;
         try {
             currentState = new Measure();
-            centralState = new Measure();
-            selfState = new Measure();
-            downstreamState = new Measure();
         } catch (Exception e) {
             System.out.println("Exception in the creation of MSI");
         }
-    }
-
-    public void changeDesiredState(ACLMessage msg, JSONObject content, int select) throws RefuseException {
-        long time = msg.getPostTimeStamp();
-        AID sender = msg.getSender();
-        int symbol = content.getInt("symbol");
-        if (symbol >= -1 && symbol < 7) {
-
-        } else {
-            symbol = Measure.BLANK;
-        }
-        if (currentState.getSymbol() >= symbol && time > currentState.getTime()) {
-            centralState.update(symbol, sender, time);
-        } else {
-            throw new RefuseException("cannot-update");
-        }
+        position = p;
     }
 
     public void updateState() {
-        ArrayList<Maatregel> measures = outer.getMeasures();
+        Vector<Maatregel> measures = outer.getMeasures();
         Measure mr = new Measure();
         for (int i = 0; i < measures.size(); i++) {
             int type = measures.get(i).getType();
             int iteration = measures.get(i).getIteration();
+            boolean lane = measures.get(i).getLane(position);
             if (type == Maatregel.AIDet) {
                 switch (iteration) {
                     case 3:
@@ -71,8 +43,11 @@ class MSI {
                     default:
                     break;
                 }
-            } else if (type == Maatregel.CROSS) {
+            } else if (type == Maatregel.CROSS && lane == true) {
                 switch (iteration) {
+                    case 4:
+                        mr.changeDesiredState(Measure.X);
+                        break;
                     case 3:
                         mr.changeDesiredState(Measure.X);
                         break;
@@ -92,18 +67,5 @@ class MSI {
 
     public Measure getState() {
         return currentState;
-    }
-
-    public Measure getState(int select) {
-        switch (select) {
-        case CENTRAL:
-            return centralState;
-        case SELF:
-            return selfState;
-        case DOWNSTREAM:
-            return downstreamState;
-        default:
-            return null;
-        }
     }
 }

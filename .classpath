@@ -6,4 +6,5 @@
 	<classpathentry kind="lib" path="lib/jade.jar" sourcepath="C:/Users/Acer/OneDrive voor Bedrijven/Graduation/Thesis/jade/jade/src"/>
 	<classpathentry kind="lib" path="lib/commons-codec-1.3.jar"/>
 	<classpathentry kind="lib" path="lib/json-20180813.jar"/>
+	<classpathentry kind="lib" path="lib/processing/core.jar"/>
 </classpath>

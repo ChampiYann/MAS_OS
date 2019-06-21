@@ -13,9 +13,9 @@
  * - 
  */
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,7 +54,7 @@ public class osAgent extends GuiAgent {
     transient protected osGui myGui;
 
     // Measures
-    private ArrayList<Maatregel> measures = new ArrayList<Maatregel>();
+    private Vector<Maatregel> measures = new Vector<Maatregel>();
 
     // Flags
     private boolean congestion = false;
@@ -62,6 +62,14 @@ public class osAgent extends GuiAgent {
     // Ontology
     private String CANCEL = "CANCEL";
     private String ADD = "ADD";
+
+    // Topic
+    private AID topicConfiguration;
+
+    // retries
+    final static private int MAX_TRIES = 2;
+    private int retryUpstream = 0;
+    private int retryDownstream = 0;
 
     /**
      * This function sets up the agent by setting the number of lanes and neighbour
@@ -82,7 +90,7 @@ public class osAgent extends GuiAgent {
             matrix = new MSI[lanes];
             for (int i = 0; i < lanes; i++) {
                 try {
-                    matrix[i] = new MSI(this);
+                    matrix[i] = new MSI(this,i);
                 } catch (Exception e) {
                     // TODO: handle exception
                     System.out.println("Exception in the creation of matrix");
@@ -100,6 +108,7 @@ public class osAgent extends GuiAgent {
             // Create new local configuration
             local = new Configuration(this);
             local.getAID = getAID();
+            local.lanes = lanes;
 
             // Set up the gui
             myGui = new osGui(this);
@@ -152,7 +161,7 @@ public class osAgent extends GuiAgent {
 
             try {
                 TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
-                final AID topicConfiguration = topicHelper.createTopic("CONFIGURATION");
+                topicConfiguration = topicHelper.createTopic("CONFIGURATION");
                 topicHelper.register(topicConfiguration);
 
                 // COnfiguration response
@@ -186,27 +195,6 @@ public class osAgent extends GuiAgent {
                         }
                     }
                 });
-
-                // COnfiguration request
-                addBehaviour(new WakerBehaviour(this, 5000) {
-                    @Override
-                    protected void onWake() {
-                        ACLMessage configurationRequest = new ACLMessage(ACLMessage.REQUEST);
-                        configurationRequest.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-                        configurationRequest.setOntology("CONFIGURATION");
-                        configurationRequest.setReplyByDate(new Date(System.currentTimeMillis() + 5000));
-                        configurationRequest.addReceiver(topicConfiguration);
-                        configurationRequest.setContent(local.configToJSON());
-                        myAgent.addBehaviour(new AchieveREInitiator(myAgent, configurationRequest) {
-                            @Override
-                            protected void handleInform(ACLMessage inform) {
-                                String messageContent = inform.getContent();
-                                downstream.getConfigFromJSON(messageContent);
-                                System.out.println("downstream neighbour for " + local.getAID.getLocalName() + " is " + downstream.getAID.getLocalName());
-                            }
-                        });
-                    }
-                });
             } catch (ServiceException e) {
                 System.out.println("Wrong configuration for " + getAID().getName());
                 doDelete();
@@ -222,10 +210,74 @@ public class osAgent extends GuiAgent {
 
             addBehaviour(new updateGui(this, 500));
 
+            addBehaviour(new TickerBehaviour(this,1000){
+            
+                @Override
+                protected void onTick() {
+                    ACLMessage HBRequest = new ACLMessage(ACLMessage.REQUEST);
+                    HBRequest.setOntology("HB");
+                    HBRequest.setReplyByDate(new Date(System.currentTimeMillis() + 1000));
+                    HBRequest.addReceiver(upstream.getAID);
+
+                    myAgent.send(HBRequest);
+
+                    MessageTemplate HBTemplate = MessageTemplate.and(
+                        MessageTemplate.MatchPerformative(ACLMessage.INFORM),
+                        MessageTemplate.MatchOntology("HB"));
+                    ACLMessage HBResponse = myAgent.blockingReceive(HBTemplate, 500);
+                    if (HBResponse == null) {
+                        if (retryUpstream == MAX_TRIES) {
+                            System.out.println("Upstream down at " + local.getAID.getLocalName());
+                            upstream = new Configuration();
+                            retryUpstream = 0;
+                        } else {
+                            retryUpstream += 1; 
+                        }
+                    } else {}
+                }
+            });
+
+            addBehaviour(new TickerBehaviour(this,1000) {
+                @Override
+                protected void onTick() {
+                    MessageTemplate HBTemplate = MessageTemplate.and(
+                        MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
+                        MessageTemplate.MatchOntology("HB"));
+                    ACLMessage HBRequest = myAgent.receive(HBTemplate);
+                    if (HBRequest != null) {
+                        ACLMessage HBResponse = new ACLMessage(ACLMessage.INFORM);
+                        HBResponse.setOntology("HB");
+                        HBResponse.addReceiver(HBRequest.getSender());
+                        myAgent.send(HBResponse);
+                    } else {
+                        if (retryDownstream == MAX_TRIES) {
+                            System.out.println("Downstream down at " + local.getAID.getLocalName());
+                            SendConfig();
+                            int c = -1;
+                            int l = -1;
+                            try {
+                                c = getMaatregel(central);
+                            } catch (NoMaatregel e) {}
+                            try {
+                                l = getMaatregel(local.getAID);
+                            } catch (NoMaatregel e) {}
+                            for (int i = 0; i < measures.size(); i++) {
+                                if (i != c && i != l) {
+                                    sendMeasure (upstream, CANCEL, measures.get(i).toJSON().toString());
+                                    measures.remove(i);
+                                }
+                            }
+                            retryDownstream = 0;
+                        } else {
+                            retryDownstream += 1; 
+                        }
+                    }
+                }
+            });
+
             // Print message stating that the configuration was succefull
             System.out.println("OS " + getAID().getLocalName() + " configured on road " + local.road + " at km " + local.location +
                 " on side " + local.side + " with " + lanes + " lanes");
-                // + ", upstream agent " + upstream.getAID.getLocalName() + " and downstream agent " + downstream.getAID.getLocalName());
 
         } else {
             // Make agent terminate immediately
@@ -255,9 +307,7 @@ public class osAgent extends GuiAgent {
                 int mr = getMaatregel(msgContent.getLong("ID"));
                 Maatregel mt = measures.get(mr);
                 sendMeasure (upstream, CANCEL, mt.toJSON().toString());
-
                 measures.remove(mr);
-                
                 msg.setPerformative(ACLMessage.INFORM);
                 return msg;
             } catch (NoMaatregel e) {
@@ -279,12 +329,13 @@ public class osAgent extends GuiAgent {
 
             JSONObject msgContent = new JSONObject(request.getContent());
             int it = msgContent.getInt("iteration");
-            if (((msgContent.getFloat("start") >= local.location &&
-            msgContent.getFloat("start") > upstream.location &&
-            msgContent.getFloat("end") < local.location) || 
-            (msgContent.getFloat("end") <= local.location &&
-            msgContent.getFloat("end") < upstream.location &&
-            msgContent.getFloat("start") > local.location)) && 
+            if ((
+                (msgContent.getFloat("end") < local.location &&
+                local.location <= msgContent.getFloat("start")) ||
+                (upstream.location < msgContent.getFloat("start") && 
+                msgContent.getFloat("start") < local.location &&
+                msgContent.getFloat("end") < local.location)
+            ) && 
             msgContent.getString("road").equals(local.road)) {
                 measures.add(new Maatregel(msgContent));
                 sendMeasure (upstream, ADD, msgContent.toString());
@@ -364,11 +415,42 @@ public class osAgent extends GuiAgent {
         this.addBehaviour(new AchieveREInitiator(this, newMsg));
     }
 
+    public void SendConfig () {
+        ACLMessage configurationRequest = new ACLMessage(ACLMessage.REQUEST);
+        configurationRequest.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+        configurationRequest.setOntology("CONFIGURATION");
+        configurationRequest.setReplyByDate(new Date(System.currentTimeMillis() + 5000));
+        configurationRequest.addReceiver(topicConfiguration);
+        configurationRequest.setContent(local.configToJSON());
+        this.addBehaviour(new AchieveREInitiator(this, configurationRequest) {
+            @Override
+            protected void handleInform(ACLMessage inform) {
+                String messageContent = inform.getContent();
+                downstream.getConfigFromJSON(messageContent);
+                System.out.println("downstream neighbour for " + local.getAID.getLocalName() + " is " + downstream.getAID.getLocalName());
+            }
+            @Override
+            protected void handleFailure(ACLMessage failure) {
+            }
+        });
+    }   
+
     public int getMaatregel (int t, AID o) throws NoMaatregel {
 
         for (int i = 0; i < measures.size(); i++) {
             Maatregel mr = measures.get(i);
             if (mr.getType() == t && mr.getOrigin().equals(o)) {
+                return i;
+            }
+        }
+        throw new NoMaatregel();
+    }
+
+    public int getMaatregel (AID o) throws NoMaatregel {
+
+        for (int i = 0; i < measures.size(); i++) {
+            Maatregel mr = measures.get(i);
+            if (mr.getOrigin().equals(o)) {
                 return i;
             }
         }
@@ -390,7 +472,7 @@ public class osAgent extends GuiAgent {
         return lanes;
     }
 
-    public ArrayList<Maatregel> getMeasures() {
+    public Vector<Maatregel> getMeasures() {
         return measures;
     }
 }
