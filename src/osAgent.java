@@ -166,52 +166,22 @@ public class osAgent extends GuiAgent {
 
             addBehaviour(new CancelResponder(this, CancelTemplate));
 
+            // Configure broadcast for configuration
             try {
                 TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
                 topicConfiguration = topicHelper.createTopic("CONFIGURATION");
                 topicHelper.register(topicConfiguration);
-
-                // COnfiguration response
-                MessageTemplate ConfigTemplate = MessageTemplate.and(requestTemplate,
-                    MessageTemplate.MatchOntology("CONFIGURATION"));
-                addBehaviour(new AchieveREResponder(this, ConfigTemplate) {
-                    @Override
-                    protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
-                        return null;
-                    }
-                    
-                    @Override
-                    protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
-                        Configuration newConfig = new Configuration();
-
-                        newConfig.getConfigFromJSON(request.getContent());
-                        if (local.location - newConfig.location < local.location - upstream.location && local.location - newConfig.location > 0) {
-                            upstream.location = newConfig.location;
-                            upstream.road = newConfig.road;
-                            upstream.getAID = newConfig.getAID;
-                            upstream.side = newConfig.side;
-
-                            timeUpstream = System.currentTimeMillis();
-
-                            System.out.println("upstream neighbour for " + local.getAID.getLocalName() + " is " + upstream.getAID.getLocalName());
-
-                            for (int i = 0; i < measures.size(); i++) {
-                                sendMeasure(upstream, ADD, measures.get(i).toJSON().toString());
-                            }
-
-                            ACLMessage result = request.createReply();
-                            result.setPerformative(ACLMessage.INFORM);
-                            result.setContent(local.configToJSON());
-                            return result;
-                        } else {
-                            throw new FailureException("sub-optimal");
-                        }
-                    }
-                });
             } catch (ServiceException e) {
                 System.out.println("Wrong configuration for " + getAID().getName());
                 doDelete();
             }
+
+            // Configuration response
+            MessageTemplate ConfigTemplate = MessageTemplate.and(requestTemplate,
+                MessageTemplate.MatchOntology("CONFIGURATION"));
+            
+            addBehaviour(new ConfigurationResponder(this, ConfigTemplate));
+            
 
             // Add behaviour simulting traffic passing by but delay it by 1 second
             addBehaviour(new WakerBehaviour(this, 10000) {
@@ -221,8 +191,10 @@ public class osAgent extends GuiAgent {
                 }
             });
 
-            addBehaviour(new updateGui(this, 500));
+            // Update the GUI
+            addBehaviour(new updateGui(this, 200));
 
+            // Behaviour that periodically sends a heartbeat upstream
             addBehaviour(new TickerBehaviour(this,1000){
                 @Override
                 protected void onTick() {
@@ -234,6 +206,7 @@ public class osAgent extends GuiAgent {
                 }
             });
 
+            // Behaviour that checks if a HB has been received back
             addBehaviour(new TickerBehaviour(this,200) {
                 @Override
                 protected void onTick() {
@@ -252,6 +225,7 @@ public class osAgent extends GuiAgent {
                 }
             });
 
+            // behaviour that responds to a HB
             addBehaviour(new TickerBehaviour(this, 200) {
                 @Override
                 protected void onTick() {
@@ -298,6 +272,48 @@ public class osAgent extends GuiAgent {
         // Printout a dismissal message
         System.out.println("OS " + getAID().getName() + " terminating.");
         myGui.dispose();
+    }
+
+    public class ConfigurationResponder extends AchieveREResponder {
+
+        
+        public ConfigurationResponder(Agent a, MessageTemplate mt) {
+            super(a, mt);
+            // TODO Auto-generated constructor stub
+        }
+
+        @Override
+        protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
+            return null;
+        }
+        
+        @Override
+        protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
+            Configuration newConfig = new Configuration();
+
+            newConfig.getConfigFromJSON(request.getContent());
+            if (local.location - newConfig.location < local.location - upstream.location && local.location - newConfig.location > 0) {
+                upstream.location = newConfig.location;
+                upstream.road = newConfig.road;
+                upstream.getAID = newConfig.getAID;
+                upstream.side = newConfig.side;
+
+                timeUpstream = System.currentTimeMillis();
+
+                System.out.println("upstream neighbour for " + local.getAID.getLocalName() + " is " + upstream.getAID.getLocalName());
+
+                for (int i = 0; i < measures.size(); i++) {
+                    sendMeasure(upstream, ADD, measures.get(i).toJSON().toString());
+                }
+
+                ACLMessage result = request.createReply();
+                result.setPerformative(ACLMessage.INFORM);
+                result.setContent(local.configToJSON());
+                return result;
+            } else {
+                throw new FailureException("sub-optimal");
+            }
+        }
     }
 
     public class CancelResponder extends AchieveREResponder {
@@ -447,9 +463,6 @@ public class osAgent extends GuiAgent {
                 String messageContent = inform.getContent();
                 downstream.getConfigFromJSON(messageContent);
                 System.out.println("downstream neighbour for " + local.getAID.getLocalName() + " is " + downstream.getAID.getLocalName());
-            }
-            @Override
-            protected void handleFailure(ACLMessage failure) {
             }
         });
         timeDownstream = System.currentTimeMillis();
