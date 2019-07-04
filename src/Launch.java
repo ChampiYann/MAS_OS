@@ -1,5 +1,7 @@
 import jade.core.Runtime;
 
+import java.io.File;
+
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.wrapper.*;
@@ -21,7 +23,7 @@ public class Launch {
             // Fire up GUI
             rma.start();
             // Initiate central
-            AgentController central = cc.createNewAgent("central", "centralAgent", null);
+            AgentController central = cc.createNewAgent("central", "agents.centralAgent", null);
             // Fire up central
             central.start();
         } catch (StaleProxyException e) {
@@ -33,17 +35,14 @@ public class Launch {
         // All OS will have 3 lanes
         String lanes = "3";
         String name;
-        String[] configurations = {
-            "RW009 56.2 +10 1 HR R",
-            "RW009 56,6 +60 1 HR R",
-            "RW009 57,2 +85 1 HR R",
-            "RW009 57,5 +10 1 HR R",
-            "RW009 57,7 +60 1 HR R",
-            "RW009 58,0 +85 1 HR R",
-            "RW009 58,4 +60 1 HR R",
-            "RW009 58,8 +60 1 HR R",
-            "RW009 59,2 +60 1 HR R",
-            "RW009 59,8 +41 1 HR R"};
+
+        File folder = new File("config");
+        File[] listOfFiles = folder.listFiles();
+        String[] configurations = new String[listOfFiles.length];
+        for (int i = 0; i < listOfFiles.length; i++) {
+            configurations[i] = listOfFiles[i].getName();
+            configurations[i] = configurations[i].substring(0, configurations[i].length()-4);
+        }
 
         // Create 5 new osAgents
         int numOS = configurations.length;
@@ -57,7 +56,7 @@ public class Launch {
             agentArgs[1] = configurations[numOS-1-i];
             try {
                 // Initiae osAgent
-                OSAgents[i] = cc.createNewAgent(name, "osAgent", agentArgs);
+                OSAgents[i] = cc.createNewAgent(name, "agents.osAgent", agentArgs);
                 // Fire up the agent
                 OSAgents[i].start();
             } catch (StaleProxyException e) {
