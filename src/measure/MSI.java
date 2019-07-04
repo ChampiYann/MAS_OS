@@ -55,13 +55,13 @@ public class MSI {
             if (type == Maatregel.AIDet) {
                 switch (iteration) {
                     case 3:
-                        changeDesiredState(NF_50);
+                        changeState(NF_50);
                         break;
                     case 2:
-                        changeDesiredState(F_50);
+                        changeState(F_50);
                     break;
                     case 1:
-                        changeDesiredState(F_70);
+                        changeState(F_70);
                     break;
                     default:
                     break;
@@ -69,16 +69,16 @@ public class MSI {
             } else if (type == Maatregel.CROSS && lane == true) {
                 switch (iteration) {
                     case 4:
-                        changeDesiredState(X);
+                        changeState(X);
                         break;
                     case 3:
-                        changeDesiredState(X);
+                        changeState(X);
                         break;
                     case 2:
-                        changeDesiredState(ARROW_L);
+                        changeState(ARROW_L);
                     break;
                     case 1:
-                        changeDesiredState(NF_90);
+                        changeState(NF_90);
                     break;
                     default:
                     break;
@@ -86,16 +86,16 @@ public class MSI {
             } else if (type == Maatregel.CROSS && lane == false) {
                 switch (iteration) {
                     case 4:
-                        changeDesiredState(NF_70);
+                        changeState(NF_70);
                         break;
                     case 3:
-                        changeDesiredState(NF_70);
+                        changeState(NF_70);
                         break;
                     case 2:
-                        changeDesiredState(NF_90);
+                        changeState(NF_90);
                     break;
                     case 1:
-                        changeDesiredState(NF_90);
+                        changeState(NF_90);
                     break;
                     default:
                     break;
@@ -104,7 +104,7 @@ public class MSI {
         }
     }
 
-    public void changeDesiredState(int sym) {
+    public void changeState(int sym) {
 
         if (getSymbol() >= sym) {
             symbol = sym;
