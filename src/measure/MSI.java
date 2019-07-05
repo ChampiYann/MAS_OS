@@ -46,13 +46,13 @@ public class MSI {
     }
 
     public void updateState() {
-        Vector<Maatregel> measures = outer.getMeasures();
+        Vector<Measure> measures = outer.getMeasures();
         symbol = BLANK;
         for (int i = 0; i < measures.size(); i++) {
             int type = measures.get(i).getType();
             int iteration = measures.get(i).getIteration();
             boolean lane = measures.get(i).getLane(position);
-            if (type == Maatregel.AIDet) {
+            if (type == Measure.AIDet) {
                 switch (iteration) {
                     case 3:
                         changeState(NF_50);
@@ -66,7 +66,7 @@ public class MSI {
                     default:
                     break;
                 }
-            } else if (type == Maatregel.CROSS && lane == true) {
+            } else if (type == Measure.CROSS && lane == true) {
                 switch (iteration) {
                     case 4:
                         changeState(X);
@@ -83,7 +83,7 @@ public class MSI {
                     default:
                     break;
                 }
-            } else if (type == Maatregel.CROSS && lane == false) {
+            } else if (type == Measure.CROSS && lane == false) {
                 switch (iteration) {
                     case 4:
                         changeState(NF_70);

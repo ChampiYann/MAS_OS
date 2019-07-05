@@ -26,9 +26,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import config.Configuration;
-import measure.NoMaatregel;
-import measure.Maatregel;
-import measure.MSI;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.ServiceException;
@@ -43,6 +40,10 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
 import jade.proto.AchieveREResponder;
+import measure.AIDMeasure;
+import measure.MSI;
+import measure.Measure;
+import measure.NoMeasure;
 
 public class osAgent extends Agent {
 
@@ -65,7 +66,7 @@ public class osAgent extends Agent {
     // transient protected osGui myGui;
 
     // Measures
-    private Vector<Maatregel> measures = new Vector<Maatregel>();
+    private Vector<Measure> measures = new Vector<Measure>();
 
     // Flags
     private boolean congestion = false;
@@ -148,11 +149,10 @@ public class osAgent extends Agent {
             kmMatcher.find();
             Pattern hmPattern = Pattern.compile("(?<=[+-])\\d{1,3}");
             Matcher hmMatcher = hmPattern.matcher(configuration);
-            String kmDot;
+            String kmDot = null;
             try {
                 kmDot = kmMatcher.group().replaceAll(",", ".");
             } catch (Exception e) {
-                kmDot = kmMatcher.group();
             }
             if (hmMatcher.find()) {
                 local.location = Float.parseFloat(kmDot) + Float.parseFloat(hmMatcher.group())/1000;
@@ -206,12 +206,11 @@ public class osAgent extends Agent {
             
             addBehaviour(new ConfigurationResponder(this, ConfigTemplate));
             
-            Date wakeupDate = new Date((long) (Math.ceil(System.currentTimeMillis() / 10000.0) * 10000));
+            Date wakeupDate = new Date((long) args[2]);
             // Add behaviour simulting traffic passing by but delay it by 1 second
             addBehaviour(new WakerBehaviour(this, wakeupDate) {
                 @Override
                 protected void onWake() {
-                    System.out.println("Go traffic detection at:" + System.currentTimeMillis());
                     myAgent.addBehaviour(new TrafficSensing(myAgent, minute, getWakeupTime()));
                 }
             });
@@ -266,14 +265,14 @@ public class osAgent extends Agent {
                         timeDownstream = System.currentTimeMillis();
                     } else {
                         if (System.currentTimeMillis()-timeDownstream > (long)minute*2) {
-                            System.out.println("Downstream down at " + local.getAID.getLocalName());
+                            // System.out.println("Downstream down at " + local.getAID.getLocalName());
                             SendConfig();
                             for (int i = 0; i < measures.size(); i++) {
                                 try {
-                                    if (getMaatregel(local.getAID) == i) {} else {
+                                    if (getMeasure(local.getAID) == i) {} else {
                                         sendMeasure (local, CANCEL, measures.get(i).toJSON().toString());
                                     }
-                                } catch (NoMaatregel e) {
+                                } catch (NoMeasure e) {
                                     sendMeasure (local, CANCEL, measures.get(i).toJSON().toString());
                                 }
                             }
@@ -359,14 +358,14 @@ public class osAgent extends Agent {
 
             JSONObject msgContent = new JSONObject(request.getContent());
             try {
-                int mr = getMaatregel(msgContent.getLong("ID"));
-                Maatregel mt = measures.get(mr);
+                int mr = getMeasure(msgContent.getLong("ID"));
+                Measure mt = measures.get(mr);
                 sendMeasure (upstream, CANCEL, mt.toJSON().toString());
                 measures.remove(mr);
                 // sendCentralUpdate();
                 msg.setPerformative(ACLMessage.INFORM);
                 return msg;
-            } catch (NoMaatregel e) {
+            } catch (NoMeasure e) {
                 throw new FailureException("no-measure-found");
             }
         }
@@ -398,11 +397,11 @@ public class osAgent extends Agent {
             msgContent.getFloat("end") < local.location)
             ) && 
             msgContent.getString("road").equals(local.road)) {
-                measures.add(new Maatregel(msgContent));
+                measures.add(new Measure(msgContent));
                 sendMeasure (upstream, ADD, msgContent.toString());
             } else if (it - 1 != 0 && !request.getSender().equals(central) && !request.getSender().equals(getAID())) {
                 msgContent.put("iteration", it - 1);
-                measures.add(new Maatregel(msgContent));
+                measures.add(new Measure(msgContent));
                 sendMeasure (upstream, ADD, msgContent.toString());
             }
             // sendCentralUpdate();
@@ -451,7 +450,7 @@ public class osAgent extends Agent {
                     System.out.println("Congestion detected!");
 
                     // Create measure
-                    Maatregel mt = new Maatregel(Maatregel.AIDet,local);
+                    Measure mt = new AIDMeasure(local);
                     sendMeasure (local, ADD, mt.toJSON().toString());
                 } else if (newCongestion == false && congestion == true) {
                     congestion = false;
@@ -459,10 +458,10 @@ public class osAgent extends Agent {
 
                     // Cancel measure
                     try {
-                        int mr = getMaatregel(Maatregel.AIDet,local.getAID);
-                        Maatregel mt = measures.get(mr);
+                        int mr = getMeasure(Measure.AIDet,local.getAID);
+                        Measure mt = measures.get(mr);
                         sendMeasure (local, CANCEL, mt.toJSON().toString());;
-                    } catch (NoMaatregel e) {
+                    } catch (NoMeasure e) {
                         //TODO: handle exception
                     }
                 }
@@ -529,44 +528,44 @@ public class osAgent extends Agent {
         timeDownstream = System.currentTimeMillis();
     }   
 
-    public int getMaatregel (int t, AID o) throws NoMaatregel {
+    public int getMeasure (int t, AID o) throws NoMeasure {
 
         for (int i = 0; i < measures.size(); i++) {
-            Maatregel mr = measures.get(i);
+            Measure mr = measures.get(i);
             if (mr.getType() == t && mr.getOrigin().equals(o)) {
                 return i;
             }
         }
-        throw new NoMaatregel();
+        throw new NoMeasure();
     }
 
-    public int getMaatregel (AID o) throws NoMaatregel {
+    public int getMeasure (AID o) throws NoMeasure {
 
         for (int i = 0; i < measures.size(); i++) {
-            Maatregel mr = measures.get(i);
+            Measure mr = measures.get(i);
             if (mr.getOrigin().equals(o)) {
                 return i;
             }
         }
-        throw new NoMaatregel();
+        throw new NoMeasure();
     }
 
-    public int getMaatregel (long id) throws NoMaatregel {
+    public int getMeasure (long id) throws NoMeasure {
 
         for (int i = 0; i < measures.size(); i++) {
-            Maatregel mr = measures.get(i);
+            Measure mr = measures.get(i);
             if (mr.getID() == id) {
                 return i;
             }
         }
-        throw new NoMaatregel();
+        throw new NoMeasure();
     }
 
     public int getNumLanes () {
         return lanes;
     }
 
-    public Vector<Maatregel> getMeasures() {
+    public Vector<Measure> getMeasures() {
         return measures;
     }
 }

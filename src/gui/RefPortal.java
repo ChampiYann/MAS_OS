@@ -23,11 +23,11 @@ public class RefPortal extends Portal {
             e.printStackTrace();
         }
     }
-
+    
     public void update(String[] symbols) {
         for (int i = 0; i < 3; i++) {
             if (symbols[i].equals("BL")) {
-                msg[i].setText("");
+                msg[i].setText(" ");
             } else { 
                 msg[i].setText(symbols[i]);
             }

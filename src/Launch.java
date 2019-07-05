@@ -17,13 +17,16 @@ public class Launch {
         // main container (i.e. on this host, port 1099)
         ContainerController cc = rt.createMainContainer(p);
 
+        Object centralArgs[] = new Object[1];
+        centralArgs[0] = (long) (Math.ceil(System.currentTimeMillis() / 10000.0) * 10000 + 10000);
+
         try {
             // Initiate RMA (gui)
             AgentController rma = cc.createNewAgent("rma", "jade.tools.rma.rma", null);
             // Fire up GUI
             rma.start();
             // Initiate central
-            AgentController central = cc.createNewAgent("central", "agents.centralAgent", null);
+            AgentController central = cc.createNewAgent("central", "agents.centralAgent", centralArgs);
             // Fire up central
             central.start();
         } catch (StaleProxyException e) {
@@ -51,9 +54,10 @@ public class Launch {
         for (int i = 0; i < numOS; i++) {
             name = "agent" + Integer.toString(i+1);
             // Concatenate arguments
-            Object agentArgs[] = new Object[2];
+            Object agentArgs[] = new Object[3];
             agentArgs[0] = lanes;
             agentArgs[1] = configurations[numOS-1-i];
+            agentArgs[2] = centralArgs[0];
             try {
                 // Initiae osAgent
                 OSAgents[i] = cc.createNewAgent(name, "agents.osAgent", agentArgs);

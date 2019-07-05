@@ -34,7 +34,7 @@ public class Portal {
             msi.setPreferredSize(new Dimension(45, 45));
             gbc.gridy = i;
             portal.add(msi, gbc);
-            msg[i] = new JTextField("", 3);
+            msg[i] = new JTextField(" ", 3);
             msg[i].setEditable(false);
             msg[i].setOpaque(false);
             msg[i].setForeground(Color.white);

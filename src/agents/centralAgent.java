@@ -1,6 +1,12 @@
 package agents;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 
 import org.json.JSONArray;
@@ -21,16 +27,14 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
 import jade.proto.AchieveREResponder;
-import measure.Maatregel;
-import measure.NoMaatregel;
+import measure.CrossMeasure;
+import measure.Measure;
+import measure.NoMeasure;
 
 public class centralAgent extends Agent {
 
     // Measures
-    private ArrayList<Maatregel> measures = new ArrayList<Maatregel>();
-
-    // Measure switch
-    private boolean sw = false;
+    private ArrayList<CrossMeasure> measures = new ArrayList<CrossMeasure>();
 
     // GUI
     transient protected centralGui myGui;
@@ -40,13 +44,18 @@ public class centralAgent extends Agent {
 
     private AID centralTopic;
 
+    private BufferedReader measureReader;
+
     @Override
     protected void setup() {
+
+        Object[] args = getArguments();
+        
         // Print out welcome message
         System.out.println("Hello! Central agent is ready.");
 
         // Set up the gui
-        myGui = new centralGui(this);
+        myGui = new centralGui(this, (long)args[0]);
         myGui.setVisible(true);
 
         myGui.addPortal();
@@ -70,16 +79,16 @@ public class centralAgent extends Agent {
         }
 
         try{
-        TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
-		centralTopic = topicHelper.createTopic("CENTRAL");
+            TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
+            centralTopic = topicHelper.createTopic("CENTRAL");
 
-        
-        addBehaviour(new WakerBehaviour(this, 10000) {
-            @Override
-            protected void onWake() {
-                myAgent.addBehaviour(new SetMeasure(myAgent,20000));
-            }
-        });
+            Date wakeupDate = new Date((long) args[0]);
+            addBehaviour(new WakerBehaviour(this, wakeupDate) {
+                @Override
+                protected void onWake() {
+                    myAgent.addBehaviour(new SetMeasure(myAgent,osAgent.minute,getWakeupTime()));
+                }
+            });
         } catch (ServiceException e) {
             e.printStackTrace();
         }
@@ -111,45 +120,103 @@ public class centralAgent extends Agent {
                 return msg;
             }
         });
+
+        try {
+            FileReader reader = new FileReader("measures\\central.txt");
+            measureReader = new BufferedReader(reader);
+            measureReader.mark(1000);
+        } catch (FileNotFoundException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     public class SetMeasure extends TickerBehaviour {
 
-        public SetMeasure(Agent a, long period) {
+        private long T;
+        private long simLastTime;
+        private LocalTime time;
+
+        public SetMeasure(Agent a, long period, long wakeUpTime) {
             super(a, period);
-            // TODO Auto-generated constructor stub
+            T = period;
+            simLastTime = wakeUpTime;
+            time = LocalTime.of(1, 0, 0);
         }
 
         @Override
         protected void onTick() {
-            if (sw == false) {
-                sw = true;
-                boolean lanes[] = {true, false, false};
-                Maatregel mt = new Maatregel(Maatregel.CROSS, getAID(), 3, (float)12.0, (float)8.0, "RW013", lanes);
-                measures.add(mt);
-                ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
-                newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-                newMsg.setOntology("ADD");
-                newMsg.setContent(mt.toJSON().toString());
-                newMsg.addReceiver(centralTopic);
-                myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
-            } else {
-                sw = false;
-                try {
-                    int mr = getMaatregel(Maatregel.CROSS,getAID());
-                    Maatregel mt = measures.get(mr);
-                    ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
-                    newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-                    newMsg.setOntology("CANCEL");
-                    newMsg.setContent(mt.toJSON().toString());
-                    newMsg.addReceiver(centralTopic);
-                    myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
-
-                    measures.remove(mr);
-                } catch (NoMaatregel e) {
-                    //TODO: handle exception
+            boolean done = false;
+            long simCurrentTime = System.currentTimeMillis();
+            long elapsedTime = simCurrentTime - simLastTime;
+            long steps = elapsedTime/T;
+            simLastTime += steps*T;
+            while (steps > 0) {
+                while(!done) {
+                    try {
+                        String line = null;
+                        line = measureReader.readLine();
+                        String[] values = line.split(",");
+                        LocalTime lineStartTime = LocalTime.parse(values[1]);
+                        if (lineStartTime.compareTo(time.plusMinutes(1)) > -1) {
+                            measureReader.reset();
+                            done = true;
+                        } else {
+                            measureReader.mark(1000);
+                            // Add measure to list en send it
+                            boolean[] lanes = new boolean[values.length-7];
+                            for (int i = 0; i < lanes.length; i++) {
+                                lanes[i] = Boolean.parseBoolean(values[7+i]);
+                            }
+                            float startKm = Float.parseFloat(values[6]);
+                            float endKm = Float.parseFloat(values[5]);
+                            if (startKm == endKm) {
+                                endKm -= (float)0.001;
+                            }
+                            CrossMeasure mr = new CrossMeasure(getAID(), time, LocalTime.parse(values[3]), values[4], startKm, endKm, lanes);
+                            measures.add(mr);
+                            addMeasure(mr);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (NullPointerException e) {
+                        done = true;
+                    }
                 }
+                // cycle though active measures and cancel those that need cancelling
+                Iterator<CrossMeasure> iterator = measures.iterator();
+                while (iterator.hasNext()) {
+                    CrossMeasure mr = iterator.next();
+                    if (mr.getEndTime().compareTo(time) == 0) {
+                        // remove measure and  send cancel
+                        cancelMeasure(mr);
+                        iterator.remove();
+                    }
+                }
+                time = time.plusMinutes(1);
+                steps -= 1;
             }
+        }
+
+        private void addMeasure (CrossMeasure mr) {
+            ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
+            newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+            newMsg.setOntology("ADD");
+            newMsg.setContent(mr.toJSON().toString());
+            newMsg.addReceiver(centralTopic);
+            myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
+        }
+
+        private void cancelMeasure (CrossMeasure mr) {
+            ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
+            newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+            newMsg.setOntology("CANCEL");
+            newMsg.setContent(mr.toJSON().toString());
+            newMsg.addReceiver(centralTopic);
+            myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
         }
     }
 
@@ -187,26 +254,26 @@ public class centralAgent extends Agent {
         }
     }
 
-    public int getMaatregel (int t, AID o) throws NoMaatregel {
+    public int getMeasure (int t, AID o) throws NoMeasure {
 
         for (int i = 0; i < measures.size(); i++) {
-            Maatregel mr = measures.get(i);
+            Measure mr = measures.get(i);
             if (mr.getType() == t && mr.getOrigin().equals(o)) {
                 return i;
             }
         }
-        throw new NoMaatregel();
+        throw new NoMeasure();
     }
 
-    public int getMaatregel (long id) throws NoMaatregel {
+    public int getMeasure (long id) throws NoMeasure {
 
         for (int i = 0; i < measures.size(); i++) {
-            Maatregel mr = measures.get(i);
+            Measure mr = measures.get(i);
             if (mr.getID() == id) {
                 return i;
             }
         }
-        throw new NoMaatregel();
+        throw new NoMeasure();
     }
 
     public ArrayList<Configuration> getOS() {

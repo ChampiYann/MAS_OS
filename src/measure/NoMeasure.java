@@ -1,10 +1,10 @@
 package measure;
 
-public class NoMaatregel extends Exception {
+public class NoMeasure extends Exception {
 
     private static final long serialVersionUID = 1L;
 
-    public NoMaatregel() {
+    public NoMeasure() {
     }
  
     public String toString() {

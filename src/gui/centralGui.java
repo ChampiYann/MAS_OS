@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ import gui.CentralBackground;
 import jade.core.AID;
 
 public class centralGui extends JFrame {
+
     private static final long serialVersionUID = 1L;
 
     private centralAgent myAgent;
@@ -54,7 +56,9 @@ public class centralGui extends JFrame {
 
     private BufferedReader msiReplay;
 
-    public centralGui(centralAgent agent) {
+    private FileWriter logWriter;
+
+    public centralGui(centralAgent agent, long simStartTime) {
         myAgent = agent;
         setSize(canvasWidth, canvasHeight);
         getContentPane().setLayout(null);
@@ -87,7 +91,12 @@ public class centralGui extends JFrame {
             e1.printStackTrace();
         }
 
-        simStartTime = (long) (Math.ceil(System.currentTimeMillis() / 10000.0) * 10000);
+        try {
+            logWriter = new FileWriter("log.txt");
+        } catch (Exception e) {
+            //TODO: handle exception
+        }
+
         simLastTime = simStartTime;
         time = LocalTime.of(1, 0, 0);
         long T = osAgent.minute; // milliseconds
@@ -121,6 +130,21 @@ public class centralGui extends JFrame {
                             }
                         }
                         updateRefCongestion();
+                        Iterator<Portal> portalIterator = portalList.iterator();
+                        Iterator<RefPortal> refPortalIterator = refPortalList.iterator();
+                        while (portalIterator.hasNext() && refPortalIterator.hasNext()) {
+                            Portal portal = portalIterator.next();
+                            RefPortal refPortal = refPortalIterator.next();
+                            try {
+                                logWriter.write(time.toString() + "," + refPortal.getLocation() + "," + refPortal.msg[3].getForeground().getBlue() +
+                                    "," + refPortal.msg[0].getText() + "," + refPortal.msg[1].getText() + "," + refPortal.msg[2].getText() +
+                                    "," + refPortal.getLocation() + "," + portal.msg[0].getText() + "," + portal.msg[1].getText() +
+                                    "," + portal.msg[2].getText() + "\n");
+                            } catch (IOException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+                        }
                         time = time.plusMinutes(1);
                         steps -= 1;
                     }
