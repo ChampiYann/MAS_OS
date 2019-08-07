@@ -216,7 +216,7 @@ public class osAgent extends Agent {
             });
 
             // Update the GUI
-            addBehaviour(new UpdateMSI(this, 100));
+            addBehaviour(new UpdateMSI(this, minute/4));
 
             // Behaviour that periodically sends a heartbeat upstream
             addBehaviour(new TickerBehaviour(this,minute/2){
