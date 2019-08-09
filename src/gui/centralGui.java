@@ -47,7 +47,6 @@ public class centralGui extends JFrame {
     private JTextField timeText;
 
     private LocalTime time;
-    private long simStartTime;
     private long simLastTime;
 
     private ArrayList<Portal> portalList = new ArrayList<Portal>();

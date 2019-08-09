@@ -21,7 +21,7 @@ class osGui extends JFrame implements ActionListener {
 
         setTitle("OS Agent - " + myAgent.getLocalName());
 
-        int numLanes = myAgent.getNumLanes();
+        int numLanes = myAgent.getLocal().lanes;
 
         setSize(300, (numLanes+1)*100);
 

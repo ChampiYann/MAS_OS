@@ -1,28 +1,22 @@
 package measure;
 
-import java.util.Vector;
-
-import agents.osAgent;
-
 public class MSI {
     /**
      * This class represents the displays above the road that show the measures
      * applied. They are initialized as BLANK
      */
 
-    final osAgent outer;
-
-    private int position;
-
-    static final int X          = 0;
-    static final int ARROW_L    = 1;
-    static final int ARROW_R    = 2;
-    static final int NF_50      = 3;
-    static final int F_50       = 4;
-    static final int NF_70      = 5;
-    static final int F_70       = 6;
-    static final int NF_90      = 7;
-    static final int BLANK      = 8;
+    public static final int X          = 0;
+    public static final int ARROW_L    = 1;
+    public static final int ARROW_R    = 2;
+    public static final int F_50       = 3;
+    public static final int NF_50      = 4;
+    public static final int F_70       = 5;
+    public static final int NF_70      = 6;
+    public static final int F_90       = 7;
+    public static final int NF_90      = 8;
+    public static final int EOR        = 9;
+    public static final int BLANK      = 10;
 
     private static final String[] symbols = new String[BLANK+1];
     static {
@@ -35,73 +29,18 @@ public class MSI {
         symbols[ARROW_L]    = "*PL*";
         symbols[ARROW_R]    = "*PR*";
         symbols[NF_90]      = "90";
+        symbols[F_90]       = "*90*";
+        symbols[EOR]        = "@";
     }
 
     private int symbol;
 
-    public MSI(osAgent outer, int p) {
-        this.outer = outer;
-        symbol = BLANK;
-        position = p;
+    public MSI(int sym) {
+        symbol = sym;
     }
 
-    public void updateState() {
-        Vector<Measure> measures = outer.getMeasures();
+    public MSI() {
         symbol = BLANK;
-        for (int i = 0; i < measures.size(); i++) {
-            int type = measures.get(i).getType();
-            int iteration = measures.get(i).getIteration();
-            boolean lane = measures.get(i).getLane(position);
-            if (type == Measure.AIDet) {
-                switch (iteration) {
-                    case 3:
-                        changeState(NF_50);
-                        break;
-                    case 2:
-                        changeState(F_50);
-                    break;
-                    case 1:
-                        changeState(F_70);
-                    break;
-                    default:
-                    break;
-                }
-            } else if (type == Measure.CROSS && lane == true) {
-                switch (iteration) {
-                    case 4:
-                        changeState(X);
-                        break;
-                    case 3:
-                        changeState(X);
-                        break;
-                    case 2:
-                        changeState(ARROW_L);
-                    break;
-                    case 1:
-                        changeState(NF_90);
-                    break;
-                    default:
-                    break;
-                }
-            } else if (type == Measure.CROSS && lane == false) {
-                switch (iteration) {
-                    case 4:
-                        changeState(NF_70);
-                        break;
-                    case 3:
-                        changeState(NF_70);
-                        break;
-                    case 2:
-                        changeState(NF_90);
-                    break;
-                    case 1:
-                        changeState(NF_90);
-                    break;
-                    default:
-                    break;
-                }
-            }
-        }
     }
 
     public void changeState(int sym) {
