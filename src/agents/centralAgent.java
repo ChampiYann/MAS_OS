@@ -4,19 +4,18 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 
 import org.json.JSONArray;
 
+import behaviour.CentralConfigurationResponder;
+import behaviour.SetMeasure;
 import config.Configuration;
 import gui.centralGui;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.ServiceException;
-import jade.core.behaviours.TickerBehaviour;
 import jade.core.behaviours.WakerBehaviour;
 import jade.core.messaging.TopicManagementHelper;
 import jade.domain.FIPANames;
@@ -25,13 +24,14 @@ import jade.domain.FIPAAgentManagement.NotUnderstoodException;
 import jade.domain.FIPAAgentManagement.RefuseException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import jade.proto.AchieveREInitiator;
 import jade.proto.AchieveREResponder;
 import measure.CrossMeasure;
 import measure.Measure;
 import measure.NoMeasure;
 
 public class centralAgent extends Agent {
+
+    private static final long serialVersionUID = 1L;
 
     // Measures
     private ArrayList<CrossMeasure> measures = new ArrayList<CrossMeasure>();
@@ -72,7 +72,7 @@ public class centralAgent extends Agent {
             // COnfiguration response
             MessageTemplate ConfigTemplate = MessageTemplate.and(requestTemplate,
                 MessageTemplate.MatchOntology("CONFIGURATION"));
-            addBehaviour(new ConfigurationResponder(this, ConfigTemplate));
+            addBehaviour(new CentralConfigurationResponder(this, ConfigTemplate));
         } catch (ServiceException e) {
             System.out.println("Wrong configuration for " + getAID().getName());
             doDelete();
@@ -134,125 +134,91 @@ public class centralAgent extends Agent {
         }
     }
 
-    public class SetMeasure extends TickerBehaviour {
+    // public class SetMeasure extends TickerBehaviour {
 
-        private long T;
-        private long simLastTime;
-        private LocalTime time;
+    //     private long T;
+    //     private long simLastTime;
+    //     private LocalTime time;
 
-        public SetMeasure(Agent a, long period, long wakeUpTime) {
-            super(a, period);
-            T = period;
-            simLastTime = wakeUpTime;
-            time = LocalTime.of(1, 0, 0);
-        }
+    //     public SetMeasure(Agent a, long period, long wakeUpTime) {
+    //         super(a, period);
+    //         T = period;
+    //         simLastTime = wakeUpTime;
+    //         time = LocalTime.of(1, 0, 0);
+    //     }
 
-        @Override
-        protected void onTick() {
-            boolean done = false;
-            long simCurrentTime = System.currentTimeMillis();
-            long elapsedTime = simCurrentTime - simLastTime;
-            long steps = elapsedTime/T;
-            simLastTime += steps*T;
-            while (steps > 0) {
-                while(!done) {
-                    try {
-                        String line = null;
-                        line = measureReader.readLine();
-                        String[] values = line.split(",");
-                        LocalTime lineStartTime = LocalTime.parse(values[1]);
-                        if (lineStartTime.compareTo(time.plusMinutes(1)) > -1) {
-                            measureReader.reset();
-                            done = true;
-                        } else {
-                            measureReader.mark(1000);
-                            // Add measure to list en send it
-                            boolean[] lanes = new boolean[values.length-7];
-                            for (int i = 0; i < lanes.length; i++) {
-                                lanes[i] = Boolean.parseBoolean(values[7+i]);
-                            }
-                            float startKm = Float.parseFloat(values[6]);
-                            float endKm = Float.parseFloat(values[5]);
-                            if (startKm == endKm) {
-                                endKm -= (float)0.001;
-                            }
-                            CrossMeasure mr = new CrossMeasure(getAID(), time, LocalTime.parse(values[3]), values[4], startKm, endKm, lanes);
-                            measures.add(mr);
-                            addMeasure(mr);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (NullPointerException e) {
-                        done = true;
-                    }
-                }
-                // cycle though active measures and cancel those that need cancelling
-                Iterator<CrossMeasure> iterator = measures.iterator();
-                while (iterator.hasNext()) {
-                    CrossMeasure mr = iterator.next();
-                    if (mr.getEndTime().compareTo(time) == 0) {
-                        // remove measure and  send cancel
-                        cancelMeasure(mr);
-                        iterator.remove();
-                    }
-                }
-                time = time.plusMinutes(1);
-                steps -= 1;
-            }
-        }
+    //     @Override
+    //     protected void onTick() {
+    //         boolean done = false;
+    //         long simCurrentTime = System.currentTimeMillis();
+    //         long elapsedTime = simCurrentTime - simLastTime;
+    //         long steps = elapsedTime/T;
+    //         simLastTime += steps*T;
+    //         while (steps > 0) {
+    //             while(!done) {
+    //                 try {
+    //                     String line = null;
+    //                     line = measureReader.readLine();
+    //                     String[] values = line.split(",");
+    //                     LocalTime lineStartTime = LocalTime.parse(values[1]);
+    //                     if (lineStartTime.compareTo(time.plusMinutes(1)) > -1) {
+    //                         measureReader.reset();
+    //                         done = true;
+    //                     } else {
+    //                         measureReader.mark(1000);
+    //                         // Add measure to list en send it
+    //                         boolean[] lanes = new boolean[values.length-7];
+    //                         for (int i = 0; i < lanes.length; i++) {
+    //                             lanes[i] = Boolean.parseBoolean(values[7+i]);
+    //                         }
+    //                         float startKm = Float.parseFloat(values[6]);
+    //                         float endKm = Float.parseFloat(values[5]);
+    //                         if (startKm == endKm) {
+    //                             endKm -= (float)0.001;
+    //                         }
+    //                         CrossMeasure mr = new CrossMeasure(getAID(), time, LocalTime.parse(values[3]), values[4], startKm, endKm, lanes);
+    //                         measures.add(mr);
+    //                         addMeasure(mr);
+    //                     }
+    //                 } catch (IOException e) {
+    //                     e.printStackTrace();
+    //                 } catch (NullPointerException e) {
+    //                     done = true;
+    //                 }
+    //             }
+    //             // cycle though active measures and cancel those that need cancelling
+    //             Iterator<CrossMeasure> iterator = measures.iterator();
+    //             while (iterator.hasNext()) {
+    //                 CrossMeasure mr = iterator.next();
+    //                 if (mr.getEndTime().compareTo(time) == 0) {
+    //                     // remove measure and  send cancel
+    //                     cancelMeasure(mr);
+    //                     iterator.remove();
+    //                 }
+    //             }
+    //             time = time.plusMinutes(1);
+    //             steps -= 1;
+    //         }
+    //     }
 
-        private void addMeasure (CrossMeasure mr) {
-            ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
-            newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-            newMsg.setOntology("ADD");
-            newMsg.setContent(mr.toJSON().toString());
-            newMsg.addReceiver(centralTopic);
-            myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
-        }
+    //     private void addMeasure (CrossMeasure mr) {
+    //         ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
+    //         newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+    //         newMsg.setOntology("ADD");
+    //         newMsg.setContent(mr.toJSON().toString());
+    //         newMsg.addReceiver(centralTopic);
+    //         myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
+    //     }
 
-        private void cancelMeasure (CrossMeasure mr) {
-            ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
-            newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-            newMsg.setOntology("CANCEL");
-            newMsg.setContent(mr.toJSON().toString());
-            newMsg.addReceiver(centralTopic);
-            myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
-        }
-    }
-
-    public class ConfigurationResponder extends AchieveREResponder {
-
-        
-        public ConfigurationResponder(Agent a, MessageTemplate mt) {
-            super(a, mt);
-            // TODO Auto-generated constructor stub
-        }
-
-        @Override
-        protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
-            return null;
-        }
-        
-        @Override
-        protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
-            Configuration newConfig = new Configuration();
-
-            newConfig.getConfigFromJSON(request.getContent());
-            Iterator<Configuration> iterator = OS.iterator();
-            boolean exists = false;
-            while (iterator.hasNext()) {
-                Configuration config = iterator.next();
-                if (config.getAID.equals(newConfig.getAID)) {
-                    exists = true;
-                }
-            }
-            if (!exists) {
-                OS.add(newConfig);
-                myGui.addPortal();
-            }
-            return null;
-        }
-    }
+    //     private void cancelMeasure (CrossMeasure mr) {
+    //         ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
+    //         newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+    //         newMsg.setOntology("CANCEL");
+    //         newMsg.setContent(mr.toJSON().toString());
+    //         newMsg.addReceiver(centralTopic);
+    //         myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
+    //     }
+    // }
 
     public int getMeasure (int t, AID o) throws NoMeasure {
 
@@ -285,5 +251,21 @@ public class centralAgent extends Agent {
 		// Printout a dismissal message
         System.out.println("Central terminating.");
         myGui.dispose();
+    }
+
+    public centralGui getMyGui() {
+        return myGui;
+    }
+
+    public ArrayList<CrossMeasure> getMeasures() {
+        return measures;
+    }
+
+    public AID getCentralTopic() {
+        return centralTopic;
+    }
+
+    public BufferedReader getMeasureReader() {
+        return measureReader;
     }
 }

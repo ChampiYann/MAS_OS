@@ -75,4 +75,8 @@ public class Configuration {
             }
         }
     };
+
+    public static boolean ConfigurationEqual(Configuration c1, Configuration c2) {
+        return c1.getAID.equals(c2.getAID);
+    }
 }

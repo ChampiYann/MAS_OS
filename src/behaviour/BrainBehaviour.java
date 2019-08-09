@@ -30,13 +30,6 @@ public class BrainBehaviour extends OneShotBehaviour {
         //Flasher rule if speed is lower that upstream
         //
 
-        try {
-            System.out.println("Agent " + outer.getLocal().location + ": downstream 1st MSI is: " + outer.getDownstreamMsi().get(1).getSymbolString());    
-        } catch (Exception e) {
-            //TODO: handle exception
-        }
-        
-
         Vector<MSI> newMsi = new Vector<MSI>(outer.getLocal().lanes);
         for (int i = 0; i < newMsi.capacity(); i++) {
             newMsi.add(new MSI());

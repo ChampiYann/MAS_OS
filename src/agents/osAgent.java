@@ -17,41 +17,36 @@ package agents;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.ListIterator;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.json.JSONArray;
-import org.json.JSONObject;
 
-import behaviour.BrainBehaviour;
+import behaviour.ConfigurationResponder;
+import behaviour.HBReaction;
+import behaviour.HBResponder;
+import behaviour.HBSender;
+import behaviour.ReceiveSensorData;
+import behaviour.TrafficSensing;
 import config.Configuration;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.ServiceException;
-import jade.core.behaviours.OneShotBehaviour;
-import jade.core.behaviours.TickerBehaviour;
 import jade.core.behaviours.WakerBehaviour;
 import jade.core.messaging.TopicManagementHelper;
 import jade.domain.FIPANames;
-import jade.domain.FIPAAgentManagement.FailureException;
-import jade.domain.FIPAAgentManagement.NotUnderstoodException;
-import jade.domain.FIPAAgentManagement.RefuseException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
-import jade.proto.AchieveREResponder;
-import measure.AIDMeasure;
 import measure.MSI;
 import measure.Measure;
-import measure.NoMeasure;
 
 public class osAgent extends Agent {
+
+    private static final long serialVersionUID = 1L;
 
     // Simulation timing
     public static long minute = 400; // milliseconds 
@@ -69,7 +64,7 @@ public class osAgent extends Agent {
     // transient protected osGui myGui;
 
     // Measures
-    private Vector<Measure> measures = new Vector<Measure>();
+    // private Vector<Measure> measures = new Vector<Measure>();
 
     // Flags
     private boolean congestion = false;
@@ -120,22 +115,20 @@ public class osAgent extends Agent {
 
             // Create new upstrem configuration
             upstream = new Configuration(this);
-
             downstream = new Configuration(this);
 
             // Create new local configuration
             local = new Configuration(this);
             local.getAID = getAID();
             local.lanes = lanes;
-            timeUpstream = System.currentTimeMillis();
-            timeDownstream = System.currentTimeMillis();
+            resetTimeUpstream();
+            resetTimeDownstream();
 
             // Setup MSIs
             msi = new Vector<MSI>(local.lanes);
             for (int i = 0; i < msi.capacity(); i++) {
                 msi.add(new MSI());
             }
-            msi.addAll(Collections.nCopies(local.lanes,new MSI()));
             centralMeasures = new Vector<Measure>();
 
             // Set up the gui
@@ -215,73 +208,14 @@ public class osAgent extends Agent {
                 }
             });
 
-            // Update the GUI
-            // addBehaviour(new UpdateMSI(this, minute/4));
-
             // Behaviour that periodically sends a heartbeat upstream
-            addBehaviour(new TickerBehaviour(this,minute/2){
-                @Override
-                protected void onTick() {
-                    ACLMessage HBRequest = new ACLMessage(ACLMessage.REQUEST);
-                    HBRequest.setOntology("HB");
-                    HBRequest.addReceiver(upstream.getAID);
-                    HBRequest.setContent(local.configToJSON());
-
-                    myAgent.send(HBRequest);
-                }
-            });
+            addBehaviour(new HBSender(this, minute/2));
 
             // Behaviour that checks if a HB has been received back
-            addBehaviour(new TickerBehaviour(this,minute/4) {
-                @Override
-                protected void onTick() {
-                    MessageTemplate HBTemplate = MessageTemplate.and(
-                        MessageTemplate.MatchPerformative(ACLMessage.INFORM),
-                        MessageTemplate.MatchOntology("HB"));
-                    ACLMessage HBResponse = myAgent.receive(HBTemplate);
-                    if (HBResponse == null) {
-                        if (System.currentTimeMillis()-timeUpstream > (long)minute*2) {
-                            // System.out.println("Upstream down at " + local.getAID.getLocalName());
-                            upstream = new Configuration();
-                        }
-                    } else {
-                        timeUpstream = System.currentTimeMillis();
-                    }
-                }
-            });
+            addBehaviour(new HBReaction(this, minute/4));
 
             // behaviour that responds to a HB
-            addBehaviour(new TickerBehaviour(this, minute/4) {
-                @Override
-                protected void onTick() {
-                    MessageTemplate HBTemplate = MessageTemplate.and(
-                        MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
-                        MessageTemplate.MatchOntology("HB"));
-                    ACLMessage HBRequest = myAgent.receive(HBTemplate);
-                    if (HBRequest != null) {
-                        ACLMessage HBResponse = new ACLMessage(ACLMessage.INFORM);
-                        HBResponse.setOntology("HB");
-                        HBResponse.addReceiver(HBRequest.getSender());
-                        downstream.getConfigFromJSON(HBRequest.getContent());
-                        myAgent.send(HBResponse);
-                        timeDownstream = System.currentTimeMillis();
-                    } else {
-                        if (System.currentTimeMillis()-timeDownstream > (long)minute*2) {
-                            // System.out.println("Downstream down at " + local.getAID.getLocalName());
-                            SendConfig();
-                            // for (int i = 0; i < measures.size(); i++) {
-                            //     try {
-                            //         if (getMeasure(local.getAID) == i) {} else {
-                            //             sendMeasure (local, CANCEL, measures.get(i).toJSON().toString());
-                            //         }
-                            //     } catch (NoMeasure e) {
-                            //         sendMeasure (local, CANCEL, measures.get(i).toJSON().toString());
-                            //     }
-                            // }
-                        }
-                    }
-                }
-            });
+            addBehaviour(new HBResponder(this, minute/4));
 
             // Print message stating that the configuration was succefull
             System.out.println("OS " + getAID().getLocalName() + " configured on road " + local.road + " at km " + local.location +
@@ -300,101 +234,6 @@ public class osAgent extends Agent {
         // myGui.dispose();
     }
 
-    public class ConfigurationResponder extends AchieveREResponder {
-
-        
-        public ConfigurationResponder(Agent a, MessageTemplate mt) {
-            super(a, mt);
-            // TODO Auto-generated constructor stub
-        }
-
-        @Override
-        protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
-            return null;
-        }
-        
-        @Override
-        protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
-            Configuration newConfig = new Configuration();
-
-            newConfig.getConfigFromJSON(request.getContent());
-            if (local.location - newConfig.location < local.location - upstream.location && local.location - newConfig.location > 0) {
-                upstream.location = newConfig.location;
-                upstream.road = newConfig.road;
-                upstream.getAID = newConfig.getAID;
-                upstream.side = newConfig.side;
-                upstream.lanes = newConfig.lanes;
-
-                upstreamMsi = new Vector<MSI>(upstream.lanes);
-                for (int i = 0; i < upstreamMsi.capacity(); i++) {
-                    upstreamMsi.add(new MSI());
-                }
-
-                timeUpstream = System.currentTimeMillis();
-
-                System.out.println("upstream neighbour for " + local.getAID.getLocalName() + " is " + upstream.getAID.getLocalName());
-
-                ACLMessage result = request.createReply();
-                result.setPerformative(ACLMessage.INFORM);
-                result.setContent(local.configToJSON());
-                return result;
-            } else {
-                // throw new FailureException("sub-optimal");
-                return null;
-            }
-        }
-    }
-
-    public class TrafficSensing extends TickerBehaviour {
-
-        private long T;
-        private long simLastTime;
-
-        public TrafficSensing(Agent a, long period, long wakeUpTime) {
-            super(a, period);
-            T = period;
-            simLastTime = wakeUpTime;
-            // time = LocalTime.of(1, 0, 0);
-        }
-
-        @Override
-        protected void onTick() {
-            long simCurrentTime = System.currentTimeMillis();
-            long elapsedTime = simCurrentTime - simLastTime;
-            long steps = elapsedTime/T;
-            simLastTime += steps*T;
-            while (steps > 0) {
-                boolean newCongestion = false;
-                String newLine = null;
-                try {
-                    newLine = congestionReader.readLine();
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-                String[] values = newLine.split(",");
-                String[] elements = values[1].split(" ");
-                for (int i = 0; i < elements.length; i++) {
-                    if (Integer.parseInt(elements[i]) == 1) {
-                        newCongestion = true;
-                    }
-                }
-                if (newCongestion == true && congestion == false) {
-                    congestion = true;
-                    myAgent.addBehaviour(new BrainBehaviour((osAgent)myAgent));
-                    System.out.println("Congestion detected!");
-
-                } else if (newCongestion == false && congestion == true) {
-                    congestion = false;
-                    myAgent.addBehaviour(new BrainBehaviour((osAgent)myAgent));
-                    System.out.println("Congestion cleared!");
-
-                }
-                steps -= 1;
-            }
-        }
-    }
-
     public void sendCentralUpdate() {
         ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
         newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
@@ -409,6 +248,12 @@ public class osAgent extends Agent {
         this.addBehaviour(new AchieveREInitiator(this, newMsg));
     }
 
+    /**
+     * Send measure to an agent for which we have a configuration
+     * @param config configuration of the receiver
+     * @param ont ontology of the message
+     * @param content content of the message
+     */
     public void sendMeasure (Configuration config, String ont, String content) {
         ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
         newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
@@ -418,6 +263,9 @@ public class osAgent extends Agent {
         this.addBehaviour(new AchieveREInitiator(this, newMsg));
     }
 
+    /**
+     * Format and send local configuration
+     */
     public void SendConfig () {
         ACLMessage configurationRequest = new ACLMessage(ACLMessage.REQUEST);
         configurationRequest.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
@@ -436,51 +284,10 @@ public class osAgent extends Agent {
                 }
                 System.out.println("downstream neighbour for " + local.getAID.getLocalName() + " is " + downstream.getAID.getLocalName());
 
-                myAgent.removeBehaviour(this);
+                // myAgent.removeBehaviour(this);
             }
         });
-        timeDownstream = System.currentTimeMillis();
-    }
-
-    public class ReceiveSensorData extends AchieveREResponder {
-
-        public ReceiveSensorData(Agent a, MessageTemplate mt) {
-            super(a, mt);
-            // TODO Auto-generated constructor stub
-        }
-
-        @Override
-        protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
-            return null;
-        }
-
-        @Override
-        protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
-            ACLMessage result = request.createReply();
-            result.setPerformative(ACLMessage.INFORM);
-
-            String msgContent = request.getContent();
-            AID sender = request.getSender();
-            JSONArray jsonContent = new JSONArray(msgContent);
-            Iterator<Object> iteratorContent = jsonContent.iterator();
-            Vector<MSI> tempVector = new Vector<MSI>();
-            while (iteratorContent.hasNext()) {
-                int value = (Integer)iteratorContent.next();
-                tempVector.add(new MSI(value));
-            }
-            if (sender.equals(downstream.getAID)) {
-                int oldSize = downstreamMsi.size();
-                downstreamMsi.addAll(0, tempVector);
-                downstreamMsi.setSize(oldSize);
-            }
-            if (sender.equals(upstream.getAID)) {
-                int oldSize = upstreamMsi.size();
-                upstreamMsi.addAll(0, tempVector);
-                upstreamMsi.setSize(oldSize);
-            }
-            myAgent.addBehaviour(new BrainBehaviour((osAgent)myAgent));
-            return result;
-        }
+        resetTimeDownstream();
     }
 
     /**
@@ -542,6 +349,13 @@ public class osAgent extends Agent {
     }
 
     /**
+     * @param upstream the upstream to set
+     */
+    public void setUpstream(Configuration upstream) {
+        this.upstream = upstream;
+    }
+
+    /**
      * @return the downstreamMsi
      */
     public Vector<MSI> getDownstreamMsi() {
@@ -549,10 +363,24 @@ public class osAgent extends Agent {
     }
 
     /**
+     * @param downstreamMsi the downstreamMsi to set
+     */
+    public void setDownstreamMsi(Vector<MSI> downstreamMsi) {
+        this.downstreamMsi = downstreamMsi;
+    }
+
+    /**
      * @return the upstreamMsi
      */
     public Vector<MSI> getUpstreamMsi() {
         return upstreamMsi;
+    }
+
+    /**
+     * @param upstreamMsi the upstreamMsi to set
+     */
+    public void setUpstreamMsi(Vector<MSI> upstreamMsi) {
+        this.upstreamMsi = upstreamMsi;
     }
 
     /**
@@ -588,5 +416,33 @@ public class osAgent extends Agent {
      */
     public BufferedReader getCongestionReader() {
         return congestionReader;
+    }
+
+    /**
+     * @return the timeUpstream
+     */
+    public long getTimeUpstream() {
+        return timeUpstream;
+    }
+
+    /**
+     * Reset the timeUpstream
+     */
+    public void resetTimeUpstream() {
+        this.timeUpstream = System.currentTimeMillis();
+    }
+
+    /**
+     * @return the timeDownstream
+     */
+    public long getTimeDownstream() {
+        return timeDownstream;
+    }
+
+    /**
+     * Reset the timeDownstream
+     */
+    public void resetTimeDownstream() {
+        this.timeDownstream = System.currentTimeMillis();
     }
 }
