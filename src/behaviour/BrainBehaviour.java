@@ -95,13 +95,13 @@ public class BrainBehaviour extends OneShotBehaviour {
         }
         
 
-        if (!osAgent.VectorEqual(outer.getMsi(), newMsi)) {
+        if (!MSI.VectorEqual(outer.getMsi(), newMsi)) {
             //update MSI with display
             outer.setMsi(newMsi);
             outer.sendCentralUpdate();
             //send messages to neighbours
-            outer.sendMeasure(outer.getDownstream(), osAgent.DISPLAY, osAgent.MsiToJson(outer.getMsi()));
-            outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, osAgent.MsiToJson(outer.getMsi()));
+            outer.sendMeasure(outer.getDownstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
+            outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
         }
     }
 }

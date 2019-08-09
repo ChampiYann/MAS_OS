@@ -1,5 +1,10 @@
 package measure;
 
+import java.util.Iterator;
+import java.util.Vector;
+
+import org.json.JSONArray;
+
 public class MSI {
     /**
      * This class represents the displays above the road that show the measures
@@ -68,5 +73,42 @@ public class MSI {
         } else {
             return false;
         }
+    }
+
+    /**
+     * Compare 2 MSI vectors to check if the MSI content is equal
+     * @param v1 First vector to compare
+     * @param v2 Second vector to compare
+     * @return True is MSI's in both vectors are the same, returns falase if not.
+     */
+    public static boolean VectorEqual(Vector<MSI> v1, Vector<MSI> v2) {
+        boolean result = true;
+        if(v1.size() != v2.size()) {
+            result = false;
+            return result;
+        }
+        Iterator<MSI> v1Iterator = v1.iterator();
+        Iterator<MSI> v2Iterator = v2.iterator();
+        while (v1Iterator.hasNext()) {
+            if (v1Iterator.next().getSymbol() != v2Iterator.next().getSymbol()) {
+                result = false;
+                return result;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Convert an MSI to a JSON String object
+     * @param input MSI to be converted to JSON String
+     * @return JSON String
+     */
+    public static String MsiToJson(Vector<MSI> input) {
+        Iterator<MSI> inputIterator = input.iterator();
+        JSONArray outputArray = new JSONArray();
+        while(inputIterator.hasNext()) {
+            outputArray.put(inputIterator.next().getSymbol());
+        }
+        return outputArray.toString();
     }
 }
