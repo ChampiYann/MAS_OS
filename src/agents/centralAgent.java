@@ -7,10 +7,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 
-import org.json.JSONArray;
-
 import behaviour.CentralConfigurationResponder;
 import behaviour.SetMeasure;
+import behaviour.SymbolListener;
 import config.Configuration;
 import gui.centralGui;
 import jade.core.AID;
@@ -19,12 +18,8 @@ import jade.core.ServiceException;
 import jade.core.behaviours.WakerBehaviour;
 import jade.core.messaging.TopicManagementHelper;
 import jade.domain.FIPANames;
-import jade.domain.FIPAAgentManagement.FailureException;
-import jade.domain.FIPAAgentManagement.NotUnderstoodException;
-import jade.domain.FIPAAgentManagement.RefuseException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import jade.proto.AchieveREResponder;
 import measure.CrossMeasure;
 import measure.Measure;
 import measure.NoMeasure;
@@ -98,28 +93,7 @@ public class centralAgent extends Agent {
                 MessageTemplate.MatchPerformative(ACLMessage.REQUEST));
         MessageTemplate SymbolsTemplate = MessageTemplate.and(requestTemplate,
                 MessageTemplate.MatchOntology("SYMBOLS"));
-        addBehaviour(new AchieveREResponder(this, SymbolsTemplate) {
-            @Override
-            protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
-                return null;
-            }
-
-            @Override
-            protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
-                ACLMessage msg = request.createReply();
-
-                AID sender = request.getSender();
-                JSONArray matrixJson = new JSONArray(request.getContent());
-                int[] symbols = new int[3];
-                for (int i = 0; i < 3; i++) {
-                    symbols[i] = matrixJson.getInt(i);
-                }
-                myGui.update(sender, symbols);
-
-                msg.setPerformative(ACLMessage.INFORM);
-                return msg;
-            }
-        });
+        addBehaviour(new SymbolListener(this, SymbolsTemplate));
 
         try {
             FileReader reader = new FileReader("measures\\central.txt");
