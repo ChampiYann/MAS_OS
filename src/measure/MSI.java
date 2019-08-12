@@ -25,17 +25,17 @@ public class MSI {
 
     private static final String[] symbols = new String[BLANK+1];
     static {
-        symbols[BLANK]      = " ";
-        symbols[NF_50]      = "50";
-        symbols[F_50]       = "*50*";
-        symbols[NF_70]      = "70";
-        symbols[F_70]       = "*70*";
         symbols[X]          = "X";
         symbols[ARROW_L]    = "*PL*";
         symbols[ARROW_R]    = "*PR*";
-        symbols[NF_90]      = "90";
+        symbols[F_50]       = "*50*";
+        symbols[NF_50]      = "50";
+        symbols[F_70]       = "*70*";
+        symbols[NF_70]      = "70";
         symbols[F_90]       = "*90*";
+        symbols[NF_90]      = "90";
         symbols[EOR]        = "@";
+        symbols[BLANK]      = " ";
     }
 
     private int symbol;

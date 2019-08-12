@@ -283,8 +283,6 @@ public class osAgent extends Agent {
                     downstreamMsi.add(new MSI());
                 }
                 System.out.println("downstream neighbour for " + local.getAID.getLocalName() + " is " + downstream.getAID.getLocalName());
-
-                // myAgent.removeBehaviour(this);
             }
         });
         resetTimeDownstream();
