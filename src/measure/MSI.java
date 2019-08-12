@@ -22,7 +22,8 @@ public class MSI {
     static final int NF_70      = 5;
     static final int F_70       = 6;
     static final int NF_90      = 7;
-    static final int BLANK      = 8;
+    static final int F_90       = 8;
+    static final int BLANK      = 9;
 
     private static final String[] symbols = new String[BLANK+1];
     static {
