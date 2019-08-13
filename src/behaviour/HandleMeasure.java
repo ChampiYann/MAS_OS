@@ -45,6 +45,10 @@ public class HandleMeasure extends AchieveREResponder {
             }
             i++;
         }
+        if (request.getSender().equals(outer.getUpstream().getAID)) {
+            outer.getCongestion().set(3, Boolean.parseBoolean(request.getContent()));
+            trigger = true;
+        }
         if (trigger == true) {
             ACLMessage reply = request.createReply();
             reply.setPerformative(ACLMessage.INFORM);

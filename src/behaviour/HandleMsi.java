@@ -24,10 +24,13 @@ public class HandleMsi extends TickerBehaviour {
         while(msiIterator.hasNext()) {
             MSI newMsi = new MSI();
             if (outer.getCongestion().get(0) == true) {
-                newMsi.changeState(MSI.NF_50);
+                newMsi.changeState(MSI.F_50);
             }
             if (outer.getCongestion().get(1) == true) {
-                newMsi.changeState(MSI.NF_70);
+                newMsi.changeState(MSI.F_70);
+            }
+            if (outer.getCongestion().get(3) == true && newMsi.getSymbol() > 2 && newMsi.getSymbol() < 8) {
+                newMsi.setSymbol(newMsi.getSymbol()+1);
             }
             msiIterator.next().setSymbol(newMsi.getSymbol());
         }

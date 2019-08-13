@@ -121,7 +121,8 @@ public class osAgent extends Agent {
                 msi.add(new MSI());
             }
             centralMeasures = new Vector<Measure>();
-            congestion = new Vector<>(3);
+            congestion = new Vector<>(4);
+            congestion.add(false);
             congestion.add(false);
             congestion.add(false);
             congestion.add(false);
