@@ -13,7 +13,7 @@ public class Configuration {
 
     public AID getAID;
     public String road;
-    public float location;
+    public double location;
     public String side;
     public int lanes;
 

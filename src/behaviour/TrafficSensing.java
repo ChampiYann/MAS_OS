@@ -45,14 +45,18 @@ public class TrafficSensing extends TickerBehaviour {
                     newCongestion = true;
                 }
             }
-            if (newCongestion == true && outer.getCongestion() == false) {
-                outer.setCongestion(true);
-                myAgent.addBehaviour(new BrainBehaviour((osAgent)myAgent));
+            if (newCongestion == true && outer.getCongestion().firstElement() == false) {
+                outer.getCongestion().set(0, true);
+                boolean b1=true;
+                outer.sendMeasure(String.valueOf(b1));
+                // myAgent.addBehaviour(new BrainBehaviour((osAgent)myAgent));
                 System.out.println("Congestion detected!");
 
-            } else if (newCongestion == false && outer.getCongestion() == true) {
-                outer.setCongestion(false);
-                myAgent.addBehaviour(new BrainBehaviour((osAgent)myAgent));
+            } else if (newCongestion == false && outer.getCongestion().firstElement() == true) {
+                outer.getCongestion().set(0, false);
+                boolean b1=false;
+                outer.sendMeasure(String.valueOf(b1));
+                // myAgent.addBehaviour(new BrainBehaviour((osAgent)myAgent));
                 System.out.println("Congestion cleared!");
 
             }

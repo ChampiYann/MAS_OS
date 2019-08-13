@@ -21,8 +21,8 @@ public class Measure {
     protected int type;
     protected int size;
     protected int iteration;
-    protected float start;
-    protected float end;
+    protected double start;
+    protected double end;
     protected long ID;
     protected String road;
     protected boolean[] lanes;

@@ -14,7 +14,7 @@ import jade.core.AID;
 public class RefPortal extends Portal {
     private BufferedReader congestionReader;
 
-    public RefPortal(AID id, float km, JPanel portal, GridBagConstraints gbc, String fn) {
+    public RefPortal(AID id, double km, JPanel portal, GridBagConstraints gbc, String fn) {
         super(id, km, portal, gbc);
         try {
             congestionReader = new BufferedReader(new FileReader(fn));

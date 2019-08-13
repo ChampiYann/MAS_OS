@@ -33,21 +33,35 @@ public class ConfigurationResponder extends AchieveREResponder {
         Configuration newConfig = new Configuration();
 
         newConfig.getConfigFromJSON(request.getContent());
-        if (outer.getLocal().location - newConfig.location < outer.getLocal().location - outer.getUpstream().location && outer.getLocal().location - newConfig.location > 0) {
+        if (newConfig.location < outer.getLocal().location &&
+        newConfig.location > outer.getUpstream().location) {
             outer.getUpstream().location = newConfig.location;
             outer.getUpstream().road = newConfig.road;
             outer.getUpstream().getAID = newConfig.getAID;
             outer.getUpstream().side = newConfig.side;
             outer.getUpstream().lanes = newConfig.lanes;
 
-            outer.setUpstreamMsi(new Vector<MSI>(outer.getUpstream().lanes));
-            for (int i = 0; i < outer.getUpstreamMsi().capacity(); i++) {
-                outer.getUpstreamMsi().add(new MSI());
-            }
+            // outer.setUpstreamMsi(new Vector<MSI>(outer.getUpstream().lanes));
+            // for (int i = 0; i < outer.getUpstreamMsi().capacity(); i++) {
+            //     outer.getUpstreamMsi().add(new MSI());
+            // }
 
             outer.resetTimeUpstream();
 
-            System.out.println("upstream neighbour for " + outer.getLocal().getAID.getLocalName() + " is " + outer.getUpstream().getAID.getLocalName());
+            System.out.println("upstream neighbour for " + outer.getLocal().location + " is " + outer.getUpstream().location);
+
+            ACLMessage result = request.createReply();
+            result.setPerformative(ACLMessage.INFORM);
+            result.setContent(outer.getLocal().configToJSON());
+            return result;
+        } else if (newConfig.location > outer.getLocal().location &&
+        newConfig.location < outer.getDownstream().lastElement().location &&
+        !Configuration.ConfigurationEqual(newConfig, outer.getDownstream().firstElement())) {
+            outer.getDownstream().removeElement(outer.getDownstream().lastElement());
+            outer.getDownstream().add(newConfig);
+            outer.getDownstream().sort(Configuration.kmCompare);
+
+            System.out.println("downstream neighbours for " + outer.getLocal().location + " are " + outer.getDownstream().firstElement().location + " and " + outer.getDownstream().lastElement().location);
 
             ACLMessage result = request.createReply();
             result.setPerformative(ACLMessage.INFORM);

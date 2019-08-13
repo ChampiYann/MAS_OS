@@ -100,7 +100,7 @@ public class BrainBehaviour extends OneShotBehaviour {
             outer.setMsi(newMsi);
             outer.sendCentralUpdate();
             //send messages to neighbours
-            outer.sendMeasure(outer.getDownstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
+            outer.sendMeasure(outer.getDownstream().firstElement(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
             outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
         }
     }

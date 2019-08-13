@@ -16,10 +16,10 @@ import measure.MSI;
 
 public class Portal {
     private AID name;
-    private float location;
+    private double location;
     protected JTextField[] msg;
 
-    public Portal(AID id, float km, JPanel portal, GridBagConstraints gbc) {
+    public Portal(AID id, double km, JPanel portal, GridBagConstraints gbc) {
         name = id;
         location = km;
         msg = new JTextField[4];
@@ -45,7 +45,7 @@ public class Portal {
             portal.revalidate();
             portal.repaint();
         }
-        msg[3].setText(Float.toString(location));
+        msg[3].setText(Double.toString(location));
     }
 
     public void update(int[] symbols) {
@@ -64,7 +64,7 @@ public class Portal {
     /**
      * @return the location
      */
-    public float getLocation() {
+    public double getLocation() {
         return location;
     }
 }

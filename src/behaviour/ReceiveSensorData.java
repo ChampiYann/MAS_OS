@@ -45,7 +45,7 @@ public class ReceiveSensorData extends AchieveREResponder {
             int value = (Integer)iteratorContent.next();
             tempVector.add(new MSI(value));
         }
-        if (sender.equals(outer.getDownstream().getAID)) {
+        if (sender.equals(outer.getDownstream().firstElement().getAID)) {
             int oldSize = outer.getDownstreamMsi().size();
             outer.getDownstreamMsi().addAll(0, tempVector);
             outer.getDownstreamMsi().setSize(oldSize);

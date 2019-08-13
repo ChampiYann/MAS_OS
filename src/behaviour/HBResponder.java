@@ -28,16 +28,16 @@ public class HBResponder extends TickerBehaviour {
             MessageTemplate.MatchOntology("HB"));
         ACLMessage HBRequest = myAgent.receive(HBTemplate);
         if (HBRequest != null) {
-            Configuration tempConfig = new Configuration(outer);
-            tempConfig.getConfigFromJSON(HBRequest.getContent());
-            if (!Configuration.ConfigurationEqual(tempConfig, outer.getDownstream())) {
-                outer.getDownstream().getConfigFromJSON(HBRequest.getContent());
-                outer.setDownstreamMsi(new Vector<MSI>(outer.getDownstream().lanes));
-                for (int i = 0; i < outer.getDownstreamMsi().capacity(); i++) {
-                    outer.getDownstreamMsi().add(new MSI());
-                }
-                System.out.println("downstream neighbour for " + outer.getLocal().getAID.getLocalName() + " is " + outer.getDownstream().getAID.getLocalName());
-            }
+            // Configuration tempConfig = new Configuration(outer);
+            // tempConfig.getConfigFromJSON(HBRequest.getContent());
+            // if (!Configuration.ConfigurationEqual(tempConfig, outer.getDownstream())) {
+            //     outer.getDownstream().getConfigFromJSON(HBRequest.getContent());
+            //     outer.setDownstreamMsi(new Vector<MSI>(outer.getDownstream().lanes));
+            //     for (int i = 0; i < outer.getDownstreamMsi().capacity(); i++) {
+            //         outer.getDownstreamMsi().add(new MSI());
+            //     }
+            //     System.out.println("downstream neighbour for " + outer.getLocal().getAID.getLocalName() + " is " + outer.getDownstream().getAID.getLocalName());
+            // }
             ACLMessage HBResponse = new ACLMessage(ACLMessage.INFORM);
             HBResponse.setOntology("HB");
             HBResponse.addReceiver(HBRequest.getSender());

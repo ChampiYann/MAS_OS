@@ -55,6 +55,13 @@ public class MSI {
         }     
     }
 
+    /**
+     * @param symbol the symbol to set
+     */
+    public void setSymbol(int symbol) {
+        this.symbol = symbol;
+    }
+
     public int getSymbol() {
         return symbol;
     }
