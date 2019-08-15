@@ -17,7 +17,7 @@ public class Configuration {
     public String side;
     public int lanes;
 
-    public Configuration(osAgent outer, AID id, String r, float loc, String s, int la) {
+    public Configuration(osAgent outer, AID id, String r, double loc, String s, int la) {
         this.outer = outer;
         getAID = id;
         road = r;
@@ -47,20 +47,20 @@ public class Configuration {
     public void getConfigFromJSON(String input) {
         JSONObject content = new JSONObject(input);
         road = content.getString("road");
-        location = content.getFloat("location");
+        location = content.getDouble("location");
         side = content.getString("side");
         getAID = new AID(content.getString("AID"), AID.ISGUID);
         lanes = content.getInt("lanes");
     }
 
-    public String configToJSON() {
+    public JSONObject configToJSON() {
         JSONObject content = new JSONObject();
         content.put("road", road);
         content.put("location", location);
         content.put("side", side);
         content.put("AID", getAID.getName());
         content.put("lanes", lanes);
-        return content.toString();
+        return content;
     }
 
     public static Comparator<Configuration> kmCompare = new Comparator<Configuration>() {

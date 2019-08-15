@@ -50,6 +50,9 @@ public class MSI {
 
     public void changeState(int sym) {
 
+        if (sym > BLANK) {
+            sym = BLANK;
+        }
         if (getSymbol() >= sym) {
             symbol = sym;
         }     

@@ -20,16 +20,14 @@ import jade.core.messaging.TopicManagementHelper;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import measure.CrossMeasure;
 import measure.Measure;
-import measure.NoMeasure;
 
 public class centralAgent extends Agent {
 
     private static final long serialVersionUID = 1L;
 
     // Measures
-    private ArrayList<CrossMeasure> measures = new ArrayList<CrossMeasure>();
+    private ArrayList<Measure> measures = new ArrayList<Measure>();
 
     // GUI
     transient protected centralGui myGui;
@@ -66,7 +64,7 @@ public class centralAgent extends Agent {
 
             // COnfiguration response
             MessageTemplate ConfigTemplate = MessageTemplate.and(requestTemplate,
-                MessageTemplate.MatchOntology("CONFIGURATION"));
+                MessageTemplate.MatchTopic(topicConfiguration));
             addBehaviour(new CentralConfigurationResponder(this, ConfigTemplate));
         } catch (ServiceException e) {
             System.out.println("Wrong configuration for " + getAID().getName());
@@ -108,28 +106,6 @@ public class centralAgent extends Agent {
         }
     }
 
-    public int getMeasure (int t, AID o) throws NoMeasure {
-
-        for (int i = 0; i < measures.size(); i++) {
-            Measure mr = measures.get(i);
-            if (mr.getType() == t && mr.getOrigin().equals(o)) {
-                return i;
-            }
-        }
-        throw new NoMeasure();
-    }
-
-    public int getMeasure (long id) throws NoMeasure {
-
-        for (int i = 0; i < measures.size(); i++) {
-            Measure mr = measures.get(i);
-            if (mr.getID() == id) {
-                return i;
-            }
-        }
-        throw new NoMeasure();
-    }
-
     public ArrayList<Configuration> getOS() {
         return OS;
     }
@@ -145,7 +121,7 @@ public class centralAgent extends Agent {
         return myGui;
     }
 
-    public ArrayList<CrossMeasure> getMeasures() {
+    public ArrayList<Measure> getMeasures() {
         return measures;
     }
 

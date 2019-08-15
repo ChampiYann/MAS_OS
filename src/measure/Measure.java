@@ -1,5 +1,10 @@
 package measure;
 
+import java.time.LocalTime;
+import java.util.Iterator;
+import java.util.Random;
+import java.util.Vector;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -7,76 +12,90 @@ import jade.core.AID;
 
 public class Measure {
 
-    public static final int AIDet      = 0;
-    public static final int CROSS      = 1;
-
-    private static final String[] Measures = new String[2];
-    static {
-        Measures[AIDet] = "AID";
-        Measures[CROSS] = "CROSS";
-    }
-
-
     protected AID origin;
-    protected int type;
-    protected int size;
-    protected int iteration;
-    protected double start;
-    protected double end;
     protected long ID;
     protected String road;
-    protected boolean[] lanes;
+    protected Vector<Integer> lanes;
+    protected Vector<Double> osList;
 
-    protected Measure() { }
+    protected Measure() {}
 
     public Measure(JSONObject content) {
-        type = content.getInt("type");
         origin = new AID(content.getString("origin"),AID.ISGUID);
-        size = content.getInt("size");
-        start = content.getFloat("start");
-        end = content.getFloat("end");
         ID = content.getLong("ID");
-        iteration = content.getInt("iteration");
         road = content.getString("road");
-        JSONArray lanesJSON = content.getJSONArray("lanes");
-        lanes = new boolean[lanesJSON.length()];
-        for (int i = 0; i < lanesJSON.length(); i++) {
-            lanes[i] = lanesJSON.getBoolean(i);
+        lanes = new Vector<Integer>();
+        Iterator<Object> lanesIterator = content.getJSONArray("lanes").iterator();
+        while (lanesIterator.hasNext()) {
+            lanes.add((Integer)lanesIterator.next());
+        }
+        osList = new Vector<Double>();
+        Iterator<Object> osListIterator = content.getJSONArray("osList").iterator();
+        while (osListIterator.hasNext()) {
+            osList.add((Double)osListIterator.next());
         }
     }
 
-    public int getType() {
-        return type;
-    }
-
-    public int getIteration() {
-        return iteration;
-    }
-
-    public AID getOrigin() {
-        return origin;
-    }
-
+    /**
+     * @return the iD
+     */
     public long getID() {
         return ID;
     }
 
-    public boolean getLane(int i) { //throws outofbounds
-        return lanes[i];
+    /**
+     * @return the lanes
+     */
+    public Vector<Integer> getLanes() {
+        return lanes;
+    }
+
+    /**
+     * @return the osList
+     */
+    public Vector<Double> getOsList() {
+        return osList;
     }
 
     public JSONObject toJSON() {
         JSONObject content = new JSONObject();
         content.put("origin", origin.getName());
-        content.put("type", type);
-        content.put("size", size);
-        content.put("iteration", iteration);
-        content.put("start", start);
-        content.put("end", end);
+        JSONArray osListJSON = new JSONArray(osList);
+        content.put("osList", osListJSON);
         content.put("ID",ID);
         content.put("road", road);
         JSONArray lanesJSON = new JSONArray(lanes);
         content.put("lanes", lanesJSON);
         return content;
+    }
+
+    private LocalTime startTime;
+    private LocalTime endTime;
+
+    public Measure(AID aid, LocalTime startTime, LocalTime endTime, String road, Vector<Double> osList, Vector<Integer> lanes) {
+        this.origin = aid;
+        this.road = road;
+        this.osList = osList;
+        this.lanes = lanes;
+        this.startTime = startTime;
+        this.endTime = endTime;
+
+        Random rand = new Random();
+        int n = rand.nextInt(50);
+        this.ID = System.currentTimeMillis() + n;
+	}
+
+	/**
+     * @return the startTime
+     */
+    public LocalTime getStartTime() {
+        return startTime;
+    }
+
+    /**
+     * @return the endTime
+     */
+    public LocalTime getEndTime() {
+        return endTime;
     }
 }

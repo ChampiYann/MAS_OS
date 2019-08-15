@@ -1,6 +1,7 @@
 package behaviour;
 
-import java.util.Vector;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import agents.osAgent;
 import config.Configuration;
@@ -11,7 +12,6 @@ import jade.domain.FIPAAgentManagement.RefuseException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREResponder;
-import measure.MSI;
 
 public class ConfigurationResponder extends AchieveREResponder {
 
@@ -31,8 +31,10 @@ public class ConfigurationResponder extends AchieveREResponder {
     @Override
     protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
         Configuration newConfig = new Configuration();
-
-        newConfig.getConfigFromJSON(request.getContent());
+        JSONObject jsonContent = new JSONObject(request.getContent());
+        JSONArray jsonCongestion = jsonContent.getJSONArray("congestion");
+        jsonContent.remove("congestion"); 
+        newConfig.getConfigFromJSON(jsonContent.toString());
         if (newConfig.location < outer.getLocal().location &&
         newConfig.location > outer.getUpstream().location) {
             outer.getUpstream().location = newConfig.location;
@@ -41,31 +43,30 @@ public class ConfigurationResponder extends AchieveREResponder {
             outer.getUpstream().side = newConfig.side;
             outer.getUpstream().lanes = newConfig.lanes;
 
-            // outer.setUpstreamMsi(new Vector<MSI>(outer.getUpstream().lanes));
-            // for (int i = 0; i < outer.getUpstreamMsi().capacity(); i++) {
-            //     outer.getUpstreamMsi().add(new MSI());
-            // }
-
             outer.resetTimeUpstream();
 
-            System.out.println("upstream neighbour for " + outer.getLocal().location + " is " + outer.getUpstream().location);
+            System.out.println("up " + outer.getLocal().location + ": " + outer.getUpstream().location);
 
             ACLMessage result = request.createReply();
             result.setPerformative(ACLMessage.INFORM);
-            result.setContent(outer.getLocal().configToJSON());
+            result.setContent(outer.getLocal().configToJSON().toString());
             return result;
         } else if (newConfig.location > outer.getLocal().location &&
-        newConfig.location < outer.getDownstream().lastElement().location &&
-        !Configuration.ConfigurationEqual(newConfig, outer.getDownstream().firstElement())) {
-            outer.getDownstream().removeElement(outer.getDownstream().lastElement());
-            outer.getDownstream().add(newConfig);
-            outer.getDownstream().sort(Configuration.kmCompare);
+        newConfig.location < outer.getDownstream().firstElement().location) {
+        // !Configuration.ConfigurationEqual(newConfig, outer.getDownstream().firstElement())) {
+            // outer.getDownstream().removeElement(outer.getDownstream().lastElement());
+            outer.getDownstream().set(0,newConfig);
+            // outer.getDownstream().sort(Configuration.kmCompare);
 
-            System.out.println("downstream neighbours for " + outer.getLocal().location + " are " + outer.getDownstream().firstElement().location + " and " + outer.getDownstream().lastElement().location);
+            outer.getCongestion().set(1, jsonCongestion.getBoolean(0));
+            outer.getCongestion().set(2, jsonCongestion.getBoolean(1));
+
+            outer.resetTimeDownstream();
+            System.out.println("down " + outer.getLocal().location + ": " + outer.getDownstream().firstElement().location + ", " + outer.getDownstream().lastElement().location);
 
             ACLMessage result = request.createReply();
             result.setPerformative(ACLMessage.INFORM);
-            result.setContent(outer.getLocal().configToJSON());
+            result.setContent(outer.getLocal().configToJSON().toString());
             return result;
         } else {
             // throw new FailureException("sub-optimal");

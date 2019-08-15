@@ -1,14 +1,12 @@
 package behaviour;
 
-import java.util.Vector;
+import org.json.JSONObject;
 
 import agents.osAgent;
-import config.Configuration;
 import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import measure.MSI;
 
 public class HBResponder extends TickerBehaviour {
 
@@ -28,23 +26,20 @@ public class HBResponder extends TickerBehaviour {
             MessageTemplate.MatchOntology("HB"));
         ACLMessage HBRequest = myAgent.receive(HBTemplate);
         if (HBRequest != null) {
-            // Configuration tempConfig = new Configuration(outer);
-            // tempConfig.getConfigFromJSON(HBRequest.getContent());
-            // if (!Configuration.ConfigurationEqual(tempConfig, outer.getDownstream())) {
-            //     outer.getDownstream().getConfigFromJSON(HBRequest.getContent());
-            //     outer.setDownstreamMsi(new Vector<MSI>(outer.getDownstream().lanes));
-            //     for (int i = 0; i < outer.getDownstreamMsi().capacity(); i++) {
-            //         outer.getDownstreamMsi().add(new MSI());
-            //     }
-            //     System.out.println("downstream neighbour for " + outer.getLocal().getAID.getLocalName() + " is " + outer.getDownstream().getAID.getLocalName());
-            // }
             ACLMessage HBResponse = new ACLMessage(ACLMessage.INFORM);
             HBResponse.setOntology("HB");
             HBResponse.addReceiver(HBRequest.getSender());
+            if (outer.getDownstream().firstElement().getAID != null) {
+                HBResponse.setContent(outer.getDownstream().firstElement().configToJSON().toString());
+            }
+            JSONObject jsonContent = new JSONObject(HBRequest.getContent());
+            jsonContent.remove("congestion"); 
+            outer.getUpstream().getConfigFromJSON(jsonContent.toString());
             myAgent.send(HBResponse);
             outer.resetTimeDownstream();
         } else {
             if (System.currentTimeMillis()-outer.getTimeDownstream() > (long)osAgent.minute*2) {
+                // System.out.println("down at " + outer.getLocal().location);
                 outer.SendConfig();
             }
         }

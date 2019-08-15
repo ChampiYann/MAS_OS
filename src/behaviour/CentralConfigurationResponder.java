@@ -2,6 +2,8 @@ package behaviour;
 
 import java.util.Iterator;
 
+import org.json.JSONObject;
+
 import agents.centralAgent;
 import config.Configuration;
 import jade.core.Agent;
@@ -31,8 +33,9 @@ public class CentralConfigurationResponder extends AchieveREResponder {
     @Override
     protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
         Configuration newConfig = new Configuration();
-
-        newConfig.getConfigFromJSON(request.getContent());
+        JSONObject jsonContent = new JSONObject(request.getContent());
+        jsonContent.remove("congestion"); 
+        newConfig.getConfigFromJSON(jsonContent.toString());
         Iterator<Configuration> iterator = outer.getOS().iterator();
         boolean exists = false;
         while (iterator.hasNext()) {

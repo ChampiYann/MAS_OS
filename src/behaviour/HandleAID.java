@@ -12,13 +12,13 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREResponder;
 
-public class HandleMeasure extends AchieveREResponder {
+public class HandleAID extends AchieveREResponder {
 
     private static final long serialVersionUID = 1L;
 
     private osAgent outer;
 
-    public HandleMeasure(Agent a, MessageTemplate mt) {
+    public HandleAID(Agent a, MessageTemplate mt) {
         super(a, mt);
 		this.outer = (osAgent)a;
     }

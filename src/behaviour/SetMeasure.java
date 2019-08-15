@@ -3,14 +3,16 @@ package behaviour;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.util.Iterator;
+import java.util.Vector;
 
 import agents.centralAgent;
+import config.Configuration;
 import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.proto.AchieveREInitiator;
-import measure.CrossMeasure;
+import measure.Measure;
 
 public class SetMeasure extends TickerBehaviour {
 
@@ -50,16 +52,14 @@ public class SetMeasure extends TickerBehaviour {
                     } else {
                         outer.getMeasureReader().mark(1000);
                         // Add measure to list en send it
-                        boolean[] lanes = new boolean[values.length-7];
-                        for (int i = 0; i < lanes.length; i++) {
-                            lanes[i] = Boolean.parseBoolean(values[7+i]);
+                        Vector<Integer> lanes = new Vector<Integer>(values.length-7);
+                        for (int i = 0; i < lanes.capacity(); i++) {
+                            lanes.add(Integer.parseInt(values[7+i]));
                         }
-                        float startKm = Float.parseFloat(values[6]);
-                        float endKm = Float.parseFloat(values[5]);
-                        if (startKm == endKm) {
-                            endKm -= (float)0.001;
-                        }
-                        CrossMeasure mr = new CrossMeasure(outer.getAID(), time, LocalTime.parse(values[3]), values[4], startKm, endKm, lanes);
+                        double startKm = Double.parseDouble(values[5]);
+                        double endKm = Double.parseDouble(values[6]);
+                        Vector<Double> osList = findOsInRange(startKm,endKm);
+                        Measure mr = new Measure(outer.getAID(), time, LocalTime.parse(values[3]), values[4], osList, lanes);
                         outer.getMeasures().add(mr);
                         addMeasure(mr);
                     }
@@ -70,9 +70,9 @@ public class SetMeasure extends TickerBehaviour {
                 }
             }
             // cycle though active measures and cancel those that need cancelling
-            Iterator<CrossMeasure> iterator = outer.getMeasures().iterator();
+            Iterator<Measure> iterator = outer.getMeasures().iterator();
             while (iterator.hasNext()) {
-                CrossMeasure mr = iterator.next();
+                Measure mr = iterator.next();
                 if (mr.getEndTime().compareTo(time) == 0) {
                     // remove measure and  send cancel
                     cancelMeasure(mr);
@@ -84,7 +84,19 @@ public class SetMeasure extends TickerBehaviour {
         }
     }
 
-    private void addMeasure (CrossMeasure mr) {
+    private Vector<Double> findOsInRange(double start, double end) {
+        Vector<Double> outputVector = new Vector<Double>();
+        Iterator<Configuration> osIterator = outer.getOS().iterator();
+        while (osIterator.hasNext()) {
+            Configuration nextOs = osIterator.next();
+            if (nextOs.location >= start &&  nextOs.location <= end) {
+                outputVector.add(nextOs.location);
+            }
+        }
+        return outputVector;
+    }
+
+    private void addMeasure (Measure mr) {
         ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
         newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
         newMsg.setOntology("ADD");
@@ -93,7 +105,7 @@ public class SetMeasure extends TickerBehaviour {
         myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
     }
 
-    private void cancelMeasure (CrossMeasure mr) {
+    private void cancelMeasure (Measure mr) {
         ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
         newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
         newMsg.setOntology("CANCEL");

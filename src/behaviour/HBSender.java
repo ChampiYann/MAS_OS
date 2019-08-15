@@ -20,9 +20,8 @@ public class HBSender extends TickerBehaviour {
     protected void onTick() {
         ACLMessage HBRequest = new ACLMessage(ACLMessage.REQUEST);
         HBRequest.setOntology("HB");
-        HBRequest.addReceiver(outer.getUpstream().getAID);
-        HBRequest.setContent(outer.getLocal().configToJSON());
-
+        HBRequest.addReceiver(outer.getDownstream().firstElement().getAID);
+        HBRequest.setContent(outer.getLocal().configToJSON().toString());
         myAgent.send(HBRequest);
     }
 

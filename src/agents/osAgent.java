@@ -10,12 +10,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import behaviour.ConfigurationResponder;
 import behaviour.HBReaction;
 import behaviour.HBResponder;
 import behaviour.HBSender;
-import behaviour.HandleMeasure;
+import behaviour.HandleAID;
+import behaviour.HandleCentral;
 import behaviour.HandleMsi;
 import behaviour.TrafficSensing;
 import config.Configuration;
@@ -28,8 +30,8 @@ import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
+import measure.CentralMeasure;
 import measure.MSI;
-import measure.Measure;
 
 public class osAgent extends Agent {
 
@@ -55,6 +57,7 @@ public class osAgent extends Agent {
 
     // Flags
     private Vector<Boolean> congestion;
+    private Vector<CentralMeasure> centralMeasures;
 
     // Ontology
     public static final String MEASURE = "MEASURE";
@@ -72,7 +75,7 @@ public class osAgent extends Agent {
 
     // New variables
     Vector<MSI> msi;
-    Vector<Measure> centralMeasures;
+    // Vector<Measure> centralMeasures;
 
     /**
      * This function sets up the agent by setting the number of lanes and neighbour
@@ -120,7 +123,7 @@ public class osAgent extends Agent {
             for (int i = 0; i < msi.capacity(); i++) {
                 msi.add(new MSI());
             }
-            centralMeasures = new Vector<Measure>();
+            centralMeasures = new Vector<CentralMeasure>();
             congestion = new Vector<>(4);
             congestion.add(false);
             congestion.add(false);
@@ -149,9 +152,9 @@ public class osAgent extends Agent {
             } catch (Exception e) {
             }
             if (hmMatcher.find()) {
-                local.location = Float.parseFloat(kmDot) + Float.parseFloat(hmMatcher.group())/1000;
+                local.location = Double.parseDouble(kmDot) + Double.parseDouble(hmMatcher.group())/1000;
             } else {
-                local.location = Float.parseFloat(kmDot);
+                local.location = Double.parseDouble(kmDot);
             }
             // Extract road side
             Pattern sidePattern = Pattern.compile("(?<=\\s)[LRlr]");
@@ -162,10 +165,19 @@ public class osAgent extends Agent {
             // Set message queue size
             // setQueueSize(10);
 
+            MessageTemplate requestTemplate = MessageTemplate.and(
+				MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST),
+                MessageTemplate.MatchPerformative(ACLMessage.REQUEST));
+
             try {
                 TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
                 final AID topicCentral = topicHelper.createTopic("CENTRAL");
                 topicHelper.register(topicCentral);
+
+                MessageTemplate centralTemplate = MessageTemplate.and(requestTemplate,
+                MessageTemplate.MatchTopic(topicCentral));
+
+                addBehaviour(new HandleCentral(this, centralTemplate));
             } catch (ServiceException e) {
                 System.out.println("Wrong configuration for " + getAID().getName());
                 doDelete();
@@ -173,20 +185,17 @@ public class osAgent extends Agent {
 
             try {
                 TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
-                topicMeasure = topicHelper.createTopic("CONFIGURATION");
+                topicMeasure = topicHelper.createTopic("AID");
                 topicHelper.register(topicMeasure);
+
+                MessageTemplate MeasureTemplate = MessageTemplate.and(requestTemplate,
+                MessageTemplate.MatchTopic(topicMeasure));
+
+                addBehaviour(new HandleAID(this,MeasureTemplate));
             } catch (ServiceException e) {
                 System.out.println("Wrong configuration for " + getAID().getName());
                 doDelete();
             }
-
-            MessageTemplate requestTemplate = MessageTemplate.and(
-				MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST),
-                MessageTemplate.MatchPerformative(ACLMessage.REQUEST));
-            MessageTemplate MeasureTemplate = MessageTemplate.and(requestTemplate,
-                MessageTemplate.MatchOntology(MEASURE));
-
-            addBehaviour(new HandleMeasure(this,MeasureTemplate));
 
             addBehaviour(new HandleMsi(this,minute/4));
 
@@ -195,16 +204,15 @@ public class osAgent extends Agent {
                 TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
                 topicConfiguration = topicHelper.createTopic("CONFIGURATION");
                 topicHelper.register(topicConfiguration);
+
+                MessageTemplate ConfigTemplate = MessageTemplate.and(requestTemplate,
+                MessageTemplate.MatchTopic(topicConfiguration));
+            
+                addBehaviour(new ConfigurationResponder(this, ConfigTemplate));
             } catch (ServiceException e) {
                 System.out.println("Wrong configuration for " + getAID().getName());
                 doDelete();
             }
-
-            // Configuration response
-            MessageTemplate ConfigTemplate = MessageTemplate.and(requestTemplate,
-                MessageTemplate.MatchOntology("CONFIGURATION"));
-            
-            addBehaviour(new ConfigurationResponder(this, ConfigTemplate));
             
             Date wakeupDate = new Date((long) args[2]);
             // Add behaviour simulting traffic passing by but delay it by 1 second
@@ -238,6 +246,21 @@ public class osAgent extends Agent {
     protected void takeDown() {
         // Printout a dismissal message
         System.out.println("OS " + getAID().getName() + " terminating.");
+        Iterator<MSI> msiIterator = msi.iterator();
+        while (msiIterator.hasNext()) {
+            msiIterator.next().setSymbol(MSI.BLANK);
+        }
+        ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
+        newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+        newMsg.setOntology("SYMBOLS");
+        JSONArray matrixJson = new JSONArray();
+        msiIterator = msi.iterator();
+        while (msiIterator.hasNext()) {
+            matrixJson.put(msiIterator.next().getSymbol());
+        }
+        newMsg.setContent(matrixJson.toString());
+        newMsg.addReceiver(central);
+        send(newMsg);
         // myGui.dispose();
     }
 
@@ -262,7 +285,7 @@ public class osAgent extends Agent {
     public void sendMeasure (String content) {
         ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
         newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-        newMsg.setOntology(MEASURE);
+        // newMsg.setOntology(MEASURE);
         newMsg.setContent(content);
         newMsg.addReceiver(topicMeasure);
         this.addBehaviour(new AchieveREInitiator(this, newMsg));
@@ -274,23 +297,14 @@ public class osAgent extends Agent {
     public void SendConfig () {
         ACLMessage configurationRequest = new ACLMessage(ACLMessage.REQUEST);
         configurationRequest.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-        configurationRequest.setOntology("CONFIGURATION");
+        // configurationRequest.setOntology("CONFIGURATION");
         configurationRequest.setReplyByDate(new Date(System.currentTimeMillis() + minute*4));
         configurationRequest.addReceiver(topicConfiguration);
-        configurationRequest.setContent(local.configToJSON());
+        JSONObject msgContent = local.configToJSON();
+        // JSONArray jsonConfiguration = new JSONArray(congestion);
+        msgContent.put("congestion", congestion);
+        configurationRequest.setContent(msgContent.toString());
         this.addBehaviour(new AchieveREInitiator(this, configurationRequest));
-        // {
-        //     @Override
-        //     protected void handleInform(ACLMessage inform) {
-        //         String messageContent = inform.getContent();
-        //         downstream.getConfigFromJSON(messageContent);
-        //         downstreamMsi = new Vector<MSI>(downstream.lanes);
-        //         for (int i = 0; i < downstreamMsi.capacity(); i++) {
-        //             downstreamMsi.add(new MSI());
-        //         }
-        //         System.out.println("downstream neighbour for " + local.getAID.getLocalName() + " is " + downstream.getAID.getLocalName());
-        //     }
-        // });
         resetTimeDownstream();
     }
 
@@ -321,34 +335,6 @@ public class osAgent extends Agent {
     public void setUpstream(Configuration upstream) {
         this.upstream = upstream;
     }
-
-    // /**
-    //  * @return the downstreamMsi
-    //  */
-    // public Vector<MSI> getDownstreamMsi() {
-    //     return downstreamMsi;
-    // }
-
-    // /**
-    //  * @param downstreamMsi the downstreamMsi to set
-    //  */
-    // public void setDownstreamMsi(Vector<MSI> downstreamMsi) {
-    //     this.downstreamMsi = downstreamMsi;
-    // }
-
-    // /**
-    //  * @return the upstreamMsi
-    //  */
-    // public Vector<MSI> getUpstreamMsi() {
-    //     return upstreamMsi;
-    // }
-
-    // /**
-    //  * @param upstreamMsi the upstreamMsi to set
-    //  */
-    // public void setUpstreamMsi(Vector<MSI> upstreamMsi) {
-    //     this.upstreamMsi = upstreamMsi;
-    // }
 
     /**
      * @return the msi
@@ -411,5 +397,12 @@ public class osAgent extends Agent {
      */
     public void resetTimeDownstream() {
         this.timeDownstream = System.currentTimeMillis();
+    }
+
+    /**
+     * @return the centralMeasures
+     */
+    public Vector<CentralMeasure> getCentralMeasures() {
+        return centralMeasures;
     }
 }
