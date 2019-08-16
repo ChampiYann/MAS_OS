@@ -176,7 +176,7 @@ public class centralGui extends JFrame {
 
             RefConfiguration config = new RefConfiguration();
             config.getAID = new AID("A13R "+location,AID.ISLOCALNAME);
-            config.location = Float.parseFloat(location);
+            config.location = Double.parseDouble(location);
             config.fileName = "config\\" + listOfFiles[i].getName();
             refConfigList.add(config);
         }
