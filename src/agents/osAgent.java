@@ -1,19 +1,5 @@
 package agents;
 
-/**
- * Configuration:
- * Based on a configuration file, a configuration agent configures all the nessecarry agents
- * 
- * Behaviours:
- * - Measure vehicle traffic
- *      every 60 seconds, a new average of the traffic state is given
- * - Display signalling
- *      based on traffic state and neighbouring signalling, the display can change
- * - Communicate with neighbouring os
- *      on change of neighbour they let the others know of the new change
- * - 
- */
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -29,7 +15,8 @@ import behaviour.ConfigurationResponder;
 import behaviour.HBReaction;
 import behaviour.HBResponder;
 import behaviour.HBSender;
-import behaviour.ReceiveSensorData;
+import behaviour.ReceiveCentralDisplay;
+import behaviour.ReceiveDisplay;
 import behaviour.TrafficSensing;
 import config.Configuration;
 import jade.core.AID;
@@ -41,8 +28,8 @@ import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
+import measure.CentralMeasure;
 import measure.MSI;
-import measure.Measure;
 
 public class osAgent extends Agent {
 
@@ -86,7 +73,8 @@ public class osAgent extends Agent {
     Vector<MSI> downstreamMsi;
     Vector<MSI> upstreamMsi;
     Vector<MSI> msi;
-    Vector<Measure> centralMeasures;
+    // Vector<Measure> centralMeasures;
+    Vector<CentralMeasure> centralMeasures;
 
     /**
      * This function sets up the agent by setting the number of lanes and neighbour
@@ -129,7 +117,7 @@ public class osAgent extends Agent {
             for (int i = 0; i < msi.capacity(); i++) {
                 msi.add(new MSI());
             }
-            centralMeasures = new Vector<Measure>();
+            centralMeasures = new Vector<CentralMeasure>();
 
             // Set up the gui
             // myGui = new osGui(this);
@@ -166,22 +154,26 @@ public class osAgent extends Agent {
             // Set message queue size
             // setQueueSize(10);
 
+            MessageTemplate requestTemplate = MessageTemplate.and(
+				MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST),
+                MessageTemplate.MatchPerformative(ACLMessage.REQUEST));
+
             try {
                 TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
                 final AID topicCentral = topicHelper.createTopic("CENTRAL");
                 topicHelper.register(topicCentral);
+
+                MessageTemplate centralTemplate = MessageTemplate.and(requestTemplate,
+                    MessageTemplate.MatchTopic(topicCentral));
+                addBehaviour(new ReceiveCentralDisplay(this,centralTemplate));
             } catch (ServiceException e) {
                 System.out.println("Wrong configuration for " + getAID().getName());
                 doDelete();
             }
 
-            MessageTemplate requestTemplate = MessageTemplate.and(
-				MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST),
-                MessageTemplate.MatchPerformative(ACLMessage.REQUEST));
             MessageTemplate DisplayTemplate = MessageTemplate.and(requestTemplate,
                 MessageTemplate.MatchOntology(DISPLAY));
-
-            addBehaviour(new ReceiveSensorData(this,DisplayTemplate));
+            addBehaviour(new ReceiveDisplay(this,DisplayTemplate));
 
             // Configure broadcast for configuration
             try {
@@ -195,7 +187,7 @@ public class osAgent extends Agent {
 
             // Configuration response
             MessageTemplate ConfigTemplate = MessageTemplate.and(requestTemplate,
-                MessageTemplate.MatchOntology("CONFIGURATION"));
+                MessageTemplate.MatchTopic(topicConfiguration));
             
             addBehaviour(new ConfigurationResponder(this, ConfigTemplate));
             
@@ -231,6 +223,21 @@ public class osAgent extends Agent {
     protected void takeDown() {
         // Printout a dismissal message
         System.out.println("OS " + getAID().getName() + " terminating.");
+        Iterator<MSI> msiIterator = msi.iterator();
+        while (msiIterator.hasNext()) {
+            msiIterator.next().setSymbol(MSI.BLANK);
+        }
+        ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
+        newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+        newMsg.setOntology("SYMBOLS");
+        JSONArray matrixJson = new JSONArray();
+        msiIterator = msi.iterator();
+        while (msiIterator.hasNext()) {
+            matrixJson.put(msiIterator.next().getSymbol());
+        }
+        newMsg.setContent(matrixJson.toString());
+        newMsg.addReceiver(central);
+        send(newMsg);
         // myGui.dispose();
     }
 
@@ -405,5 +412,12 @@ public class osAgent extends Agent {
      */
     public void resetTimeDownstream() {
         this.timeDownstream = System.currentTimeMillis();
+    }
+
+    /**
+     * @return the centralMsi
+     */
+    public Vector<CentralMeasure> getCentralMeasures() {
+        return centralMeasures;
     }
 }

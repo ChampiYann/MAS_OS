@@ -49,6 +49,8 @@ public class ConfigurationResponder extends AchieveREResponder {
 
             System.out.println("upstream neighbour for " + outer.getLocal().getAID.getLocalName() + " is " + outer.getUpstream().getAID.getLocalName());
 
+            outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
+
             ACLMessage result = request.createReply();
             result.setPerformative(ACLMessage.INFORM);
             result.setContent(outer.getLocal().configToJSON());

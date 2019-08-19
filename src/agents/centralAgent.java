@@ -20,7 +20,6 @@ import jade.core.messaging.TopicManagementHelper;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import measure.CrossMeasure;
 import measure.Measure;
 import measure.NoMeasure;
 
@@ -29,7 +28,7 @@ public class centralAgent extends Agent {
     private static final long serialVersionUID = 1L;
 
     // Measures
-    private ArrayList<CrossMeasure> measures = new ArrayList<CrossMeasure>();
+    private ArrayList<Measure> measures = new ArrayList<Measure>();
 
     // GUI
     transient protected centralGui myGui;
@@ -145,14 +144,22 @@ public class centralAgent extends Agent {
         return myGui;
     }
 
-    public ArrayList<CrossMeasure> getMeasures() {
+    public ArrayList<Measure> getMeasures() {
         return measures;
     }
 
+    /**
+     * 
+     * @return the centralTopic
+     */
     public AID getCentralTopic() {
         return centralTopic;
     }
 
+    /**
+     * 
+     * @return the measureReader
+     */
     public BufferedReader getMeasureReader() {
         return measureReader;
     }

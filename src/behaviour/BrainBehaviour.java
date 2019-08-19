@@ -6,6 +6,7 @@ import java.util.Vector;
 
 import agents.osAgent;
 import jade.core.behaviours.OneShotBehaviour;
+import measure.CentralMeasure;
 import measure.MSI;
 
 public class BrainBehaviour extends OneShotBehaviour {
@@ -36,10 +37,17 @@ public class BrainBehaviour extends OneShotBehaviour {
         }
         Iterator<MSI> newMsiIterator = newMsi.iterator();
         //TODO: Check central rules first
-        // Iterator<Measure> centralIterator = centralMeasures.iterator();
-        // while(centralIterator.hasNext()) {
-        //     Measure centralMeasure = centralIterator.next();
-        // }
+        Iterator<CentralMeasure> centralIterator = outer.getCentralMeasures().iterator();
+        while(centralIterator.hasNext()) {
+            CentralMeasure centralMeasure = centralIterator.next();
+            if ((centralMeasure.getEnd() < outer.getLocal().location &&
+            outer.getLocal().location <= centralMeasure.getStart()) ||
+            (outer.getUpstream().location < centralMeasure.getStart() && 
+            centralMeasure.getStart()< outer.getLocal().location &&
+            centralMeasure.getEnd() < outer.getLocal().location)) {
+                newMsi = centralMeasure.getMsi();
+            }
+        }
         //Check local congestion second
         newMsiIterator = newMsi.iterator();
         if (outer.getCongestion() == true) {
@@ -54,22 +62,21 @@ public class BrainBehaviour extends OneShotBehaviour {
             Iterator<MSI> downstreamMsiIterator = outer.getDownstreamMsi().iterator();
             //TODO: change value to ficitional downstream msi and apply taper, expansion, etc rules afterwards
             newMsiIterator = newMsi.iterator();
+
             while (downstreamMsiIterator.hasNext()) {
                 MSI nextDownstreamMsi = downstreamMsiIterator.next();
                 if (nextDownstreamMsi.getSymbol() == MSI.X) {
                     newMsiIterator.next().changeState(MSI.ARROW_L);
-                }
-                if (nextDownstreamMsi.getSymbol() == MSI.ARROW_L) {
+                } else if (nextDownstreamMsi.getSymbol() == MSI.ARROW_L) {
                     newMsiIterator.next().changeState(MSI.NF_90);
-                }
-                if (nextDownstreamMsi.getSymbol() == MSI.NF_70 || nextDownstreamMsi.getSymbol() == MSI.F_70) {
+                } else if (nextDownstreamMsi.getSymbol() == MSI.NF_70 || nextDownstreamMsi.getSymbol() == MSI.F_70) {
                     newMsiIterator.next().changeState(MSI.NF_90);
-                }
-                if (nextDownstreamMsi.getSymbol() == MSI.NF_50 || nextDownstreamMsi.getSymbol() == MSI.F_50) {
+                } else if (nextDownstreamMsi.getSymbol() == MSI.NF_50 || nextDownstreamMsi.getSymbol() == MSI.F_50) {
                     newMsiIterator.next().changeState(MSI.NF_70);
-                }
-                if (nextDownstreamMsi.getSymbol() == MSI.NF_90 || nextDownstreamMsi.getSymbol() == MSI.F_90) {
+                } else if (nextDownstreamMsi.getSymbol() == MSI.NF_90 || nextDownstreamMsi.getSymbol() == MSI.F_90) {
                     newMsiIterator.next().changeState(MSI.BLANK);
+                } else {
+                    newMsiIterator.next();
                 }
             }
         } catch (NullPointerException e) {
