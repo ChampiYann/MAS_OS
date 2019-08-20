@@ -54,7 +54,6 @@ public class TrafficSensing extends TickerBehaviour {
                 outer.setCongestion(false);
                 myAgent.addBehaviour(new BrainBehaviour((osAgent)myAgent));
                 System.out.println("Congestion cleared!");
-
             }
             steps -= 1;
         }

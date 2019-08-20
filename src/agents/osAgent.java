@@ -1,8 +1,6 @@
 package agents;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Vector;
@@ -12,17 +10,17 @@ import java.util.regex.Pattern;
 import org.json.JSONArray;
 
 import behaviour.ConfigurationResponder;
+import behaviour.EnvironmentInputBehaviour;
 import behaviour.HBReaction;
 import behaviour.HBResponder;
 import behaviour.HBSender;
 import behaviour.ReceiveCentralDisplay;
 import behaviour.ReceiveDisplay;
-import behaviour.TrafficSensing;
 import config.Configuration;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.ServiceException;
-import jade.core.behaviours.WakerBehaviour;
+import jade.core.behaviours.Behaviour;
 import jade.core.messaging.TopicManagementHelper;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
@@ -91,12 +89,17 @@ public class osAgent extends Agent {
             lanes = Integer.parseInt((String) args[0]);
             String configuration = (String)args[1];
 
-            try {
-                congestionReader = new BufferedReader(new FileReader("config\\" + configuration + ".txt"));
-            } catch (IOException e) {
-                System.out.println("Wrong configuration for " + getAID().getName());
-                doDelete();
-            }
+            // try {
+            //     congestionReader = new BufferedReader(new FileReader("config\\" + configuration + ".txt"));
+            // } catch (IOException e) {
+            //     System.out.println("Wrong configuration for " + getAID().getName());
+            //     doDelete();
+            // }
+
+            setEnabledO2ACommunication(true,0);
+            Behaviour o2aBehaviour = new EnvironmentInputBehaviour(this, minute);
+            addBehaviour(o2aBehaviour);
+            setO2AManager(o2aBehaviour);
 
             // Declare central agent
             central = getAID("central");
@@ -191,14 +194,14 @@ public class osAgent extends Agent {
             
             addBehaviour(new ConfigurationResponder(this, ConfigTemplate));
             
-            Date wakeupDate = new Date((long) args[2]);
-            // Add behaviour simulting traffic passing by but delay it by 1 second
-            addBehaviour(new WakerBehaviour(this, wakeupDate) {
-                @Override
-                protected void onWake() {
-                    myAgent.addBehaviour(new TrafficSensing(myAgent, minute, getWakeupTime()));
-                }
-            });
+            // Date wakeupDate = new Date((long) args[2]);
+            // // Add behaviour simulting traffic passing by but delay it by 1 second
+            // addBehaviour(new WakerBehaviour(this, wakeupDate) {
+            //     @Override
+            //     protected void onWake() {
+            //         myAgent.addBehaviour(new TrafficSensing(myAgent, minute, getWakeupTime()));
+            //     }
+            // });
 
             // Behaviour that periodically sends a heartbeat upstream
             addBehaviour(new HBSender(this, minute/2));

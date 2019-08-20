@@ -1,12 +1,27 @@
 import jade.core.Runtime;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.Vector;
 
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.wrapper.*;
 
+import org.apache.commons.math3.distribution.WeibullDistribution;
+
+import agents.osAgent;
+import environment.Outstation;
+
 public class Launch {
+
+    public static final long minute = 400;
+
     public static void main(String[] args) {
         // Get a hold on JADE runtime
         Runtime rt = Runtime.instance();
@@ -44,12 +59,12 @@ public class Launch {
         String[] configurations = new String[listOfFiles.length];
         for (int i = 0; i < listOfFiles.length; i++) {
             configurations[i] = listOfFiles[i].getName();
-            configurations[i] = configurations[i].substring(0, configurations[i].length()-4);
+            configurations[i] = configurations[i].substring(0, configurations[i].length() - 4);
         }
 
         // Create 5 new osAgents
         int numOS = configurations.length;
-        AgentController[] OSAgents = new AgentController[numOS];
+        Vector<Outstation> outstations = new Vector<Outstation>(numOS);
 
         for (int i = 0; i < numOS; i++) {
             name = "agent" + Integer.toString(i+1);
@@ -60,13 +75,59 @@ public class Launch {
             agentArgs[2] = centralArgs[0];
             try {
                 // Initiae osAgent
-                OSAgents[i] = cc.createNewAgent(name, "agents.osAgent", agentArgs);
+                try {
+                    outstations.add(new Outstation(name, agentArgs, cc));
+                } catch (FileNotFoundException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
                 // Fire up the agent
-                OSAgents[i].start();
+                outstations.get(i).start();
             } catch (StaleProxyException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
+        
+        WeibullDistribution distribution = new WeibullDistribution(0.4360,792.0608);
+        Random rand = new Random();
+
+        Timer timer = new Timer();
+        TimerTask task = new TimerTask(){
+        
+            @Override
+            public void run() {
+                Iterator<Outstation> outstationIterator = outstations.iterator();
+                while (outstationIterator.hasNext()) {
+                    Outstation nextOutstation = outstationIterator.next();
+                    try {
+                        nextOutstation.handleDelay();
+                    } catch (StaleProxyException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                    try {
+                        nextOutstation.sendCongestion();
+                    } catch (StaleProxyException | IOException e1) {
+                        // TODO Auto-generated catch block
+                        e1.printStackTrace();
+                    }
+                    if (rand.nextInt(1000) <= 0) {
+                        long restartDelaySeconds = Math.round(distribution.sample()+1);
+                        // System.out.println(Math.round(distribution.sample()/60)+1);
+                        long restartDelayMinutes = restartDelaySeconds/60;
+                        try {
+                            nextOutstation.kill(restartDelayMinutes);
+                        } catch (StaleProxyException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        };
+
+        long delay = (long)centralArgs[0] - System.currentTimeMillis();
+        timer.scheduleAtFixedRate(task, delay, osAgent.minute);
     }
 }

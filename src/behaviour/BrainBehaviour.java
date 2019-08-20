@@ -22,7 +22,7 @@ public class BrainBehaviour extends OneShotBehaviour {
 
     @Override
     public void action () {
-        //TODO: add all rules here
+        //add all rules here
         //Normalise AID rule to 50
         //DIF-V to spread to other traffic streams
         //Continue-v rule or Extend-v rule depending on relation with downstream OS
@@ -36,7 +36,7 @@ public class BrainBehaviour extends OneShotBehaviour {
             newMsi.add(new MSI());
         }
         Iterator<MSI> newMsiIterator = newMsi.iterator();
-        //TODO: Check central rules first
+        //Check central rules first
         Iterator<CentralMeasure> centralIterator = outer.getCentralMeasures().iterator();
         while(centralIterator.hasNext()) {
             CentralMeasure centralMeasure = centralIterator.next();
