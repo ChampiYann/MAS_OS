@@ -3,6 +3,7 @@ import jade.core.Runtime;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.time.LocalTime;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Timer;
@@ -21,6 +22,8 @@ import environment.Outstation;
 public class Launch {
 
     public static final long minute = 400;
+    static volatile AgentController central = null;
+    static volatile LocalTime time =  LocalTime.of(1, 0, 0);
 
     public static void main(String[] args) {
         // Get a hold on JADE runtime
@@ -41,7 +44,7 @@ public class Launch {
             // Fire up GUI
             rma.start();
             // Initiate central
-            AgentController central = cc.createNewAgent("central", "agents.centralAgent", centralArgs);
+            central = cc.createNewAgent("central", "agents.centralAgent", null);
             // Fire up central
             central.start();
         } catch (StaleProxyException e) {
@@ -72,7 +75,6 @@ public class Launch {
             Object agentArgs[] = new Object[3];
             agentArgs[0] = lanes;
             agentArgs[1] = configurations[numOS-1-i];
-            agentArgs[2] = centralArgs[0];
             try {
                 // Initiae osAgent
                 try {
@@ -91,39 +93,40 @@ public class Launch {
         
         WeibullDistribution distribution = new WeibullDistribution(0.4360,792.0608);
         Random rand = new Random();
-
         Timer timer = new Timer();
         TimerTask task = new TimerTask(){
         
             @Override
             public void run() {
+                try {
+                    central.putO2AObject(time, AgentController.ASYNC);
+                } catch (StaleProxyException e2) {
+                    // TODO Auto-generated catch block
+                    e2.printStackTrace();
+                }
+
                 Iterator<Outstation> outstationIterator = outstations.iterator();
                 while (outstationIterator.hasNext()) {
                     Outstation nextOutstation = outstationIterator.next();
                     try {
-                        nextOutstation.handleDelay();
-                    } catch (StaleProxyException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                    try {
                         nextOutstation.sendCongestion();
                     } catch (StaleProxyException | IOException e1) {
                         // TODO Auto-generated catch block
-                        e1.printStackTrace();
+                        // e1.printStackTrace();
                     }
-                    if (rand.nextInt(1000) <= 0) {
-                        long restartDelaySeconds = Math.round(distribution.sample()+1);
-                        // System.out.println(Math.round(distribution.sample()/60)+1);
-                        long restartDelayMinutes = restartDelaySeconds/60;
-                        try {
-                            nextOutstation.kill(restartDelayMinutes);
-                        } catch (StaleProxyException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
-                    }
+                    // if (rand.nextInt(500) <= 0) {
+                    //     long restartDelaySeconds = Math.round(distribution.sample()+1);
+                    //     // System.out.println(Math.round(distribution.sample()/60)+1);
+                    //     long restartDelayMinutes = restartDelaySeconds/60;
+                    //     try {
+                    //         nextOutstation.kill(restartDelayMinutes);
+                    //     } catch (StaleProxyException e) {
+                    //         // TODO Auto-generated catch block
+                    //         e.printStackTrace();
+                    //     }
+                    // }
                 }
+                time = time.plusMinutes(1);
             }
         };
 

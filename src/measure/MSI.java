@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class MSI {
     /**
@@ -86,7 +87,7 @@ public class MSI {
      * Compare 2 MSI vectors to check if the MSI content is equal
      * @param v1 First vector to compare
      * @param v2 Second vector to compare
-     * @return True is MSI's in both vectors are the same, returns falase if not.
+     * @return True is MSI's in both vectors are the same, returns false if not.
      */
     public static boolean VectorEqual(Vector<MSI> v1, Vector<MSI> v2) {
         boolean result = true;
@@ -116,6 +117,8 @@ public class MSI {
         while(inputIterator.hasNext()) {
             outputArray.put(inputIterator.next().getSymbol());
         }
-        return outputArray.toString();
+        JSONObject content = new JSONObject();
+        content.put("msi", outputArray);
+        return content.toString();
     }
 }

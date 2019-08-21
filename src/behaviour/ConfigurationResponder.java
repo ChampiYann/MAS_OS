@@ -1,5 +1,6 @@
 package behaviour;
 
+import java.util.NoSuchElementException;
 import java.util.Vector;
 
 import agents.osAgent;
@@ -47,9 +48,17 @@ public class ConfigurationResponder extends AchieveREResponder {
 
             outer.resetTimeUpstream();
 
+            outer.addBehaviour(new BrainBehaviour((osAgent)myAgent));
+
             System.out.println("upstream neighbour for " + outer.getLocal().getAID.getLocalName() + " is " + outer.getUpstream().getAID.getLocalName());
 
             outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
+
+            try {
+                outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, outer.getCentralMeasures().firstElement().toJSON().toString());
+            } catch (NoSuchElementException e) {
+                //TODO: handle exception
+            }
 
             ACLMessage result = request.createReply();
             result.setPerformative(ACLMessage.INFORM);

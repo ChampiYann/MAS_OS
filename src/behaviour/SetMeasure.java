@@ -18,33 +18,25 @@ public class SetMeasure extends TickerBehaviour {
 
     private centralAgent outer;
 
-    private long T;
-    private long simLastTime;
-    private LocalTime time;
-
-    public SetMeasure(Agent a, long period, long wakeUpTime) {
+    public SetMeasure(Agent a, long period) {
         super(a, period);
         outer = (centralAgent)a;
-        T = period;
-        simLastTime = wakeUpTime;
-        time = LocalTime.of(1, 0, 0);
     }
 
     @Override
     protected void onTick() {
-        boolean done = false;
-        long simCurrentTime = System.currentTimeMillis();
-        long elapsedTime = simCurrentTime - simLastTime;
-        long steps = elapsedTime/T;
-        simLastTime += steps*T;
-        while (steps > 0) {
+        Object input = outer.getO2AObject();
+        if (input != null) {
+            LocalTime timeInput = (LocalTime)input;
+            outer.setTime(timeInput);
+            boolean done = false;
             while(!done) {
                 try {
                     String line = null;
                     line = outer.getMeasureReader().readLine();
                     String[] values = line.split(",");
                     LocalTime lineStartTime = LocalTime.parse(values[1]);
-                    if (lineStartTime.compareTo(time.plusMinutes(1)) > -1) {
+                    if (lineStartTime.compareTo(timeInput.plusMinutes(1)) > -1) {
                         outer.getMeasureReader().reset();
                         done = true;
                     } else {
@@ -59,7 +51,7 @@ public class SetMeasure extends TickerBehaviour {
                         if (startKm == endKm) {
                             endKm -= (float)0.001;
                         }
-                        Measure mr = new Measure(outer.getAID(), time, LocalTime.parse(values[3]), values[4], startKm, endKm, lanes);
+                        Measure mr = new Measure(outer.getAID(), timeInput, LocalTime.parse(values[3]), values[4], startKm, endKm, lanes);
                         outer.getMeasures().add(mr);
                         addMeasure(mr);
                     }
@@ -73,14 +65,12 @@ public class SetMeasure extends TickerBehaviour {
             Iterator<Measure> iterator = outer.getMeasures().iterator();
             while (iterator.hasNext()) {
                 Measure mr = iterator.next();
-                if (mr.getEndTime().compareTo(time) == 0) {
+                if (mr.getEndTime().compareTo(timeInput) == 0) {
                     // remove measure and  send cancel
                     cancelMeasure(mr);
                     iterator.remove();
                 }
             }
-            time = time.plusMinutes(1);
-            steps -= 1;
         }
     }
 

@@ -46,9 +46,6 @@ public class centralGui extends JFrame {
     private JPanel refRoad;
     private JTextField timeText;
 
-    private LocalTime time;
-    private long simLastTime;
-
     private ArrayList<Portal> portalList = new ArrayList<Portal>();
     private ArrayList<RefConfiguration> refConfigList = new ArrayList<RefConfiguration>();
     private ArrayList<RefPortal> refPortalList = new ArrayList<RefPortal>();
@@ -57,7 +54,7 @@ public class centralGui extends JFrame {
 
     private FileWriter logWriter;
 
-    public centralGui(centralAgent agent, long simStartTime) {
+    public centralGui(centralAgent agent) {
         myAgent = agent;
         setSize(canvasWidth, canvasHeight);
         getContentPane().setLayout(null);
@@ -96,26 +93,19 @@ public class centralGui extends JFrame {
             //TODO: handle exception
         }
 
-        simLastTime = simStartTime;
-        time = LocalTime.of(1, 0, 0);
-        long T = osAgent.minute; // milliseconds
         ActionListener taskPerformer = new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                if (System.currentTimeMillis() > simStartTime) {
-                    boolean done = false;
-                    long simCurrentTime = System.currentTimeMillis();
-                    long elapsedTime = simCurrentTime - simLastTime;
-                    long steps = elapsedTime/T;
-                    simLastTime += steps*T;
-                    while (steps > 0) {
+                if (agent.getTime() != null) {
+
+                        boolean done = false;
                         while(!done) {
                             try {
-                                timeText.setText(time.toString());
+                                timeText.setText(agent.getTime().toString());
                                 String line = null;
                                 line = msiReplay.readLine().replaceAll(",", ".");
                                 String[] values = line.split(";");
                                 LocalTime lineTime = LocalTime.parse(values[1]);
-                                if (lineTime.compareTo(time.plusMinutes(1)) > -1) {
+                                if (lineTime.compareTo(agent.getTime().plusMinutes(1)) > -1) {
                                     msiReplay.reset();
                                     done = true;
                                 } else {
@@ -135,7 +125,7 @@ public class centralGui extends JFrame {
                             Portal portal = portalIterator.next();
                             RefPortal refPortal = refPortalIterator.next();
                             try {
-                                logWriter.write(time.toString() + "," + refPortal.getLocation() + "," + refPortal.msg[3].getForeground().getBlue() +
+                                logWriter.write(agent.getTime().toString() + "," + refPortal.getLocation() + "," + refPortal.msg[3].getForeground().getBlue() +
                                     "," + refPortal.msg[0].getText() + "," + refPortal.msg[1].getText() + "," + refPortal.msg[2].getText() +
                                     "," + refPortal.getLocation() + "," + portal.msg[0].getText() + "," + portal.msg[1].getText() +
                                     "," + portal.msg[2].getText() + "\n");
@@ -144,13 +134,10 @@ public class centralGui extends JFrame {
                                 e.printStackTrace();
                             }
                         }
-                        time = time.plusMinutes(1);
-                        steps -= 1;
                     }
                 }
-            }
         };
-        new Timer((int)T, taskPerformer).start();
+        new Timer((int)osAgent.minute, taskPerformer).start();
 
         File folder = new File("config");
         File[] listOfFiles = folder.listFiles();

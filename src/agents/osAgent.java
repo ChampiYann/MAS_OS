@@ -89,13 +89,6 @@ public class osAgent extends Agent {
             lanes = Integer.parseInt((String) args[0]);
             String configuration = (String)args[1];
 
-            // try {
-            //     congestionReader = new BufferedReader(new FileReader("config\\" + configuration + ".txt"));
-            // } catch (IOException e) {
-            //     System.out.println("Wrong configuration for " + getAID().getName());
-            //     doDelete();
-            // }
-
             setEnabledO2ACommunication(true,0);
             Behaviour o2aBehaviour = new EnvironmentInputBehaviour(this, minute);
             addBehaviour(o2aBehaviour);
@@ -193,15 +186,6 @@ public class osAgent extends Agent {
                 MessageTemplate.MatchTopic(topicConfiguration));
             
             addBehaviour(new ConfigurationResponder(this, ConfigTemplate));
-            
-            // Date wakeupDate = new Date((long) args[2]);
-            // // Add behaviour simulting traffic passing by but delay it by 1 second
-            // addBehaviour(new WakerBehaviour(this, wakeupDate) {
-            //     @Override
-            //     protected void onWake() {
-            //         myAgent.addBehaviour(new TrafficSensing(myAgent, minute, getWakeupTime()));
-            //     }
-            // });
 
             // Behaviour that periodically sends a heartbeat upstream
             addBehaviour(new HBSender(this, minute/2));

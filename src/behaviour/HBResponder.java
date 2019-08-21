@@ -51,6 +51,7 @@ public class HBResponder extends TickerBehaviour {
                 outer.getDownstreamMsi().add(new MSI());
             }
             outer.sendMeasure(outer.getDownstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
+            outer.addBehaviour(new BrainBehaviour(outer));
             System.out.println("downstream neighbour for " + outer.getLocal().getAID.getLocalName() + " is " + outer.getDownstream().getAID.getLocalName());
         }
     }

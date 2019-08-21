@@ -1,7 +1,6 @@
 package behaviour;
 
 import java.util.Iterator;
-import java.util.ListIterator;
 import java.util.Vector;
 
 import agents.osAgent;
@@ -30,7 +29,7 @@ public class BrainBehaviour extends OneShotBehaviour {
         //(STAT-V, MAX-V, DYN-V)
         //Flasher rule if speed is lower that upstream
         //
-
+        
         Vector<MSI> newMsi = new Vector<MSI>(outer.getLocal().lanes);
         for (int i = 0; i < newMsi.capacity(); i++) {
             newMsi.add(new MSI());
@@ -40,14 +39,20 @@ public class BrainBehaviour extends OneShotBehaviour {
         Iterator<CentralMeasure> centralIterator = outer.getCentralMeasures().iterator();
         while(centralIterator.hasNext()) {
             CentralMeasure centralMeasure = centralIterator.next();
-            if ((centralMeasure.getEnd() < outer.getLocal().location &&
-            outer.getLocal().location <= centralMeasure.getStart()) ||
-            (outer.getUpstream().location < centralMeasure.getStart() && 
-            centralMeasure.getStart()< outer.getLocal().location &&
-            centralMeasure.getEnd() < outer.getLocal().location)) {
-                newMsi = centralMeasure.getMsi();
+            if ((centralMeasure.getEnd() <= outer.getLocal().location && outer.getLocal().location <= centralMeasure.getStart()) ||
+            (outer.getLocal().location < centralMeasure.getStart() && outer.getDownstream().location > centralMeasure.getEnd()) ||
+            (outer.getLocal().location > centralMeasure.getEnd() && outer.getUpstream().location < centralMeasure.getStart())) {
+                Iterator<MSI> centralMsiIterator = centralMeasure.getMsi().iterator();
+                newMsiIterator = newMsi.iterator();
+                while (centralMsiIterator.hasNext()) {
+                    newMsiIterator.next().changeState(centralMsiIterator.next().getSymbol());
+                }
             }
         }
+        //TODO: DIF-V rule
+        // newMsiIterator = newMsi.iterator();
+        DifV(newMsi);
+
         //Check local congestion second
         newMsiIterator = newMsi.iterator();
         if (outer.getCongestion() == true) {
@@ -55,7 +60,6 @@ public class BrainBehaviour extends OneShotBehaviour {
                 newMsiIterator.next().changeState(MSI.NF_50);
             }
         }
-        //TODO: DIF-V rule
 
         //Check downstream third
         try {
@@ -82,14 +86,17 @@ public class BrainBehaviour extends OneShotBehaviour {
         } catch (NullPointerException e) {
             //This agent has no downstream neighbour
         }
+
+        //Check DIF-V again
+        DifV(newMsi);
         
         //Check upstream last
         try {
             Iterator<MSI> upstreamMsiIterator = outer.getUpstreamMsi().iterator();
-            ListIterator<MSI> newMsiListIterator = newMsi.listIterator();
+            newMsiIterator = newMsi.iterator();
             while (upstreamMsiIterator.hasNext()) {
                 MSI nextUpstreamMsi = upstreamMsiIterator.next();
-                MSI nextNewMsi = newMsiListIterator.next();
+                MSI nextNewMsi = newMsiIterator.next();
                 if (nextUpstreamMsi.getSymbol() == MSI.X) {
                     nextNewMsi.changeState(MSI.EOR);
                 }
@@ -101,6 +108,8 @@ public class BrainBehaviour extends OneShotBehaviour {
             //This agent has no upstream neighbour
         }
         
+        //Check DIF-V again
+        DifV(newMsi);
 
         if (!MSI.VectorEqual(outer.getMsi(), newMsi)) {
             //update MSI with display
@@ -109,6 +118,28 @@ public class BrainBehaviour extends OneShotBehaviour {
             //send messages to neighbours
             outer.sendMeasure(outer.getDownstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
             outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
+        }
+    }
+
+    private void DifV(Vector<MSI> newMsi) {
+        for (int i = 0; i < newMsi.size(); i++) {
+            for (int j = 0; j < newMsi.size(); j++) {
+                if (newMsi.get(j).getSymbol() == MSI.X && i != j) {
+                    newMsi.get(i).changeState(MSI.NF_70);
+                } 
+                if (newMsi.get(j).getSymbol() == MSI.NF_70 && i > j) {
+                    newMsi.get(i).changeState(MSI.NF_70);
+                }
+                if (newMsi.get(j).getSymbol() == MSI.NF_70 && i < j) {
+                    newMsi.get(i).changeState(MSI.NF_90);
+                }
+                if (newMsi.get(j).getSymbol() == MSI.NF_90 && i != j) {
+                    newMsi.get(i).changeState(MSI.NF_90);
+                }
+                if (newMsi.get(j).getSymbol() == MSI.EOR && i != j) {
+                    newMsi.get(i).changeState(MSI.EOR);
+                }
+            }
         }
     }
 }
