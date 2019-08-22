@@ -34,8 +34,15 @@ public class HandleCentral extends AchieveREResponder {
     @Override
     protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
         JSONObject msgContent = new JSONObject(request.getContent());
+        Iterator<CentralMeasure> centralMeasureIterator = outer.getCentralMeasures().iterator();
+        boolean flag = false;
+        while (centralMeasureIterator.hasNext()) {
+            if (centralMeasureIterator.next().getID() == msgContent.getLong("ID")) {
+                flag = true;
+            }
+        }
 
-        if (request.getOntology().equals("ADD")) {
+        if (request.getOntology().equals("ADD") && flag == false) {
             JSONArray osListJSON = msgContent.getJSONArray("osList");
             Iterator<Object> osListIterator = osListJSON.iterator();
             while (osListIterator.hasNext()) {

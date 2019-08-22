@@ -1,5 +1,7 @@
 package behaviour;
 
+import java.util.NoSuchElementException;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -45,6 +47,14 @@ public class ConfigurationResponder extends AchieveREResponder {
 
             outer.resetTimeUpstream();
 
+            outer.sendMeasure(outer.getCongestion().firstElement().toString());
+
+            try {
+                outer.sendCentralMeasure(outer.getCentralMeasures().firstElement().toJSON().toString());
+            } catch (NoSuchElementException e) {
+                //TODO: handle exception
+            }
+
             System.out.println("up " + outer.getLocal().location + ": " + outer.getUpstream().location);
 
             ACLMessage result = request.createReply();
@@ -53,10 +63,7 @@ public class ConfigurationResponder extends AchieveREResponder {
             return result;
         } else if (newConfig.location > outer.getLocal().location &&
         newConfig.location < outer.getDownstream().firstElement().location) {
-        // !Configuration.ConfigurationEqual(newConfig, outer.getDownstream().firstElement())) {
-            // outer.getDownstream().removeElement(outer.getDownstream().lastElement());
             outer.getDownstream().set(0,newConfig);
-            // outer.getDownstream().sort(Configuration.kmCompare);
 
             outer.getCongestion().set(1, jsonCongestion.getBoolean(0));
             outer.getCongestion().set(2, jsonCongestion.getBoolean(1));

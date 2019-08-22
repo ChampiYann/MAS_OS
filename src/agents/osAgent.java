@@ -24,7 +24,7 @@ import config.Configuration;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.ServiceException;
-import jade.core.behaviours.WakerBehaviour;
+import jade.core.behaviours.Behaviour;
 import jade.core.messaging.TopicManagementHelper;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
@@ -65,6 +65,7 @@ public class osAgent extends Agent {
     // Topic
     private AID topicConfiguration;
     private AID topicMeasure;
+    private AID topicCentral;
 
     // Retries
     private long timeUpstream = 0;
@@ -98,6 +99,11 @@ public class osAgent extends Agent {
                 System.out.println("Wrong configuration for " + getAID().getName());
                 doDelete();
             }
+
+            setEnabledO2ACommunication(true,0);
+            Behaviour o2aBehaviour = new TrafficSensing(this, minute);
+            addBehaviour(o2aBehaviour);
+            setO2AManager(o2aBehaviour);
 
             // Declare central agent
             central = getAID("central");
@@ -171,7 +177,7 @@ public class osAgent extends Agent {
 
             try {
                 TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
-                final AID topicCentral = topicHelper.createTopic("CENTRAL");
+                topicCentral = topicHelper.createTopic("CENTRAL");
                 topicHelper.register(topicCentral);
 
                 MessageTemplate centralTemplate = MessageTemplate.and(requestTemplate,
@@ -214,14 +220,14 @@ public class osAgent extends Agent {
                 doDelete();
             }
             
-            Date wakeupDate = new Date((long) args[2]);
-            // Add behaviour simulting traffic passing by but delay it by 1 second
-            addBehaviour(new WakerBehaviour(this, wakeupDate) {
-                @Override
-                protected void onWake() {
-                    myAgent.addBehaviour(new TrafficSensing(myAgent, minute, getWakeupTime()));
-                }
-            });
+            // Date wakeupDate = new Date((long) args[2]);
+            // // Add behaviour simulting traffic passing by but delay it by 1 second
+            // addBehaviour(new WakerBehaviour(this, wakeupDate) {
+            //     @Override
+            //     protected void onWake() {
+            //         myAgent.addBehaviour(new TrafficSensing(myAgent, minute, getWakeupTime()));
+            //     }
+            // });
 
             // Behaviour that periodically sends a heartbeat upstream
             addBehaviour(new HBSender(this, minute/2));
@@ -288,6 +294,15 @@ public class osAgent extends Agent {
         // newMsg.setOntology(MEASURE);
         newMsg.setContent(content);
         newMsg.addReceiver(topicMeasure);
+        this.addBehaviour(new AchieveREInitiator(this, newMsg));
+    }
+
+    public void sendCentralMeasure (String content) {
+        ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
+        newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+        // newMsg.setOntology(MEASURE);
+        newMsg.setContent(content);
+        newMsg.addReceiver(topicCentral);
         this.addBehaviour(new AchieveREInitiator(this, newMsg));
     }
 

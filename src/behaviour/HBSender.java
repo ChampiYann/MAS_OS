@@ -24,5 +24,4 @@ public class HBSender extends TickerBehaviour {
         HBRequest.setContent(outer.getLocal().configToJSON().toString());
         myAgent.send(HBRequest);
     }
-
 }

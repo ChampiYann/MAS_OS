@@ -4,8 +4,8 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Date;
 
 import behaviour.CentralConfigurationResponder;
 import behaviour.SetMeasure;
@@ -15,7 +15,7 @@ import gui.centralGui;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.ServiceException;
-import jade.core.behaviours.WakerBehaviour;
+import jade.core.behaviours.Behaviour;
 import jade.core.messaging.TopicManagementHelper;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
@@ -39,16 +39,18 @@ public class centralAgent extends Agent {
 
     private BufferedReader measureReader;
 
+    private LocalTime time;
+
     @Override
     protected void setup() {
 
-        Object[] args = getArguments();
+        // Object[] args = getArguments();
         
         // Print out welcome message
         System.out.println("Hello! Central agent is ready.");
 
         // Set up the gui
-        myGui = new centralGui(this, (long)args[0]);
+        myGui = new centralGui(this);
         myGui.setVisible(true);
 
         myGui.addPortal();
@@ -75,13 +77,18 @@ public class centralAgent extends Agent {
             TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
             centralTopic = topicHelper.createTopic("CENTRAL");
 
-            Date wakeupDate = new Date((long) args[0]);
-            addBehaviour(new WakerBehaviour(this, wakeupDate) {
-                @Override
-                protected void onWake() {
-                    myAgent.addBehaviour(new SetMeasure(myAgent,osAgent.minute,getWakeupTime()));
-                }
-            });
+            setEnabledO2ACommunication(true,0);
+            Behaviour o2aBehaviour = new SetMeasure(this, osAgent.minute);
+            addBehaviour(o2aBehaviour);
+            setO2AManager(o2aBehaviour);
+
+            // Date wakeupDate = new Date((long) args[0]);
+            // addBehaviour(new WakerBehaviour(this, wakeupDate) {
+            //     @Override
+            //     protected void onWake() {
+            //         myAgent.addBehaviour(new SetMeasure(myAgent,osAgent.minute,getWakeupTime()));
+            //     }
+            // });
         } catch (ServiceException e) {
             e.printStackTrace();
         }
@@ -131,5 +138,19 @@ public class centralAgent extends Agent {
 
     public BufferedReader getMeasureReader() {
         return measureReader;
+    }
+
+    /**
+     * @param time the time to set
+     */
+    public void setTime(LocalTime time) {
+        this.time = time;
+    }
+
+    /**
+     * @return the time
+     */
+    public LocalTime getTime() {
+        return time;
     }
 }

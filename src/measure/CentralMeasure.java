@@ -4,6 +4,7 @@ import java.util.Vector;
 import java.util.Iterator;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import agents.osAgent;
 
@@ -49,5 +50,15 @@ public class CentralMeasure extends Measure {
      */
     public int getOrder() {
         return order;
+    }
+
+    public JSONObject toJSON() {
+        JSONObject content = new JSONObject();
+        JSONArray osListJSON = new JSONArray(osList);
+        content.put("osList", osListJSON);
+        content.put("ID",ID);
+        JSONArray lanesJSON = new JSONArray(lanes);
+        content.put("lanes", lanesJSON);
+        return content;
     }
 }

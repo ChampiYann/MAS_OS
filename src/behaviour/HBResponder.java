@@ -33,13 +33,12 @@ public class HBResponder extends TickerBehaviour {
                 HBResponse.setContent(outer.getDownstream().firstElement().configToJSON().toString());
             }
             JSONObject jsonContent = new JSONObject(HBRequest.getContent());
-            jsonContent.remove("congestion"); 
+            jsonContent.remove("congestion");
             outer.getUpstream().getConfigFromJSON(jsonContent.toString());
             myAgent.send(HBResponse);
             outer.resetTimeDownstream();
         } else {
             if (System.currentTimeMillis()-outer.getTimeDownstream() > (long)osAgent.minute*2) {
-                // System.out.println("down at " + outer.getLocal().location);
                 outer.SendConfig();
             }
         }
