@@ -2,6 +2,7 @@ import jade.core.Runtime;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.util.Iterator;
@@ -90,47 +91,67 @@ public class Launch {
                 e.printStackTrace();
             }
         }
-        
-        WeibullDistribution distribution = new WeibullDistribution(0.4360,792.0608);
-        Random rand = new Random();
-        Timer timer = new Timer();
-        TimerTask task = new TimerTask(){
-        
-            @Override
-            public void run() {
-                try {
-                    central.putO2AObject(time, AgentController.ASYNC);
-                } catch (StaleProxyException e2) {
-                    // TODO Auto-generated catch block
-                    e2.printStackTrace();
-                }
+        FileWriter killWriter;
+        try {
+            killWriter = new FileWriter("kill_log.txt");
 
-                Iterator<Outstation> outstationIterator = outstations.iterator();
-                while (outstationIterator.hasNext()) {
-                    Outstation nextOutstation = outstationIterator.next();
+            WeibullDistribution distribution = new WeibullDistribution(0.4360,792.0608);
+            Random rand = new Random();
+            Timer timer = new Timer();
+            TimerTask task = new TimerTask(){
+            
+                @Override
+                public void run() {
                     try {
-                        nextOutstation.sendCongestion();
-                    } catch (StaleProxyException | IOException e1) {
+                        central.putO2AObject(time, AgentController.ASYNC);
+                    } catch (StaleProxyException e2) {
                         // TODO Auto-generated catch block
-                        // e1.printStackTrace();
+                        e2.printStackTrace();
                     }
-                    // if (rand.nextInt(500) <= 0) {
-                    //     long restartDelaySeconds = Math.round(distribution.sample()+1);
-                    //     // System.out.println(Math.round(distribution.sample()/60)+1);
-                    //     long restartDelayMinutes = restartDelaySeconds/60;
-                    //     try {
-                    //         nextOutstation.kill(restartDelayMinutes);
-                    //     } catch (StaleProxyException e) {
-                    //         // TODO Auto-generated catch block
-                    //         e.printStackTrace();
-                    //     }
-                    // }
+                    Iterator<Outstation> outstationIterator = outstations.iterator();
+                    while (outstationIterator.hasNext()) {
+                        Outstation nextOutstation = outstationIterator.next();
+                        try {
+                            nextOutstation.handleDelay(killWriter, time);
+                        } catch (StaleProxyException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                        try {
+                            nextOutstation.sendCongestion();
+                        } catch (StaleProxyException | IOException e1) {
+                            // TODO Auto-generated catch block
+                            // e1.printStackTrace();
+                        }
+                        if (rand.nextInt(1000) < 1) {
+                            long restartDelaySeconds = Math.round(distribution.sample()+1);
+                            // System.out.println(Math.round(distribution.sample()/60)+1);
+                            long restartDelayMinutes = restartDelaySeconds/60;
+                            try {
+                                nextOutstation.kill(restartDelayMinutes);
+                                try {
+                                    killWriter.write(time.toString() + ",kill," + nextOutstation.getLocation()+ "\n");
+                                    killWriter.flush();
+                                } catch (IOException e) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
+                                }
+                            } catch (StaleProxyException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                    time = time.plusMinutes(1);
                 }
-                time = time.plusMinutes(1);
-            }
-        };
+            };
 
-        long delay = (long)centralArgs[0] - System.currentTimeMillis();
-        timer.scheduleAtFixedRate(task, delay, osAgent.minute);
+            long delay = (long)centralArgs[0] - System.currentTimeMillis();
+            timer.scheduleAtFixedRate(task, delay, osAgent.minute);
+
+        } catch (IOException e3) {
+            // TODO Auto-generated catch block
+            e3.printStackTrace();
+        }
     }
 }

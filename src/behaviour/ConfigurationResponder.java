@@ -57,7 +57,7 @@ public class ConfigurationResponder extends AchieveREResponder {
             try {
                 outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, outer.getCentralMeasures().firstElement().toJSON().toString());
             } catch (NoSuchElementException e) {
-                //TODO: handle exception
+                //No measures to send
             }
 
             ACLMessage result = request.createReply();

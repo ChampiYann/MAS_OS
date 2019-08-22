@@ -49,8 +49,7 @@ public class BrainBehaviour extends OneShotBehaviour {
                 }
             }
         }
-        //TODO: DIF-V rule
-        // newMsiIterator = newMsi.iterator();
+        //DIF-V rule
         DifV(newMsi);
 
         //Check local congestion second

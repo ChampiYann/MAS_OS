@@ -96,7 +96,6 @@ public class centralGui extends JFrame {
         ActionListener taskPerformer = new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 if (agent.getTime() != null) {
-
                         boolean done = false;
                         while(!done) {
                             try {
