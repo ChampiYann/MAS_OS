@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import agents.centralAgent;
-import config.Configuration;
 import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
 import jade.domain.FIPANames;
@@ -48,10 +47,10 @@ public class SetMeasure extends TickerBehaviour {
                         for (int i = 0; i < lanes.capacity(); i++) {
                             lanes.add(Integer.parseInt(values[7+i]));
                         }
-                        double startKm = Double.parseDouble(values[5]);
-                        double endKm = Double.parseDouble(values[6]);
-                        Vector<Double> osList = findOsInRange(startKm,endKm);
-                        Measure mr = new Measure(outer.getAID(), timeInput, LocalTime.parse(values[3]), values[4], osList, lanes);
+                        double startKm = Double.parseDouble(values[6]);
+                        double endKm = Double.parseDouble(values[5]);
+                        // Vector<Double> osList = findOsInRange(startKm,endKm);
+                        Measure mr = new Measure(outer.getAID(), timeInput, LocalTime.parse(values[3]), values[4], startKm, endKm, lanes);
                         outer.getMeasures().add(mr);
                         addMeasure(mr);
                     }
@@ -74,17 +73,17 @@ public class SetMeasure extends TickerBehaviour {
         }
     }
 
-    private Vector<Double> findOsInRange(double start, double end) {
-        Vector<Double> outputVector = new Vector<Double>();
-        Iterator<Configuration> osIterator = outer.getOS().iterator();
-        while (osIterator.hasNext()) {
-            Configuration nextOs = osIterator.next();
-            if (nextOs.location >= start &&  nextOs.location <= end) {
-                outputVector.add(nextOs.location);
-            }
-        }
-        return outputVector;
-    }
+    // private Vector<Double> findOsInRange(double start, double end) {
+    //     Vector<Double> outputVector = new Vector<Double>();
+    //     Iterator<Configuration> osIterator = outer.getOS().iterator();
+    //     while (osIterator.hasNext()) {
+    //         Configuration nextOs = osIterator.next();
+    //         if (nextOs.location >= start &&  nextOs.location <= end) {
+    //             outputVector.add(nextOs.location);
+    //         }
+    //     }
+    //     return outputVector;
+    // }
 
     private void addMeasure (Measure mr) {
         ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);

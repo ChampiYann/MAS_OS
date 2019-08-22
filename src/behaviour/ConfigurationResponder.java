@@ -55,7 +55,7 @@ public class ConfigurationResponder extends AchieveREResponder {
                 //TODO: handle exception
             }
 
-            System.out.println("up " + outer.getLocal().location + ": " + outer.getUpstream().location);
+            // System.out.println("up " + outer.getLocal().location + ": " + outer.getUpstream().location);
 
             ACLMessage result = request.createReply();
             result.setPerformative(ACLMessage.INFORM);
@@ -71,12 +71,17 @@ public class ConfigurationResponder extends AchieveREResponder {
             outer.resetTimeDownstream();
             System.out.println("down " + outer.getLocal().location + ": " + outer.getDownstream().firstElement().location + ", " + outer.getDownstream().lastElement().location);
 
+            try {
+                outer.sendCentralMeasure(outer.getCentralMeasures().firstElement().toJSON().toString());
+            } catch (NoSuchElementException e) {
+                //TODO: handle exception
+            }
+
             ACLMessage result = request.createReply();
             result.setPerformative(ACLMessage.INFORM);
             result.setContent(outer.getLocal().configToJSON().toString());
             return result;
         } else {
-            // throw new FailureException("sub-optimal");
             return null;
         }
     }

@@ -2,7 +2,6 @@ package behaviour;
 
 import java.util.Iterator;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import agents.osAgent;
@@ -42,24 +41,24 @@ public class HandleCentral extends AchieveREResponder {
             }
         }
 
-        if (request.getOntology().equals("ADD") && flag == false) {
-            JSONArray osListJSON = msgContent.getJSONArray("osList");
-            Iterator<Object> osListIterator = osListJSON.iterator();
-            while (osListIterator.hasNext()) {
-                Double nextOs = (Double)osListIterator.next();
-                if (nextOs == outer.getLocal().location) {
-                    outer.getCentralMeasures().add(new CentralMeasure(outer, msgContent.getLong("ID"), msgContent.getJSONArray("lanes"),0));
-                }
+        if (request.getOntology().equals("ADD")) {
+            double start = msgContent.getDouble("start");
+            double end = msgContent.getDouble("end");
+            if ((end <= outer.getLocal().location && outer.getLocal().location <= start) ||
+            (outer.getLocal().location < start && outer.getDownstream().firstElement().location > end) ||
+            (outer.getLocal().location > end && outer.getUpstream().location < start)) {
+                outer.getCentralMeasures().add(new CentralMeasure(outer, msgContent.getLong("ID"), msgContent.getJSONArray("lanes"),0,start,end));
+            } else if (start >= outer.getUpstream().location && outer.getLocal().location > start) {
+                outer.getCentralMeasures().add(new CentralMeasure(outer, msgContent.getLong("ID"), msgContent.getJSONArray("lanes"),-1,start,end));
+            } else {
                 for (int i = 0; i < outer.getDownstream().size(); i++) {
-                    if (nextOs == outer.getDownstream().get(i).location) {
-                        outer.getCentralMeasures().add(new CentralMeasure(outer, msgContent.getLong("ID"), msgContent.getJSONArray("lanes"),i+1));
+                    if (end <= outer.getDownstream().get(i).location && outer.getLocal().location < end) {
+                        outer.getCentralMeasures().add(new CentralMeasure(outer, msgContent.getLong("ID"), msgContent.getJSONArray("lanes"),i+1,start,end));
                     }
                 }
-                if (nextOs == outer.getUpstream().location) {
-                    outer.getCentralMeasures().add(new CentralMeasure(outer, msgContent.getLong("ID"), msgContent.getJSONArray("lanes"),-1));
-                }
             }
-        } else {
+           
+        } else if (request.getOntology().equals("CANCEL")) {
             try {
                 Iterator<CentralMeasure> measureIterator = outer.getCentralMeasures().iterator();
                 while (measureIterator.hasNext()) {

@@ -18,10 +18,12 @@ public class CentralMeasure extends Measure {
         this.order = order;
     }
 
-    public CentralMeasure(osAgent outer, long ID, JSONArray lanes, int order) {
+    public CentralMeasure(osAgent outer, long ID, JSONArray lanes, int order, double start, double end) {
         this.ID = ID;
         this.order = order;
         this.lanes = new Vector<Integer>(outer.getLocal().lanes);
+        this.start = start;
+        this.end = end;
 
         int applyTo = lanes.getInt(0) - 1;
         int valueToApply = lanes.getInt(1);
@@ -54,8 +56,8 @@ public class CentralMeasure extends Measure {
 
     public JSONObject toJSON() {
         JSONObject content = new JSONObject();
-        JSONArray osListJSON = new JSONArray(osList);
-        content.put("osList", osListJSON);
+        content.put("start", start);
+        content.put("end", end);
         content.put("ID",ID);
         JSONArray lanesJSON = new JSONArray(lanes);
         content.put("lanes", lanesJSON);

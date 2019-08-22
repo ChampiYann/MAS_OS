@@ -16,7 +16,8 @@ public class Measure {
     protected long ID;
     protected String road;
     protected Vector<Integer> lanes;
-    protected Vector<Double> osList;
+    protected double start;
+    protected double end;
 
     protected Measure() {}
 
@@ -24,15 +25,12 @@ public class Measure {
         origin = new AID(content.getString("origin"),AID.ISGUID);
         ID = content.getLong("ID");
         road = content.getString("road");
+        start = content.getDouble("start");
+        end = content.getDouble("end");
         lanes = new Vector<Integer>();
         Iterator<Object> lanesIterator = content.getJSONArray("lanes").iterator();
         while (lanesIterator.hasNext()) {
             lanes.add((Integer)lanesIterator.next());
-        }
-        osList = new Vector<Double>();
-        Iterator<Object> osListIterator = content.getJSONArray("osList").iterator();
-        while (osListIterator.hasNext()) {
-            osList.add((Double)osListIterator.next());
         }
     }
 
@@ -50,18 +48,11 @@ public class Measure {
         return lanes;
     }
 
-    /**
-     * @return the osList
-     */
-    public Vector<Double> getOsList() {
-        return osList;
-    }
-
     public JSONObject toJSON() {
         JSONObject content = new JSONObject();
         content.put("origin", origin.getName());
-        JSONArray osListJSON = new JSONArray(osList);
-        content.put("osList", osListJSON);
+        content.put("start", start);
+        content.put("end", end);
         content.put("ID",ID);
         content.put("road", road);
         JSONArray lanesJSON = new JSONArray(lanes);
@@ -72,10 +63,11 @@ public class Measure {
     private LocalTime startTime;
     private LocalTime endTime;
 
-    public Measure(AID aid, LocalTime startTime, LocalTime endTime, String road, Vector<Double> osList, Vector<Integer> lanes) {
+    public Measure(AID aid, LocalTime startTime, LocalTime endTime, String road, double start, double end, Vector<Integer> lanes) {
         this.origin = aid;
         this.road = road;
-        this.osList = osList;
+        this.start = start;
+        this.end = end;
         this.lanes = lanes;
         this.startTime = startTime;
         this.endTime = endTime;

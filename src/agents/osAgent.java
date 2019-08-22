@@ -300,7 +300,7 @@ public class osAgent extends Agent {
     public void sendCentralMeasure (String content) {
         ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
         newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-        // newMsg.setOntology(MEASURE);
+        newMsg.setOntology("ADD");
         newMsg.setContent(content);
         newMsg.addReceiver(topicCentral);
         this.addBehaviour(new AchieveREInitiator(this, newMsg));
