@@ -1,12 +1,31 @@
 import jade.core.Runtime;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalTime;
+import java.util.Iterator;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.Vector;
 
 import jade.core.Profile;
 import jade.core.ProfileImpl;
 import jade.wrapper.*;
 
+import org.apache.commons.math3.distribution.WeibullDistribution;
+
+import agents.osAgent;
+import environment.Outstation;
+
 public class Launch {
+
+    public static final long minute = 400;
+    static volatile AgentController central = null;
+    static volatile LocalTime time =  LocalTime.of(1, 0, 0);
+
     public static void main(String[] args) {
         // Get a hold on JADE runtime
         Runtime rt = Runtime.instance();
@@ -26,7 +45,7 @@ public class Launch {
             // Fire up GUI
             rma.start();
             // Initiate central
-            AgentController central = cc.createNewAgent("central", "agents.centralAgent", centralArgs);
+            central = cc.createNewAgent("central", "agents.centralAgent", null);
             // Fire up central
             central.start();
         } catch (StaleProxyException e) {
@@ -44,12 +63,12 @@ public class Launch {
         String[] configurations = new String[listOfFiles.length];
         for (int i = 0; i < listOfFiles.length; i++) {
             configurations[i] = listOfFiles[i].getName();
-            configurations[i] = configurations[i].substring(0, configurations[i].length()-4);
+            configurations[i] = configurations[i].substring(0, configurations[i].length() - 4);
         }
 
         // Create 5 new osAgents
         int numOS = configurations.length;
-        AgentController[] OSAgents = new AgentController[numOS];
+        Vector<Outstation> outstations = new Vector<Outstation>(numOS);
 
         for (int i = 0; i < numOS; i++) {
             name = "agent" + Integer.toString(i+1);
@@ -57,16 +76,82 @@ public class Launch {
             Object agentArgs[] = new Object[3];
             agentArgs[0] = lanes;
             agentArgs[1] = configurations[numOS-1-i];
-            agentArgs[2] = centralArgs[0];
             try {
                 // Initiae osAgent
-                OSAgents[i] = cc.createNewAgent(name, "agents.osAgent", agentArgs);
+                try {
+                    outstations.add(new Outstation(name, agentArgs, cc));
+                } catch (FileNotFoundException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
                 // Fire up the agent
-                OSAgents[i].start();
+                outstations.get(i).start();
             } catch (StaleProxyException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
+        }
+        FileWriter killWriter;
+        try {
+            killWriter = new FileWriter("kill_log.txt");
+
+            WeibullDistribution distribution = new WeibullDistribution(0.4360,792.0608);
+            Random rand = new Random();
+            Timer timer = new Timer();
+            TimerTask task = new TimerTask(){
+            
+                @Override
+                public void run() {
+                    try {
+                        central.putO2AObject(time, AgentController.ASYNC);
+                    } catch (StaleProxyException e2) {
+                        // TODO Auto-generated catch block
+                        e2.printStackTrace();
+                    }
+                    Iterator<Outstation> outstationIterator = outstations.iterator();
+                    while (outstationIterator.hasNext()) {
+                        Outstation nextOutstation = outstationIterator.next();
+                        try {
+                            nextOutstation.handleDelay(killWriter, time);
+                        } catch (StaleProxyException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                        try {
+                            nextOutstation.sendCongestion();
+                        } catch (StaleProxyException | IOException e1) {
+                            // TODO Auto-generated catch block
+                            // e1.printStackTrace();
+                        }
+                        if (rand.nextInt(1000) < 1) {
+                            long restartDelaySeconds = Math.round(distribution.sample()+1);
+                            // System.out.println(Math.round(distribution.sample()/60)+1);
+                            long restartDelayMinutes = restartDelaySeconds/60;
+                            try {
+                                nextOutstation.kill(restartDelayMinutes);
+                                try {
+                                    killWriter.write(time.toString() + ",kill," + nextOutstation.getLocation()+ "\n");
+                                    killWriter.flush();
+                                } catch (IOException e) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
+                                }
+                            } catch (StaleProxyException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                    time = time.plusMinutes(1);
+                }
+            };
+
+            long delay = (long)centralArgs[0] - System.currentTimeMillis();
+            timer.scheduleAtFixedRate(task, delay, osAgent.minute);
+
+        } catch (IOException e3) {
+            // TODO Auto-generated catch block
+            e3.printStackTrace();
         }
     }
 }

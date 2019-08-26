@@ -6,7 +6,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 
 import org.json.JSONArray;
@@ -16,8 +15,8 @@ import gui.centralGui;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.ServiceException;
+import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.TickerBehaviour;
-import jade.core.behaviours.WakerBehaviour;
 import jade.core.messaging.TopicManagementHelper;
 import jade.domain.FIPANames;
 import jade.domain.FIPAAgentManagement.FailureException;
@@ -46,16 +45,16 @@ public class centralAgent extends Agent {
 
     private BufferedReader measureReader;
 
+    private LocalTime time;
+
     @Override
     protected void setup() {
-
-        Object[] args = getArguments();
         
         // Print out welcome message
         System.out.println("Hello! Central agent is ready.");
 
         // Set up the gui
-        myGui = new centralGui(this, (long)args[0]);
+        myGui = new centralGui(this);
         myGui.setVisible(true);
 
         myGui.addPortal();
@@ -82,13 +81,10 @@ public class centralAgent extends Agent {
             TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
             centralTopic = topicHelper.createTopic("CENTRAL");
 
-            Date wakeupDate = new Date((long) args[0]);
-            addBehaviour(new WakerBehaviour(this, wakeupDate) {
-                @Override
-                protected void onWake() {
-                    myAgent.addBehaviour(new SetMeasure(myAgent,osAgent.minute,getWakeupTime()));
-                }
-            });
+            setEnabledO2ACommunication(true,0);
+            Behaviour o2aBehaviour = new SetMeasure(this, osAgent.minute);
+            addBehaviour(o2aBehaviour);
+            setO2AManager(o2aBehaviour);
         } catch (ServiceException e) {
             e.printStackTrace();
         }
@@ -136,25 +132,16 @@ public class centralAgent extends Agent {
 
     public class SetMeasure extends TickerBehaviour {
 
-        private long T;
-        private long simLastTime;
-        private LocalTime time;
-
-        public SetMeasure(Agent a, long period, long wakeUpTime) {
+        public SetMeasure(Agent a, long period) {
             super(a, period);
-            T = period;
-            simLastTime = wakeUpTime;
-            time = LocalTime.of(1, 0, 0);
         }
 
         @Override
         protected void onTick() {
-            boolean done = false;
-            long simCurrentTime = System.currentTimeMillis();
-            long elapsedTime = simCurrentTime - simLastTime;
-            long steps = elapsedTime/T;
-            simLastTime += steps*T;
-            while (steps > 0) {
+            Object input = getO2AObject();
+            if (input != null) {
+                time = (LocalTime)input;
+                boolean done = false;
                 while(!done) {
                     try {
                         String line = null;
@@ -196,8 +183,6 @@ public class centralAgent extends Agent {
                         iterator.remove();
                     }
                 }
-                time = time.plusMinutes(1);
-                steps -= 1;
             }
         }
 
@@ -285,5 +270,12 @@ public class centralAgent extends Agent {
 		// Printout a dismissal message
         System.out.println("Central terminating.");
         myGui.dispose();
+    }
+
+    /**
+     * @return the time
+     */
+    public LocalTime getTime() {
+        return time;
     }
 }

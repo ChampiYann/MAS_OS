@@ -46,10 +46,6 @@ public class centralGui extends JFrame {
     private JPanel refRoad;
     private JTextField timeText;
 
-    private LocalTime time;
-    private long simStartTime;
-    private long simLastTime;
-
     private ArrayList<Portal> portalList = new ArrayList<Portal>();
     private ArrayList<RefConfiguration> refConfigList = new ArrayList<RefConfiguration>();
     private ArrayList<RefPortal> refPortalList = new ArrayList<RefPortal>();
@@ -58,7 +54,7 @@ public class centralGui extends JFrame {
 
     private FileWriter logWriter;
 
-    public centralGui(centralAgent agent, long simStartTime) {
+    public centralGui(centralAgent agent) {
         myAgent = agent;
         setSize(canvasWidth, canvasHeight);
         getContentPane().setLayout(null);
@@ -97,61 +93,50 @@ public class centralGui extends JFrame {
             //TODO: handle exception
         }
 
-        simLastTime = simStartTime;
-        time = LocalTime.of(1, 0, 0);
-        long T = osAgent.minute; // milliseconds
         ActionListener taskPerformer = new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                if (System.currentTimeMillis() > simStartTime) {
+                if (agent.getTime() != null) {
                     boolean done = false;
-                    long simCurrentTime = System.currentTimeMillis();
-                    long elapsedTime = simCurrentTime - simLastTime;
-                    long steps = elapsedTime/T;
-                    simLastTime += steps*T;
-                    while (steps > 0) {
-                        while(!done) {
-                            try {
-                                timeText.setText(time.toString());
-                                String line = null;
-                                line = msiReplay.readLine().replaceAll(",", ".");
-                                String[] values = line.split(";");
-                                LocalTime lineTime = LocalTime.parse(values[1]);
-                                if (lineTime.compareTo(time.plusMinutes(1)) > -1) {
-                                    msiReplay.reset();
-                                    done = true;
-                                } else {
-                                    msiReplay.mark(1000);
-                                    updateRef(new AID(values[4] + " " + values[5],AID.ISLOCALNAME),Arrays.copyOfRange(values,6,8+1));
-                                }
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            } catch (NullPointerException e) {
+                    while(!done) {
+                        try {
+                            timeText.setText(agent.getTime().toString());
+                            String line = null;
+                            line = msiReplay.readLine().replaceAll(",", ".");
+                            String[] values = line.split(";");
+                            LocalTime lineTime = LocalTime.parse(values[1]);
+                            if (lineTime.compareTo(agent.getTime().plusMinutes(1)) > -1) {
+                                msiReplay.reset();
                                 done = true;
+                            } else {
+                                msiReplay.mark(1000);
+                                updateRef(new AID(values[4] + " " + values[5],AID.ISLOCALNAME),Arrays.copyOfRange(values,6,8+1));
                             }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (NullPointerException e) {
+                            done = true;
                         }
-                        updateRefCongestion();
-                        Iterator<Portal> portalIterator = portalList.iterator();
-                        Iterator<RefPortal> refPortalIterator = refPortalList.iterator();
-                        while (portalIterator.hasNext() && refPortalIterator.hasNext()) {
-                            Portal portal = portalIterator.next();
-                            RefPortal refPortal = refPortalIterator.next();
-                            try {
-                                logWriter.write(time.toString() + "," + refPortal.getLocation() + "," + refPortal.msg[3].getForeground().getBlue() +
-                                    "," + refPortal.msg[0].getText() + "," + refPortal.msg[1].getText() + "," + refPortal.msg[2].getText() +
-                                    "," + refPortal.getLocation() + "," + portal.msg[0].getText() + "," + portal.msg[1].getText() +
-                                    "," + portal.msg[2].getText() + "\n");
-                            } catch (IOException e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
-                            }
+                    }
+                    updateRefCongestion();
+                    Iterator<Portal> portalIterator = portalList.iterator();
+                    Iterator<RefPortal> refPortalIterator = refPortalList.iterator();
+                    while (portalIterator.hasNext() && refPortalIterator.hasNext()) {
+                        Portal portal = portalIterator.next();
+                        RefPortal refPortal = refPortalIterator.next();
+                        try {
+                            logWriter.write(agent.getTime().toString() + "," + refPortal.getLocation() + "," + refPortal.msg[3].getForeground().getBlue() +
+                                "," + refPortal.msg[0].getText() + "," + refPortal.msg[1].getText() + "," + refPortal.msg[2].getText() +
+                                "," + refPortal.getLocation() + "," + portal.msg[0].getText() + "," + portal.msg[1].getText() +
+                                "," + portal.msg[2].getText() + "\n");
+                        } catch (IOException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
                         }
-                        time = time.plusMinutes(1);
-                        steps -= 1;
                     }
                 }
             }
         };
-        new Timer((int)T, taskPerformer).start();
+        new Timer((int)osAgent.minute, taskPerformer).start();
 
         File folder = new File("config");
         File[] listOfFiles = folder.listFiles();

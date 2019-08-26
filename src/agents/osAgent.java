@@ -14,9 +14,6 @@ package agents;
  * - 
  */
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.Date;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -29,8 +26,8 @@ import config.Configuration;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.ServiceException;
+import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.TickerBehaviour;
-import jade.core.behaviours.WakerBehaviour;
 import jade.core.messaging.TopicManagementHelper;
 import jade.domain.FIPANames;
 import jade.domain.FIPAAgentManagement.FailureException;
@@ -82,9 +79,6 @@ public class osAgent extends Agent {
     private long timeUpstream = 0;
     private long timeDownstream = 0;
 
-    // congestion file
-    private BufferedReader congestionReader;
-
     /**
      * This function sets up the agent by setting the number of lanes and neighbour
      * based on input arguments. Then declare the MSI's and add behaviours of that
@@ -99,13 +93,6 @@ public class osAgent extends Agent {
         if (args != null && args.length > 0) {
             lanes = Integer.parseInt((String) args[0]);
             String configuration = (String)args[1];
-
-            try {
-                congestionReader = new BufferedReader(new FileReader("config\\" + configuration + ".txt"));
-            } catch (IOException e) {
-                System.out.println("Wrong configuration for " + getAID().getName());
-                doDelete();
-            }
 
             // Setup MSIs
             matrix = new MSI[lanes];
@@ -206,14 +193,10 @@ public class osAgent extends Agent {
             
             addBehaviour(new ConfigurationResponder(this, ConfigTemplate));
             
-            Date wakeupDate = new Date((long) args[2]);
-            // Add behaviour simulting traffic passing by but delay it by 1 second
-            addBehaviour(new WakerBehaviour(this, wakeupDate) {
-                @Override
-                protected void onWake() {
-                    myAgent.addBehaviour(new TrafficSensing(myAgent, minute, getWakeupTime()));
-                }
-            });
+            setEnabledO2ACommunication(true,0);
+            Behaviour o2aBehaviour = new TrafficSensing(this, minute);
+            addBehaviour(o2aBehaviour);
+            setO2AManager(o2aBehaviour);
 
             // Update the GUI
             addBehaviour(new UpdateMSI(this, minute/4));
@@ -412,39 +395,15 @@ public class osAgent extends Agent {
 
     public class TrafficSensing extends TickerBehaviour {
 
-        private long T;
-        private long simLastTime;
-        // private LocalTime time;
-
-        public TrafficSensing(Agent a, long period, long wakeUpTime) {
+        public TrafficSensing(Agent a, long period) {
             super(a, period);
-            T = period;
-            simLastTime = wakeUpTime;
-            // time = LocalTime.of(1, 0, 0);
         }
 
         @Override
         protected void onTick() {
-            long simCurrentTime = System.currentTimeMillis();
-            long elapsedTime = simCurrentTime - simLastTime;
-            long steps = elapsedTime/T;
-            simLastTime += steps*T;
-            while (steps > 0) {
-                boolean newCongestion = false;
-                String newLine = null;
-                try {
-                    newLine = congestionReader.readLine();
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-                String[] values = newLine.split(",");
-                String[] elements = values[1].split(" ");
-                for (int i = 0; i < elements.length; i++) {
-                    if (Integer.parseInt(elements[i]) == 1) {
-                        newCongestion = true;
-                    }
-                }
+            Object input = getO2AObject();
+            if (input != null) {
+                boolean newCongestion = (Boolean)input;
                 if (newCongestion == true && congestion == false) {
                     congestion = true;
                     System.out.println("Congestion detected!");
@@ -465,7 +424,6 @@ public class osAgent extends Agent {
                         //TODO: handle exception
                     }
                 }
-                steps -= 1;
             }
         }
     }
