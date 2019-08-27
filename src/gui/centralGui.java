@@ -80,7 +80,7 @@ public class centralGui extends JFrame {
         timeText.setBounds(margin, 2 * margin + 200, 150, 50);
 
         try {
-            FileReader reader = new FileReader("180223BEELDEN.csv");
+            FileReader reader = new FileReader("BEELD1803.csv");
             msiReplay = new BufferedReader(reader);
         } catch (FileNotFoundException e1) {
             // TODO Auto-generated catch block

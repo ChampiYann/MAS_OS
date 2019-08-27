@@ -123,7 +123,7 @@ public class Launch {
                             // TODO Auto-generated catch block
                             // e1.printStackTrace();
                         }
-                        if (rand.nextInt(1000) < 1) {
+                        if (rand.nextInt(16117524) < 169) {
                             long restartDelaySeconds = Math.round(distribution.sample()+1);
                             // System.out.println(Math.round(distribution.sample()/60)+1);
                             long restartDelayMinutes = restartDelaySeconds/60;
