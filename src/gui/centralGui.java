@@ -12,7 +12,10 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -80,7 +83,7 @@ public class centralGui extends JFrame {
         timeText.setBounds(margin, 2 * margin + 200, 150, 50);
 
         try {
-            FileReader reader = new FileReader("180223BEELDEN.csv");
+            FileReader reader = new FileReader("BEELD1803.csv");
             msiReplay = new BufferedReader(reader);
         } catch (FileNotFoundException e1) {
             // TODO Auto-generated catch block
@@ -95,16 +98,19 @@ public class centralGui extends JFrame {
 
         ActionListener taskPerformer = new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                if (agent.getTime() != null) {
+                if (agent.getDateTime() != null) {
                         boolean done = false;
                         while(!done) {
                             try {
-                                timeText.setText(agent.getTime().toString());
+                                timeText.setText(agent.getDateTime().toString());
                                 String line = null;
                                 line = msiReplay.readLine().replaceAll(",", ".");
                                 String[] values = line.split(";");
+                                DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("d-M-yyyy");
+                                LocalDate lineDate = LocalDate.parse(values[0],dateFormatter);
                                 LocalTime lineTime = LocalTime.parse(values[1]);
-                                if (lineTime.compareTo(agent.getTime().plusMinutes(1)) > -1) {
+                                LocalDateTime lineDateTime = lineDate.atTime(lineTime);
+                                if (lineDateTime.compareTo(agent.getDateTime().plusMinutes(1)) > -1) {
                                     msiReplay.reset();
                                     done = true;
                                 } else {
@@ -124,7 +130,7 @@ public class centralGui extends JFrame {
                             Portal portal = portalIterator.next();
                             RefPortal refPortal = refPortalIterator.next();
                             try {
-                                logWriter.write(agent.getTime().toString() + "," + refPortal.getLocation() + "," + refPortal.msg[3].getForeground().getBlue() +
+                                logWriter.write(agent.getDateTime().toString() + "," + refPortal.getLocation() + "," + refPortal.msg[3].getForeground().getBlue() +
                                     "," + refPortal.msg[0].getText() + "," + refPortal.msg[1].getText() + "," + refPortal.msg[2].getText() +
                                     "," + refPortal.getLocation() + "," + portal.msg[0].getText() + "," + portal.msg[1].getText() +
                                     "," + portal.msg[2].getText() + "\n");

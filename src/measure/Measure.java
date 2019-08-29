@@ -1,5 +1,6 @@
 package measure;
 
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Random;
 
@@ -29,8 +30,8 @@ public class Measure {
     protected long ID;
     protected String road;
     protected int[] lanes;
-    protected LocalTime startTime;
-    protected LocalTime endTime;
+    protected LocalDateTime startTime;
+    protected LocalDateTime endTime;
 
     protected Measure() { }
 
@@ -50,7 +51,7 @@ public class Measure {
         }
     }
 
-    public Measure(AID o, LocalTime st, LocalTime et, String r, float s, float e, int[] l) {
+    public Measure(AID o, LocalDateTime st, LocalDateTime et, String r, float s, float e, int[] l) {
         type = CROSS;
         origin = o;
         size = 4;
@@ -90,14 +91,14 @@ public class Measure {
     /**
      * @return the startTime
      */
-    public LocalTime getStartTime() {
+    public LocalDateTime getStartTime() {
         return startTime;
     }
 
     /**
      * @return the endTime
      */
-    public LocalTime getEndTime() {
+    public LocalDateTime getEndTime() {
         return endTime;
     }
 

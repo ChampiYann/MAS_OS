@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -78,13 +79,13 @@ public class Outstation {
         controller.putO2AObject(newCongestion, AgentController.ASYNC);
     }
 
-    public void handleDelay(FileWriter killWriter, LocalTime time) throws StaleProxyException {
+    public void handleDelay(FileWriter killWriter, LocalDateTime dateTime) throws StaleProxyException {
         if (restartDelay > 0) {
             restartDelay -= 1;
         } else {
             start();
             try {
-                killWriter.write(time.toString() + ",start," + getLocation()+ "\n");
+                killWriter.write(dateTime.toString() + ",start," + getLocation()+ "\n");
                 killWriter.flush();
             } catch (IOException e1) {
                 // TODO Auto-generated catch block

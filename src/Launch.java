@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Iterator;
 import java.util.Random;
@@ -24,7 +26,9 @@ public class Launch {
 
     public static final long minute = 400;
     static volatile AgentController central = null;
-    static volatile LocalTime time =  LocalTime.of(1, 0, 0);
+    // static volatile LocalTime time =  LocalTime.of(1, 0, 0);
+    // static volatile LocalDate date = LocalDate.of(2018, 3, 1);
+    static volatile LocalDateTime dateTime = LocalDateTime.of(2018, 3, 1, 1, 0);
 
     public static void main(String[] args) {
         // Get a hold on JADE runtime
@@ -103,7 +107,7 @@ public class Launch {
                 @Override
                 public void run() {
                     try {
-                        central.putO2AObject(time, AgentController.ASYNC);
+                        central.putO2AObject(dateTime, AgentController.ASYNC);
                     } catch (StaleProxyException e2) {
                         // TODO Auto-generated catch block
                         e2.printStackTrace();
@@ -112,7 +116,7 @@ public class Launch {
                     while (outstationIterator.hasNext()) {
                         Outstation nextOutstation = outstationIterator.next();
                         try {
-                            nextOutstation.handleDelay(killWriter, time);
+                            nextOutstation.handleDelay(killWriter, dateTime);
                         } catch (StaleProxyException e) {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
@@ -123,14 +127,14 @@ public class Launch {
                             // TODO Auto-generated catch block
                             // e1.printStackTrace();
                         }
-                        if (rand.nextInt(1000) < 1) {
+                        if (rand.nextInt(16117524) < 169) {
                             long restartDelaySeconds = Math.round(distribution.sample()+1);
                             // System.out.println(Math.round(distribution.sample()/60)+1);
                             long restartDelayMinutes = restartDelaySeconds/60;
                             try {
                                 nextOutstation.kill(restartDelayMinutes);
                                 try {
-                                    killWriter.write(time.toString() + ",kill," + nextOutstation.getLocation()+ "\n");
+                                    killWriter.write(dateTime.toString() + ",kill," + nextOutstation.getLocation()+ "\n");
                                     killWriter.flush();
                                 } catch (IOException e) {
                                     // TODO Auto-generated catch block
@@ -142,7 +146,8 @@ public class Launch {
                             }
                         }
                     }
-                    time = time.plusMinutes(1);
+                    dateTime = dateTime.plusMinutes(1);
+                    // time = time.plusMinutes(1);
                 }
             };
 

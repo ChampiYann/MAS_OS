@@ -62,15 +62,16 @@ public class BrainBehaviour extends OneShotBehaviour {
 
         //Check downstream third
         try {
+            //Determine arrow configuration
+            ArrowConfig(newMsi,outer.getDownstreamMsi());
+
             Iterator<MSI> downstreamMsiIterator = outer.getDownstreamMsi().iterator();
             //TODO: change value to ficitional downstream msi and apply taper, expansion, etc rules afterwards
             newMsiIterator = newMsi.iterator();
 
             while (downstreamMsiIterator.hasNext()) {
                 MSI nextDownstreamMsi = downstreamMsiIterator.next();
-                if (nextDownstreamMsi.getSymbol() == MSI.X) {
-                    newMsiIterator.next().changeState(MSI.ARROW_L);
-                } else if (nextDownstreamMsi.getSymbol() == MSI.ARROW_L) {
+                if (nextDownstreamMsi.getSymbol() == MSI.ARROW_L || nextDownstreamMsi.getSymbol() == MSI.ARROW_R) {
                     newMsiIterator.next().changeState(MSI.NF_90);
                 } else if (nextDownstreamMsi.getSymbol() == MSI.NF_70 || nextDownstreamMsi.getSymbol() == MSI.F_70) {
                     newMsiIterator.next().changeState(MSI.NF_90);
@@ -139,6 +140,20 @@ public class BrainBehaviour extends OneShotBehaviour {
                     newMsi.get(i).changeState(MSI.EOR);
                 }
             }
+        }
+    }
+
+    private void ArrowConfig(Vector<MSI> newMsi, Vector<MSI> downstreamMsi) {
+        if (downstreamMsi.get(0).getSymbol() == MSI.X && downstreamMsi.get(1).getSymbol() == MSI.X) {
+            newMsi.get(0).changeState(MSI.X);
+            newMsi.get(1).changeState(MSI.ARROW_R);
+        } else if (downstreamMsi.get(1).getSymbol() == MSI.X && downstreamMsi.get(2).getSymbol() == MSI.X) {
+            newMsi.get(1).changeState(MSI.ARROW_L);
+            newMsi.get(2).changeState(MSI.X);
+        } else if (downstreamMsi.get(0).getSymbol() == MSI.X) {
+            newMsi.get(0).changeState(MSI.ARROW_R);
+        } else if (downstreamMsi.get(2).getSymbol() == MSI.X) {
+            newMsi.get(2).changeState(MSI.ARROW_L);
         }
     }
 }

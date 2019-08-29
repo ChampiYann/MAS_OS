@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 // import java.util.Date;
@@ -42,7 +43,7 @@ public class centralAgent extends Agent {
 
     private BufferedReader measureReader;
 
-    private LocalTime time;
+    private LocalDateTime dateTime;
 
     @Override
     protected void setup() {
@@ -94,7 +95,7 @@ public class centralAgent extends Agent {
         addBehaviour(new SymbolListener(this, SymbolsTemplate));
 
         try {
-            FileReader reader = new FileReader("measures\\central.txt");
+            FileReader reader = new FileReader("measures\\central.csv");
             measureReader = new BufferedReader(reader);
             measureReader.mark(1000);
         } catch (FileNotFoundException e1) {
@@ -166,14 +167,14 @@ public class centralAgent extends Agent {
     /**
      * @param time the time to set
      */
-    public void setTime(LocalTime time) {
-        this.time = time;
+    public void setDateTime(LocalDateTime time) {
+        this.dateTime = time;
     }
 
     /**
      * @return the time
      */
-    public LocalTime getTime() {
-        return time;
+    public LocalDateTime getDateTime() {
+        return dateTime;
     }
 }
