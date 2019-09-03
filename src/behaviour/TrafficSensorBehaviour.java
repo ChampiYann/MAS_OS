@@ -1,24 +1,25 @@
 package behaviour;
 
 import agents.osAgent;
-// import jade.core.behaviours.CyclicBehaviour;
-import jade.core.behaviours.TickerBehaviour;
+import jade.core.behaviours.OneShotBehaviour;
 
-public class EnvironmentInputBehaviour extends TickerBehaviour {
+public class TrafficSensorBehaviour extends OneShotBehaviour {
 
     private static final long serialVersionUID = 1L;
 
     private osAgent outer;
+    private Object input;
 
-    public EnvironmentInputBehaviour (osAgent outer, long period) {
-        super(outer,period);
+    public TrafficSensorBehaviour (osAgent outer, Object input) {
+        super(outer);
         this.outer = outer;
+        this.input = input;
     }
 
     @Override
-    protected void onTick() {
-        Object input = outer.getO2AObject();
-        if (input != null) {
+    public void action() {
+        // Object input = outer.getO2AObject();
+        // if (input != null) {
             boolean newCongestion = (Boolean)input;
 
             if (newCongestion == true && outer.getCongestion() == false) {
@@ -31,15 +32,7 @@ public class EnvironmentInputBehaviour extends TickerBehaviour {
                 myAgent.addBehaviour(new BrainBehaviour((osAgent)myAgent));
                 System.out.println("Congestion cleared!");
             }
-        }
+        // }
     }
-
-    // @Override
-    // public void action() {
-    //     Object input = outer.getO2AObject();
-    //     if (input != null) {
-    //         myAgent.addBehaviour(new TrafficSensorBehaviour(outer,input));
-    //     }
-    // }
 
 }

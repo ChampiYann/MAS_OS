@@ -5,11 +5,10 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
-// import java.util.Date;
 
 import behaviour.CentralConfigurationResponder;
+import behaviour.InputHandlerBehaviour;
 import behaviour.SetMeasure;
 import behaviour.SymbolListener;
 import config.Configuration;
@@ -18,7 +17,6 @@ import jade.core.AID;
 import jade.core.Agent;
 import jade.core.ServiceException;
 import jade.core.behaviours.Behaviour;
-// import jade.core.behaviours.WakerBehaviour;
 import jade.core.messaging.TopicManagementHelper;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
@@ -79,13 +77,17 @@ public class centralAgent extends Agent {
             TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
             centralTopic = topicHelper.createTopic("CENTRAL");
 
-            setEnabledO2ACommunication(true,0);
-            Behaviour o2aBehaviour = new SetMeasure(this, osAgent.minute);
-            addBehaviour(o2aBehaviour);
-            setO2AManager(o2aBehaviour);
+            
+            addBehaviour(new SetMeasure(this, osAgent.minute/2));
+            
         } catch (ServiceException e) {
             e.printStackTrace();
         }
+
+        setEnabledO2ACommunication(true,0);
+        Behaviour o2aBehaviour = new InputHandlerBehaviour(this);
+        addBehaviour(o2aBehaviour);
+        setO2AManager(o2aBehaviour);
 
         MessageTemplate requestTemplate = MessageTemplate.and(
 				MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST),
@@ -176,5 +178,22 @@ public class centralAgent extends Agent {
      */
     public LocalDateTime getDateTime() {
         return dateTime;
+    }
+
+    public void updateGuiTime(LocalDateTime dateTime) {
+        myGui.updateTime(dateTime);
+        this.dateTime = dateTime;
+    }
+
+    public void updateGuiCongestion(float location, boolean congestion) {
+        myGui.updateCongestion(location,congestion);
+    }
+
+    public void updateGuiMsi(float location, String[] symbols) {
+        myGui.updateRef(location, symbols);
+    }
+
+    public void guiLog() {
+        myGui.log();
     }
 }

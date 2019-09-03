@@ -6,7 +6,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -65,7 +64,7 @@ public class Outstation {
         }
     }
 
-    public void sendCongestion() throws IOException, StaleProxyException {
+    public boolean sendCongestion() throws IOException {
         boolean newCongestion = false;
         String newLine = null;
         newLine = reader.readLine();
@@ -76,7 +75,13 @@ public class Outstation {
                 newCongestion = true;
             }
         }
-        controller.putO2AObject(newCongestion, AgentController.ASYNC);
+        try {
+            controller.putO2AObject(newCongestion, AgentController.ASYNC);
+        } catch (StaleProxyException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return newCongestion;
     }
 
     public void handleDelay(FileWriter killWriter, LocalDateTime dateTime) throws StaleProxyException {

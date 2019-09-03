@@ -90,7 +90,7 @@ public class osAgent extends Agent {
             String configuration = (String)args[1];
 
             setEnabledO2ACommunication(true,0);
-            Behaviour o2aBehaviour = new EnvironmentInputBehaviour(this, minute);
+            Behaviour o2aBehaviour = new EnvironmentInputBehaviour(this,minute/4);
             addBehaviour(o2aBehaviour);
             setO2AManager(o2aBehaviour);
 
