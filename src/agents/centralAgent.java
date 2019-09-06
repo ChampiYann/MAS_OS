@@ -4,10 +4,11 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 import behaviour.CentralConfigurationResponder;
+import behaviour.InputHandlerBehaviour;
 import behaviour.SetMeasure;
 import behaviour.SymbolListener;
 import config.Configuration;
@@ -39,7 +40,7 @@ public class centralAgent extends Agent {
 
     private BufferedReader measureReader;
 
-    private LocalTime time;
+    private LocalDateTime dateTime;
 
     @Override
     protected void setup() {
@@ -77,18 +78,8 @@ public class centralAgent extends Agent {
             TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
             centralTopic = topicHelper.createTopic("CENTRAL");
 
-            setEnabledO2ACommunication(true,0);
-            Behaviour o2aBehaviour = new SetMeasure(this, osAgent.minute);
-            addBehaviour(o2aBehaviour);
-            setO2AManager(o2aBehaviour);
+            addBehaviour(new SetMeasure(this, osAgent.minute/2));
 
-            // Date wakeupDate = new Date((long) args[0]);
-            // addBehaviour(new WakerBehaviour(this, wakeupDate) {
-            //     @Override
-            //     protected void onWake() {
-            //         myAgent.addBehaviour(new SetMeasure(myAgent,osAgent.minute,getWakeupTime()));
-            //     }
-            // });
         } catch (ServiceException e) {
             e.printStackTrace();
         }
@@ -100,8 +91,13 @@ public class centralAgent extends Agent {
                 MessageTemplate.MatchOntology("SYMBOLS"));
         addBehaviour(new SymbolListener(this, SymbolsTemplate));
 
+        setEnabledO2ACommunication(true,0);
+        Behaviour o2aBehaviour = new InputHandlerBehaviour(this);
+        addBehaviour(o2aBehaviour);
+        setO2AManager(o2aBehaviour);
+
         try {
-            FileReader reader = new FileReader("measures\\central.txt");
+            FileReader reader = new FileReader("measures\\central.csv");
             measureReader = new BufferedReader(reader);
             measureReader.mark(1000);
         } catch (FileNotFoundException e1) {
@@ -141,16 +137,33 @@ public class centralAgent extends Agent {
     }
 
     /**
-     * @param time the time to set
+     * @param dateTime the time to set
      */
-    public void setTime(LocalTime time) {
-        this.time = time;
+    public void setDateTime(LocalDateTime dateTime) {
+        this.dateTime = dateTime;
     }
 
     /**
      * @return the time
      */
-    public LocalTime getTime() {
-        return time;
+    public LocalDateTime getDateTime() {
+        return dateTime;
+    }
+
+    public void updateGuiTime(LocalDateTime dateTime) {
+        myGui.updateTime(dateTime);
+        this.dateTime = dateTime;
+    }
+
+    public void updateGuiCongestion(float location, boolean congestion) {
+        myGui.updateCongestion(location,congestion);
+    }
+
+    public void updateGuiMsi(float location, String[] symbols) {
+        myGui.updateRef(location, symbols);
+    }
+
+    public void guiLog() {
+        myGui.log();
     }
 }

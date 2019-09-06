@@ -39,7 +39,7 @@ public class HandleMsi extends TickerBehaviour {
                 }
                 if (nextMeasure.getOrder() == 2) {
                     int nextLane = nextMeasure.getLanes().elementAt(laneId);
-                    if (nextLane < 3) {
+                    if (!(nextLane == MSI.F_50 || nextLane == MSI.NF_50)) {
                         newMsi.changeState(nextLane+7);
                     } else {
                         newMsi.changeState(nextLane+1);

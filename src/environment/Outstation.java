@@ -64,7 +64,7 @@ public class Outstation {
         }
     }
 
-    public void sendCongestion() throws IOException, StaleProxyException {
+    public boolean sendCongestion() throws IOException, StaleProxyException {
         boolean newCongestion = false;
         String newLine = null;
         newLine = reader.readLine();
@@ -76,6 +76,7 @@ public class Outstation {
             }
         }
         controller.putO2AObject(newCongestion, AgentController.ASYNC);
+        return newCongestion;
     }
 
     public void handleDelay(FileWriter killWriter, LocalTime time) throws StaleProxyException {

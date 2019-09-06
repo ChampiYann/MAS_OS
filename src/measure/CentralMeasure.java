@@ -25,21 +25,22 @@ public class CentralMeasure extends Measure {
         this.start = start;
         this.end = end;
 
-        int applyTo = lanes.getInt(0) - 1;
-        int valueToApply = lanes.getInt(1);
+        // int applyTo = lanes.getInt(0) - 1;
+        // int valueToApply = lanes.getInt(1);
 
-        for (int i = 0; i < this.lanes.capacity(); i++) {
-            if (i == applyTo) {
-                this.lanes.add(valueToApply);
-            }
-            else {
-                if (valueToApply == 0) {
-                    this.lanes.add(MSI.NF_70);
-                } else {
-                    this.lanes.add(valueToApply + 2);
-                }
-            }
-        }
+        // for (int i = 0; i < this.lanes.capacity(); i++) {
+        //     // if (i == applyTo) {
+        //     //     this.lanes.add(valueToApply);
+        //     // }
+        //     // else {
+        //     //     if (valueToApply == 0) {
+        //     //         this.lanes.add(MSI.NF_70);
+        //     //     } else {
+        //     //         this.lanes.add(valueToApply + 2);
+        //     //     }
+        //     // }
+        //     this.lanes.add(lanes.getInt(i));
+        // }
 
         Iterator<Object> lanesIterator = lanes.iterator();
         while (lanesIterator.hasNext()) {

@@ -1,7 +1,10 @@
 package behaviour;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
 import java.util.Vector;
 
@@ -26,18 +29,17 @@ public class SetMeasure extends TickerBehaviour {
 
     @Override
     protected void onTick() {
-        Object input = outer.getO2AObject();
-        if (input != null) {
-            LocalTime timeInput = (LocalTime)input;
-            outer.setTime(timeInput);
             boolean done = false;
             while(!done) {
                 try {
                     String line = null;
                     line = outer.getMeasureReader().readLine();
                     String[] values = line.split(",");
+                    DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
                     LocalTime lineStartTime = LocalTime.parse(values[1]);
-                    if (lineStartTime.compareTo(timeInput.plusMinutes(1)) > -1) {
+                    LocalDate lineStartDate = LocalDate.parse(values[0],dateFormatter);
+                    LocalDateTime lineStartDateTime = lineStartDate.atTime(lineStartTime);
+                    if (lineStartDateTime.compareTo(outer.getDateTime().plusMinutes(1)) > -1) {
                         outer.getMeasureReader().reset();
                         done = true;
                     } else {
@@ -50,7 +52,10 @@ public class SetMeasure extends TickerBehaviour {
                         double startKm = Double.parseDouble(values[6]);
                         double endKm = Double.parseDouble(values[5]);
                         // Vector<Double> osList = findOsInRange(startKm,endKm);
-                        Measure mr = new Measure(outer.getAID(), timeInput, LocalTime.parse(values[3]), values[4], startKm, endKm, lanes);
+                        LocalTime lineEndTime = LocalTime.parse(values[3]);
+                        LocalDate lineEndDate = LocalDate.parse(values[2],dateFormatter);
+                        LocalDateTime lineEndDateTime = lineEndDate.atTime(lineEndTime);
+                        Measure mr = new Measure(outer.getAID(), lineStartDateTime, lineEndDateTime, values[4], startKm, endKm, lanes);
                         outer.getMeasures().add(mr);
                         addMeasure(mr);
                     }
@@ -64,13 +69,12 @@ public class SetMeasure extends TickerBehaviour {
             Iterator<Measure> iterator = outer.getMeasures().iterator();
             while (iterator.hasNext()) {
                 Measure mr = iterator.next();
-                if (mr.getEndTime().compareTo(timeInput) == 0) {
+                if (mr.getEndTime().compareTo(outer.getDateTime()) == 0) {
                     // remove measure and  send cancel
                     cancelMeasure(mr);
                     iterator.remove();
                 }
             }
-        }
     }
 
     // private Vector<Double> findOsInRange(double start, double end) {

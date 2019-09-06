@@ -1,6 +1,6 @@
 package measure;
 
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Vector;
@@ -60,10 +60,10 @@ public class Measure {
         return content;
     }
 
-    private LocalTime startTime;
-    private LocalTime endTime;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
 
-    public Measure(AID aid, LocalTime startTime, LocalTime endTime, String road, double start, double end, Vector<Integer> lanes) {
+    public Measure(AID aid, LocalDateTime startTime, LocalDateTime endTime, String road, double start, double end, Vector<Integer> lanes) {
         this.origin = aid;
         this.road = road;
         this.start = start;
@@ -80,14 +80,14 @@ public class Measure {
 	/**
      * @return the startTime
      */
-    public LocalTime getStartTime() {
+    public LocalDateTime getStartTime() {
         return startTime;
     }
 
     /**
      * @return the endTime
      */
-    public LocalTime getEndTime() {
+    public LocalDateTime getEndTime() {
         return endTime;
     }
 }

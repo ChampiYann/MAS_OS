@@ -1,7 +1,5 @@
 package behaviour;
 
-import java.util.NoSuchElementException;
-
 import org.json.JSONObject;
 
 import agents.osAgent;
