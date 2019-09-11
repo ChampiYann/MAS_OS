@@ -32,15 +32,14 @@ public class CentralConfigurationResponder extends AchieveREResponder {
     
     @Override
     protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
-        Configuration newConfig = new Configuration();
         JSONObject jsonContent = new JSONObject(request.getContent());
         jsonContent.remove("congestion"); 
-        newConfig.getConfigFromJSON(jsonContent.toString());
+        Configuration newConfig = new Configuration(jsonContent.toString());
         Iterator<Configuration> iterator = outer.getOS().iterator();
         boolean exists = false;
         while (iterator.hasNext()) {
             Configuration config = iterator.next();
-            if (config.getAID.equals(newConfig.getAID)) {
+            if (config.getAID().equals(newConfig.getAID())) {
                 exists = true;
             }
         }

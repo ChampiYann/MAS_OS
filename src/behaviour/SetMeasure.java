@@ -6,14 +6,17 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
-import java.util.Vector;
+
+import org.json.JSONArray;
 
 import agents.centralAgent;
+import agents.osAgent;
 import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.proto.AchieveREInitiator;
+import measure.MSI;
 import measure.Measure;
 
 public class SetMeasure extends TickerBehaviour {
@@ -45,23 +48,29 @@ public class SetMeasure extends TickerBehaviour {
                     } else {
                         outer.getMeasureReader().mark(1000);
                         // Add measure to list en send it
-                        Vector<Integer> lanes = new Vector<Integer>(values.length-7);
-                        for (int i = 0; i < lanes.capacity(); i++) {
-                            lanes.add(Integer.parseInt(values[7+i]));
+                        MSI[] lanes = new MSI[values.length-7];
+                        for (int i = 0; i < lanes.length; i++) {
+                            lanes[i] = new MSI(Integer.parseInt(values[7+i]));
                         }
                         double startKm = Double.parseDouble(values[6]);
                         double endKm = Double.parseDouble(values[5]);
-                        // Vector<Double> osList = findOsInRange(startKm,endKm);
                         LocalTime lineEndTime = LocalTime.parse(values[3]);
                         LocalDate lineEndDate = LocalDate.parse(values[2],dateFormatter);
                         LocalDateTime lineEndDateTime = lineEndDate.atTime(lineEndTime);
-                        Measure mr = new Measure(outer.getAID(), lineStartDateTime, lineEndDateTime, values[4], startKm, endKm, lanes);
+                        Measure mr = new Measure(lineStartDateTime, lineEndDateTime, values[4], startKm, endKm, lanes);
                         outer.getMeasures().add(mr);
-                        addMeasure(mr);
+                        // addMeasure(mr);
+                        sendMeasures();
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (NullPointerException e) {
+                    try {
+                        outer.getMeasureReader().reset();
+                    } catch (IOException e1) {
+                        // TODO Auto-generated catch block
+                        e1.printStackTrace();
+                    }
                     done = true;
                 }
             }
@@ -70,40 +79,38 @@ public class SetMeasure extends TickerBehaviour {
             while (iterator.hasNext()) {
                 Measure mr = iterator.next();
                 if (mr.getEndTime().compareTo(outer.getDateTime()) == 0) {
-                    // remove measure and  send cancel
-                    cancelMeasure(mr);
+                    // remove measure and send cancel
+                    // cancelMeasure(mr);
                     iterator.remove();
+                    sendMeasures();
                 }
             }
     }
 
-    // private Vector<Double> findOsInRange(double start, double end) {
-    //     Vector<Double> outputVector = new Vector<Double>();
-    //     Iterator<Configuration> osIterator = outer.getOS().iterator();
-    //     while (osIterator.hasNext()) {
-    //         Configuration nextOs = osIterator.next();
-    //         if (nextOs.location >= start &&  nextOs.location <= end) {
-    //             outputVector.add(nextOs.location);
-    //         }
-    //     }
-    //     return outputVector;
+    private void sendMeasures () {
+        ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
+        newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+        newMsg.addReceiver(outer.getCentralTopic());
+        newMsg.setOntology(osAgent.MEASURE);
+        newMsg.setContent(new JSONArray(outer.getMeasures()).toString());
+        myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
+    }
+
+    // private void addMeasure (Measure mr) {
+    //     ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
+    //     newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+    //     newMsg.setOntology("ADD");
+    //     newMsg.setContent(mr.toJSON().toString());
+    //     newMsg.addReceiver(outer.getCentralTopic());
+    //     myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
     // }
 
-    private void addMeasure (Measure mr) {
-        ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
-        newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-        newMsg.setOntology("ADD");
-        newMsg.setContent(mr.toJSON().toString());
-        newMsg.addReceiver(outer.getCentralTopic());
-        myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
-    }
-
-    private void cancelMeasure (Measure mr) {
-        ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
-        newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-        newMsg.setOntology("CANCEL");
-        newMsg.setContent(mr.toJSON().toString());
-        newMsg.addReceiver(outer.getCentralTopic());
-        myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
-    }
+    // private void cancelMeasure (Measure mr) {
+    //     ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
+    //     newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+    //     newMsg.setOntology("CANCEL");
+    //     newMsg.setContent(mr.toJSON().toString());
+    //     newMsg.addReceiver(outer.getCentralTopic());
+    //     myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
+    // }
 }

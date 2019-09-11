@@ -76,7 +76,7 @@ public class centralAgent extends Agent {
 
         try{
             TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
-            centralTopic = topicHelper.createTopic("CENTRAL");
+            centralTopic = topicHelper.createTopic("MEASURE");
 
             addBehaviour(new SetMeasure(this, osAgent.minute/2));
 

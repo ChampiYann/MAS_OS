@@ -31,6 +31,8 @@ public class Launch {
 
     public static final long minute = 400;
     static volatile AgentController central = null;
+    // static volatile LocalTime time =  LocalTime.of(1, 0, 0);
+    // static volatile LocalDate date = LocalDate.of(2018, 3, 1);
     static volatile LocalDateTime dateTime = LocalDateTime.of(2018, 3, 1, 1, 0);
 
     public static void main(String[] args) {
@@ -106,7 +108,6 @@ public class Launch {
             FileReader reader = new FileReader("BEELD1803.csv");
             msiReplay = new BufferedReader(reader);
 
-
             WeibullDistribution distribution = new WeibullDistribution(0.4360,792.0608);
             Random rand = new Random();
             Timer timer = new Timer();
@@ -146,15 +147,16 @@ public class Launch {
                         }
                     }
 
+                    
                     Iterator<Outstation> outstationIterator = outstations.iterator();
                     while (outstationIterator.hasNext()) {
                         Outstation nextOutstation = outstationIterator.next();
-                        // try {
-                        //     nextOutstation.handleDelay(killWriter, time);
-                        // } catch (StaleProxyException e) {
-                        //     // TODO Auto-generated catch block
-                        //     e.printStackTrace();
-                        // }
+                        try {
+                            nextOutstation.handleDelay(killWriter, dateTime);
+                        } catch (StaleProxyException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
                         try {
                             boolean congestion = nextOutstation.sendCongestion();
                             Vector<Object> packet = new Vector<Object>();
@@ -170,25 +172,26 @@ public class Launch {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
-                        // if (rand.nextInt(1000) < 1) {
-                        //     long restartDelaySeconds = Math.round(distribution.sample()+1);
-                        //     // System.out.println(Math.round(distribution.sample()/60)+1);
-                        //     long restartDelayMinutes = restartDelaySeconds/60;
-                        //     try {
-                        //         nextOutstation.kill(restartDelayMinutes);
-                        //         try {
-                        //             killWriter.write(time.toString() + ",kill," + nextOutstation.getLocation()+ "\n");
-                        //             killWriter.flush();
-                        //         } catch (IOException e) {
-                        //             // TODO Auto-generated catch block
-                        //             e.printStackTrace();
-                        //         }
-                        //     } catch (StaleProxyException e) {
-                        //         // TODO Auto-generated catch block
-                        //         e.printStackTrace();
-                        //     }
-                        // }
+                        if (rand.nextInt(16117524) < 169) {
+                            long restartDelaySeconds = Math.round(distribution.sample()+1);
+                            // System.out.println(Math.round(distribution.sample()/60)+1);
+                            long restartDelayMinutes = restartDelaySeconds/60;
+                            try {
+                                nextOutstation.kill(restartDelayMinutes);
+                                try {
+                                    killWriter.write(dateTime.toString() + ",kill," + nextOutstation.getLocation()+ "\n");
+                                    killWriter.flush();
+                                } catch (IOException e) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
+                                }
+                            } catch (StaleProxyException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+                        }
                     }
+
                     Vector<Object> packet = new Vector<Object>();
                     packet.add(dateTime);
                     packet.add(InputHandlerBehaviour.LOG);

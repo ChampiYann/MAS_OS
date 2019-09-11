@@ -72,7 +72,8 @@ public class centralGui extends JFrame {
         try {
             logWriter = new FileWriter("log.txt");
         } catch (Exception e) {
-            //TODO: handle exception
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
 
         File folder = new File("config");
@@ -98,8 +99,8 @@ public class centralGui extends JFrame {
             }
 
             RefConfiguration config = new RefConfiguration();
-            config.getAID = new AID("A13R "+location,AID.ISLOCALNAME);
-            config.location = Float.parseFloat(location);
+            config.setAID(new AID("A13R "+location,AID.ISLOCALNAME));
+            config.setLocation(Float.parseFloat(location));
             config.fileName = "config\\" + listOfFiles[i].getName();
             refConfigList.add(config);
         }
@@ -117,7 +118,7 @@ public class centralGui extends JFrame {
         
         for (int i = 0; i < OsList.size(); i++) {
             try {
-                if (!portalList.get(i).getName().equals(OsList.get(i).getAID)) {
+                if (!portalList.get(i).getName().equals(OsList.get(i).getAID())) {
                     JPanel portal = new JPanel();
                     road.add(portal, i);
                     portal.setLayout(new GridBagLayout());
@@ -127,7 +128,7 @@ public class centralGui extends JFrame {
                     gbc.fill = GridBagConstraints.HORIZONTAL;
                     gbc.gridx = 0;
                     gbc.weighty = 3;
-                    portalList.add(i, new Portal(OsList.get(i).getAID, OsList.get(i).location,portal,gbc));
+                    portalList.add(i, new Portal(OsList.get(i).getAID(), OsList.get(i).getLocation(),portal,gbc));
                 }
             } catch (IndexOutOfBoundsException e) {
                 JPanel portal = new JPanel();
@@ -139,7 +140,7 @@ public class centralGui extends JFrame {
                 gbc.fill = GridBagConstraints.HORIZONTAL;
                 gbc.gridx = 0;
                 gbc.weighty = 3;
-                portalList.add(i, new Portal(OsList.get(i).getAID, OsList.get(i).location,portal,gbc));
+                portalList.add(i, new Portal(OsList.get(i).getAID(), OsList.get(i).getLocation(),portal,gbc));
             }
             revalidate();
             repaint();
@@ -151,7 +152,7 @@ public class centralGui extends JFrame {
         
         for (int i = 0; i < refConfigList.size(); i++) {
             try {
-                if (!refPortalList.get(i).getName().equals(refConfigList.get(i).getAID)) {
+                if (!refPortalList.get(i).getName().equals(refConfigList.get(i).getAID())) {
                     JPanel portal = new JPanel();
                     refRoad.add(portal, i);
                     portal.setLayout(new GridBagLayout());
@@ -161,7 +162,7 @@ public class centralGui extends JFrame {
                     gbc.fill = GridBagConstraints.HORIZONTAL;
                     gbc.gridx = 0;
                     gbc.weighty = 3;
-                    refPortalList.add(i, new RefPortal(refConfigList.get(i).getAID, refConfigList.get(i).location,portal,gbc,refConfigList.get(i).fileName));
+                    refPortalList.add(i, new RefPortal(refConfigList.get(i).getAID(), refConfigList.get(i).getLocation(),portal,gbc,refConfigList.get(i).fileName));
                 }
             } catch (IndexOutOfBoundsException e) {
                 JPanel portal = new JPanel();
@@ -173,7 +174,7 @@ public class centralGui extends JFrame {
                 gbc.fill = GridBagConstraints.HORIZONTAL;
                 gbc.gridx = 0;
                 gbc.weighty = 3;
-                refPortalList.add(i, new RefPortal(refConfigList.get(i).getAID, refConfigList.get(i).location,portal,gbc,refConfigList.get(i).fileName));
+                refPortalList.add(i, new RefPortal(refConfigList.get(i).getAID(), refConfigList.get(i).getLocation(),portal,gbc,refConfigList.get(i).fileName));
             }
         }
     }

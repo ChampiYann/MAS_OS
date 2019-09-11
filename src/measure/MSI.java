@@ -4,6 +4,8 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONPropertyIgnore;
 
 public class MSI {
     /**
@@ -48,6 +50,10 @@ public class MSI {
         symbol = BLANK;
     }
 
+    public MSI(JSONObject jsonContent) {
+        this.symbol = jsonContent.getInt("symbol");
+    }
+
     public void changeState(int sym) {
 
         if (sym > BLANK) {
@@ -69,20 +75,27 @@ public class MSI {
         return symbol;
     }
 
+    @JSONPropertyIgnore
     public String getSymbolString() {
         return getSymbol(symbol);
     }
 
+    @JSONPropertyIgnore
     public static String getSymbol(int sym) {
         return symbols[sym];
     }
 
+    @JSONPropertyIgnore
     public boolean isBlank() {
         if (symbol == BLANK) {
             return true;
         } else {
             return false;
         }
+    }
+
+    public JSONObject toJSON() {
+        return new JSONObject().put("symbol", this.symbol);
     }
 
     /**
@@ -120,5 +133,11 @@ public class MSI {
             outputArray.put(inputIterator.next().getSymbol());
         }
         return outputArray.toString();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        MSI s = (MSI) obj;
+        return this.symbol == s.symbol;
     }
 }

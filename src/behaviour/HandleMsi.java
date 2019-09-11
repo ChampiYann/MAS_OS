@@ -1,12 +1,13 @@
 package behaviour;
 
+import java.util.Arrays;
 import java.util.Iterator;
 
 import agents.osAgent;
 import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
-import measure.CentralMeasure;
 import measure.MSI;
+import measure.Measure;
 
 public class HandleMsi extends TickerBehaviour {
 
@@ -21,47 +22,42 @@ public class HandleMsi extends TickerBehaviour {
 
     @Override
     protected void onTick() {
-        Iterator<MSI> msiIterator = outer.getMsi().iterator();
-        int laneId = 0;
-        while(msiIterator.hasNext()) {
-            //TODO: DIF-V rule
-
-            MSI newMsi = new MSI();
-            Iterator<CentralMeasure> centralMeasureIterator = outer.getCentralMeasures().iterator();
-            while (centralMeasureIterator.hasNext()) {
-                CentralMeasure nextMeasure = centralMeasureIterator.next();
-                // System.out.println("nextMeasure order: " + nextMeasure.getOrder() + ", nextMeasure lane value: " + nextMeasure.getLanes().elementAt(laneId));
-                if (nextMeasure.getOrder() == 0) {
-                    newMsi.changeState(nextMeasure.getLanes().elementAt(laneId));
-                }
-                if (nextMeasure.getOrder() == 1) {
-                    newMsi.changeState(nextMeasure.getLanes().elementAt(laneId)+2);
-                }
-                if (nextMeasure.getOrder() == 2) {
-                    int nextLane = nextMeasure.getLanes().elementAt(laneId);
-                    if (!(nextLane == MSI.F_50 || nextLane == MSI.NF_50)) {
-                        newMsi.changeState(nextLane+7);
-                    } else {
-                        newMsi.changeState(nextLane+1);
-                    }
-                }
-                if (nextMeasure.getOrder() == -1) {
-                    newMsi.changeState(MSI.EOR);
-                }
-            }
-            if (outer.getCongestion().get(0) == true) {
-                newMsi.changeState(MSI.F_50);
-            }
-            if (outer.getCongestion().get(1) == true) {
-                newMsi.changeState(MSI.F_70);
-            }
-            if (outer.getCongestion().get(3) == true && newMsi.getSymbol() > 2 && newMsi.getSymbol() < 8) {
-                newMsi.setSymbol(newMsi.getSymbol()+1);
-            }
-            msiIterator.next().setSymbol(newMsi.getSymbol());
-            laneId += 1;
+        // Initialize new MSI array
+        MSI[] newMsi = new MSI[outer.getLocal().getLanes()];
+        for (int i = 0; i < newMsi.length; i++) {
+            newMsi[i] = new MSI();
         }
-        outer.sendCentralUpdate();
+
+        // Go through measure to can most restricive symbol
+        Iterator<Measure> measureIterator = outer.getLocalMeasures().iterator();
+        while(measureIterator.hasNext()) {
+            MSI[] nextMeasureDisplay = measureIterator.next().getDisplay();
+            for (int i = 0; i < newMsi.length; i++) {
+                newMsi[i].changeState(nextMeasureDisplay[i].getSymbol());
+            }
+        }
+
+        // check for flashers
+        boolean[] flashers = new boolean[newMsi.length];
+        Arrays.fill(flashers, true);
+        outer.getUpstreamMeasures().stream().forEach(n -> {for (int i = 0; i < newMsi.length; i++) {
+            if (n.getDisplay()[i].getSymbol() <= newMsi[i].getSymbol()) {
+                flashers[i] = false;
+            }
+        }});
+        for (int i = 0; i < newMsi.length; i++) {
+            if (flashers[i] == true && MSI.F_50 < newMsi[i].getSymbol() && newMsi[i].getSymbol() <= MSI.NF_90) {
+                newMsi[i].changeState(newMsi[i].getSymbol()-1);
+            }
+        }
+
+        // Update MSI
+        if (!Arrays.equals(newMsi, outer.getMsi())) {
+            outer.setMsi(newMsi);
+            outer.sendCentralUpdate();
+        }
+
+        myAgent.addBehaviour(new CompilerBehaviour());
     }
 
 }
