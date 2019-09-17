@@ -223,6 +223,7 @@ public class centralGui extends JFrame {
                     "," + refPortal.msg[0].getText() + "," + refPortal.msg[1].getText() + "," + refPortal.msg[2].getText() +
                     "," + refPortal.getLocation() + "," + portal.msg[0].getText() + "," + portal.msg[1].getText() +
                     "," + portal.msg[2].getText() + "\n");
+                    logWriter.flush();
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
