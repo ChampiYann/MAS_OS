@@ -5,23 +5,24 @@ import java.util.Iterator;
 
 import agents.osAgent;
 import jade.core.Agent;
+import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.TickerBehaviour;
 import measure.MSI;
 import measure.Measure;
 
-public class HandleMsi extends TickerBehaviour {
+public class HandleMsi extends OneShotBehaviour {
 
     private static final long serialVersionUID = 1L;
 
     private osAgent outer;
 
-    public HandleMsi(Agent a, long period) {
-        super(a, period);
+    public HandleMsi(Agent a) {
+        super(a);
         this.outer = (osAgent)a;
     }
 
     @Override
-    protected void onTick() {
+    public void action() {
         // Initialize new MSI array
         MSI[] newMsi = new MSI[outer.getLocal().getLanes()];
         for (int i = 0; i < newMsi.length; i++) {
@@ -57,7 +58,7 @@ public class HandleMsi extends TickerBehaviour {
             outer.sendCentralUpdate();
         }
 
-        myAgent.addBehaviour(new CompilerBehaviour());
+        // myAgent.addBehaviour(new CompilerBehaviour());
     }
 
 }

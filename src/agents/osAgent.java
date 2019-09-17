@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import behaviour.CompilerBehaviour;
 import behaviour.ConfigurationResponder;
 import behaviour.HBReaction;
 import behaviour.HBResponder;
@@ -195,7 +196,7 @@ public class osAgent extends Agent {
             }
 
             // Change displays
-            addBehaviour(new HandleMsi(this,minute/2));
+            addBehaviour(new CompilerBehaviour(this,minute/2));
 
             // Subscribe to central messages
             try {

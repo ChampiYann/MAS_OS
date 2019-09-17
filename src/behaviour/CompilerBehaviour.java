@@ -4,11 +4,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import agents.osAgent;
+import jade.core.Agent;
 import jade.core.behaviours.OneShotBehaviour;
+import jade.core.behaviours.TickerBehaviour;
 import measure.MSI;
 import measure.Measure;
 
-public class CompilerBehaviour extends OneShotBehaviour {
+public class CompilerBehaviour extends TickerBehaviour {
+
+    public CompilerBehaviour(Agent a, long period) {
+        super(a, period);
+        // TODO Auto-generated constructor stub
+    }
 
     /**
      *
@@ -16,7 +23,7 @@ public class CompilerBehaviour extends OneShotBehaviour {
     private static final long serialVersionUID = 1L;
 
     @Override
-    public void action() {
+    protected void onTick() {
         osAgent outer = (osAgent)myAgent;
 
         ArrayList<Measure> newMeasures = new ArrayList<Measure>();
@@ -92,6 +99,7 @@ public class CompilerBehaviour extends OneShotBehaviour {
         if (!newMeasures.equals(outer.getLocalMeasures())) {
             outer.setLocalMeasures(newMeasures);
             outer.sendMeasures();
+            myAgent.addBehaviour(new HandleMsi(myAgent));
         }
     }
 
