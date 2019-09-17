@@ -66,7 +66,7 @@ public class centralAgent extends Agent {
 
             // COnfiguration response
             MessageTemplate ConfigTemplate = MessageTemplate.and(requestTemplate,
-                MessageTemplate.MatchOntology("CONFIGURATION"));
+                MessageTemplate.MatchTopic(topicConfiguration));
             addBehaviour(new CentralConfigurationResponder(this, ConfigTemplate));
         } catch (ServiceException e) {
             System.out.println("Wrong configuration for " + getAID().getName());

@@ -1,7 +1,7 @@
 package behaviour;
 
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Vector;
 
 import agents.osAgent;
 import jade.core.behaviours.OneShotBehaviour;
@@ -30,8 +30,8 @@ public class BrainBehaviour extends OneShotBehaviour {
         //Flasher rule if speed is lower that upstream
         //
         
-        Vector<MSI> newMsi = new Vector<MSI>(outer.getLocal().lanes);
-        for (int i = 0; i < newMsi.capacity(); i++) {
+        ArrayList<MSI> newMsi = new ArrayList<MSI>(outer.getLocal().lanes);
+        for (int i = 0; i < outer.getLocal().lanes; i++) {
             newMsi.add(new MSI());
         }
         Iterator<MSI> newMsiIterator = newMsi.iterator();
@@ -116,17 +116,17 @@ public class BrainBehaviour extends OneShotBehaviour {
             outer.setMsi(newMsi);
             outer.sendCentralUpdate();
             //send messages to neighbours
-            outer.sendMeasure(outer.getDownstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
-            outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
+            // outer.sendMeasure(outer.getDownstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
+            // outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
         }
     }
 
-    private void DifV(Vector<MSI> newMsi) {
+    private void DifV(ArrayList<MSI> newMsi) {
         for (int i = 0; i < newMsi.size(); i++) {
             for (int j = 0; j < newMsi.size(); j++) {
                 if (newMsi.get(j).getSymbol() == MSI.X && i != j) {
                     newMsi.get(i).changeState(MSI.NF_70);
-                } 
+                }
                 if (newMsi.get(j).getSymbol() == MSI.NF_70 && i > j) {
                     newMsi.get(i).changeState(MSI.NF_70);
                 }
@@ -143,7 +143,7 @@ public class BrainBehaviour extends OneShotBehaviour {
         }
     }
 
-    private void ArrowConfig(Vector<MSI> newMsi, Vector<MSI> downstreamMsi) {
+    private void ArrowConfig(ArrayList<MSI> newMsi, ArrayList<MSI> downstreamMsi) {
         if (downstreamMsi.get(0).getSymbol() == MSI.X && downstreamMsi.get(1).getSymbol() == MSI.X) {
             newMsi.get(0).changeState(MSI.X);
             newMsi.get(1).changeState(MSI.ARROW_R);

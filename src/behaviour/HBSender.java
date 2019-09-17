@@ -1,5 +1,7 @@
 package behaviour;
 
+import org.json.JSONObject;
+
 import agents.osAgent;
 import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
@@ -21,7 +23,10 @@ public class HBSender extends TickerBehaviour {
         ACLMessage HBRequest = new ACLMessage(ACLMessage.REQUEST);
         HBRequest.setOntology("HB");
         HBRequest.addReceiver(outer.getUpstream().getAID);
-        HBRequest.setContent(outer.getLocal().configToJSON());
+        JSONObject jsonContent = new JSONObject();
+        jsonContent.put("configuration", outer.getLocal().configToJSON());
+        jsonContent.put("msi", outer.getMsi());
+        HBRequest.setContent(jsonContent.toString());
 
         myAgent.send(HBRequest);
     }

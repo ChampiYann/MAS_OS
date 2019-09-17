@@ -1,7 +1,6 @@
 package behaviour;
 
-import java.util.NoSuchElementException;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import agents.osAgent;
 import config.Configuration;
@@ -31,18 +30,12 @@ public class ConfigurationResponder extends AchieveREResponder {
     
     @Override
     protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
-        Configuration newConfig = new Configuration();
-
-        newConfig.getConfigFromJSON(request.getContent());
+        Configuration newConfig = new Configuration(request.getContent());
         if (outer.getLocal().location - newConfig.location < outer.getLocal().location - outer.getUpstream().location && outer.getLocal().location - newConfig.location > 0) {
-            outer.getUpstream().location = newConfig.location;
-            outer.getUpstream().road = newConfig.road;
-            outer.getUpstream().getAID = newConfig.getAID;
-            outer.getUpstream().side = newConfig.side;
-            outer.getUpstream().lanes = newConfig.lanes;
+            outer.setUpstream(newConfig);
 
-            outer.setUpstreamMsi(new Vector<MSI>(outer.getUpstream().lanes));
-            for (int i = 0; i < outer.getUpstreamMsi().capacity(); i++) {
+            outer.setUpstreamMsi(new ArrayList<MSI>(outer.getUpstream().lanes));
+            for (int i = 0; i < outer.getUpstream().lanes; i++) {
                 outer.getUpstreamMsi().add(new MSI());
             }
 
@@ -55,14 +48,14 @@ public class ConfigurationResponder extends AchieveREResponder {
             outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
 
             try {
-                outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, outer.getCentralMeasures().firstElement().toJSON().toString());
-            } catch (NoSuchElementException e) {
+                outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, outer.getCentralMeasures().get(0).toJSON().toString());
+            } catch (IndexOutOfBoundsException e) {
                 //No measures to send
             }
 
             ACLMessage result = request.createReply();
             result.setPerformative(ACLMessage.INFORM);
-            result.setContent(outer.getLocal().configToJSON());
+            result.setContent(outer.getLocal().configToJSON().toString());
             return result;
         } else {
             // throw new FailureException("sub-optimal");

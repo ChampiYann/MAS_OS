@@ -19,7 +19,8 @@
             "projectName": "MAS_OS",
             "env": {
                 "DISPLAY": "localhost:10.0"
-            }
+            },
+            "console": "internalConsole"
         },
         {
             "type": "java",

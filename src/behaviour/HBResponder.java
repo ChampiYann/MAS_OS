@@ -1,6 +1,9 @@
 package behaviour;
 
-import java.util.Vector;
+import java.util.Iterator;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import agents.osAgent;
 import config.Configuration;
@@ -28,31 +31,32 @@ public class HBResponder extends TickerBehaviour {
             MessageTemplate.MatchOntology("HB"));
         ACLMessage HBRequest = myAgent.receive(HBTemplate);
         if (HBRequest != null) {
-            setDownstream(HBRequest);
+            JSONObject jsonContent = new JSONObject(HBRequest.getContent());
+            outer.setDownstream(new Configuration(jsonContent.getJSONObject("configuration").toString()));
+
+            outer.getDownstreamMsi().clear();
+            JSONArray jsonArray = jsonContent.getJSONArray("msi");
+            Iterator<Object> iteratorContent = jsonArray.iterator();
+            while (iteratorContent.hasNext()) {
+                JSONObject jsonMSI = (JSONObject)iteratorContent.next();
+                outer.getDownstreamMsi().add(new MSI(jsonMSI.getInt("symbol")));
+            }
+            outer.addBehaviour(new BrainBehaviour(outer));
+
             ACLMessage HBResponse = new ACLMessage(ACLMessage.INFORM);
             HBResponse.setOntology("HB");
             HBResponse.addReceiver(HBRequest.getSender());
+
+            jsonContent = new JSONObject();
+            jsonContent.put("msi", outer.getMsi());
+            HBResponse.setContent(jsonContent.toString());
+
             myAgent.send(HBResponse);
             outer.resetTimeDownstream();
         } else {
             if (System.currentTimeMillis()-outer.getTimeDownstream() > (long)osAgent.minute*2) {
                 outer.SendConfig();
             }
-        }
-    }
-
-    private void setDownstream(ACLMessage HBRequest) {
-        Configuration tempConfig = new Configuration(outer);
-        tempConfig.getConfigFromJSON(HBRequest.getContent());
-        if (!Configuration.ConfigurationEqual(tempConfig, outer.getDownstream())) {
-            outer.getDownstream().getConfigFromJSON(HBRequest.getContent());
-            outer.setDownstreamMsi(new Vector<MSI>(outer.getDownstream().lanes));
-            for (int i = 0; i < outer.getDownstreamMsi().capacity(); i++) {
-                outer.getDownstreamMsi().add(new MSI());
-            }
-            outer.sendMeasure(outer.getDownstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
-            outer.addBehaviour(new BrainBehaviour(outer));
-            System.out.println("downstream neighbour for " + outer.getLocal().getAID.getLocalName() + " is " + outer.getDownstream().getAID.getLocalName());
         }
     }
 }

@@ -1,9 +1,10 @@
 package agents;
 
 import java.io.BufferedReader;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,7 +16,6 @@ import behaviour.HBReaction;
 import behaviour.HBResponder;
 import behaviour.HBSender;
 import behaviour.ReceiveCentralDisplay;
-import behaviour.ReceiveDisplay;
 import config.Configuration;
 import jade.core.AID;
 import jade.core.Agent;
@@ -49,7 +49,7 @@ public class osAgent extends Agent {
     // transient protected osGui myGui;
 
     // Measures
-    // private Vector<Measure> measures = new Vector<Measure>();
+    // private ArrayList<Measure> measures = new ArrayList<Measure>();
 
     // Flags
     private boolean congestion = false;
@@ -68,11 +68,11 @@ public class osAgent extends Agent {
     private BufferedReader congestionReader;
 
     // New variables
-    Vector<MSI> downstreamMsi;
-    Vector<MSI> upstreamMsi;
-    Vector<MSI> msi;
-    // Vector<Measure> centralMeasures;
-    Vector<CentralMeasure> centralMeasures;
+    ArrayList<MSI> downstreamMsi;
+    ArrayList<MSI> upstreamMsi;
+    ArrayList<MSI> msi;
+    // ArrayList<Measure> centralMeasures;
+    ArrayList<CentralMeasure> centralMeasures;
 
     /**
      * This function sets up the agent by setting the number of lanes and neighbour
@@ -109,11 +109,15 @@ public class osAgent extends Agent {
             resetTimeDownstream();
 
             // Setup MSIs
-            msi = new Vector<MSI>(local.lanes);
-            for (int i = 0; i < msi.capacity(); i++) {
+            msi = new ArrayList<MSI>(local.lanes);
+            for (int i = 0; i < local.lanes; i++) {
                 msi.add(new MSI());
             }
-            centralMeasures = new Vector<CentralMeasure>();
+            downstreamMsi = new ArrayList<MSI>();
+            downstreamMsi.addAll(Arrays.asList(new MSI[] { new MSI(), new MSI(), new MSI() }));
+            upstreamMsi = new ArrayList<MSI>();
+            upstreamMsi.addAll(Arrays.asList(new MSI[] { new MSI(), new MSI(), new MSI() }));
+            centralMeasures = new ArrayList<CentralMeasure>();
 
             // Set up the gui
             // myGui = new osGui(this);
@@ -166,10 +170,6 @@ public class osAgent extends Agent {
                 System.out.println("Wrong configuration for " + getAID().getName());
                 doDelete();
             }
-
-            MessageTemplate DisplayTemplate = MessageTemplate.and(requestTemplate,
-                MessageTemplate.MatchOntology(DISPLAY));
-            addBehaviour(new ReceiveDisplay(this,DisplayTemplate));
 
             // Configure broadcast for configuration
             try {
@@ -263,21 +263,20 @@ public class osAgent extends Agent {
     public void SendConfig () {
         ACLMessage configurationRequest = new ACLMessage(ACLMessage.REQUEST);
         configurationRequest.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-        configurationRequest.setOntology("CONFIGURATION");
         configurationRequest.setReplyByDate(new Date(System.currentTimeMillis() + minute*4));
         configurationRequest.addReceiver(topicConfiguration);
-        configurationRequest.setContent(local.configToJSON());
+        configurationRequest.setContent(local.configToJSON().toString());
         this.addBehaviour(new AchieveREInitiator(this, configurationRequest) {
-            @Override
-            protected void handleInform(ACLMessage inform) {
-                String messageContent = inform.getContent();
-                downstream.getConfigFromJSON(messageContent);
-                downstreamMsi = new Vector<MSI>(downstream.lanes);
-                for (int i = 0; i < downstreamMsi.capacity(); i++) {
-                    downstreamMsi.add(new MSI());
-                }
-                System.out.println("downstream neighbour for " + local.getAID.getLocalName() + " is " + downstream.getAID.getLocalName());
-            }
+            // @Override
+            // protected void handleInform(ACLMessage inform) {
+            //     String messageContent = inform.getContent();
+            //     downstream = new Configuration(messageContent);
+            //     downstreamMsi = new ArrayList<MSI>(downstream.lanes);
+            //     for (int i = 0; i < downstreamMsi.capacity(); i++) {
+            //         downstreamMsi.add(new MSI());
+            //     }
+            //     System.out.println("downstream neighbour for " + local.getAID.getLocalName() + " is " + downstream.getAID.getLocalName());
+            // }
         });
         resetTimeDownstream();
     }
@@ -313,42 +312,42 @@ public class osAgent extends Agent {
     /**
      * @return the downstreamMsi
      */
-    public Vector<MSI> getDownstreamMsi() {
+    public ArrayList<MSI> getDownstreamMsi() {
         return downstreamMsi;
     }
 
     /**
      * @param downstreamMsi the downstreamMsi to set
      */
-    public void setDownstreamMsi(Vector<MSI> downstreamMsi) {
+    public void setDownstreamMsi(ArrayList<MSI> downstreamMsi) {
         this.downstreamMsi = downstreamMsi;
     }
 
     /**
      * @return the upstreamMsi
      */
-    public Vector<MSI> getUpstreamMsi() {
+    public ArrayList<MSI> getUpstreamMsi() {
         return upstreamMsi;
     }
 
     /**
      * @param upstreamMsi the upstreamMsi to set
      */
-    public void setUpstreamMsi(Vector<MSI> upstreamMsi) {
+    public void setUpstreamMsi(ArrayList<MSI> upstreamMsi) {
         this.upstreamMsi = upstreamMsi;
     }
 
     /**
      * @return the msi
      */
-    public Vector<MSI> getMsi() {
+    public ArrayList<MSI> getMsi() {
         return msi;
     }
 
     /**
      * @param msi the msi to set
      */
-    public void setMsi(Vector<MSI> msi) {
+    public void setMsi(ArrayList<MSI> msi) {
         this.msi = msi;
     }
 
@@ -404,7 +403,14 @@ public class osAgent extends Agent {
     /**
      * @return the centralMsi
      */
-    public Vector<CentralMeasure> getCentralMeasures() {
+    public ArrayList<CentralMeasure> getCentralMeasures() {
         return centralMeasures;
+    }
+
+    /**
+     * @param downstream the downstream to set
+     */
+    public void setDownstream(Configuration downstream) {
+        this.downstream = downstream;
     }
 }

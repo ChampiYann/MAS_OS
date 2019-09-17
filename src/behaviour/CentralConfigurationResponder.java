@@ -30,9 +30,7 @@ public class CentralConfigurationResponder extends AchieveREResponder {
     
     @Override
     protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
-        Configuration newConfig = new Configuration();
-
-        newConfig.getConfigFromJSON(request.getContent());
+        Configuration newConfig = new Configuration(request.getContent());
         Iterator<Configuration> iterator = outer.getOS().iterator();
         boolean exists = false;
         while (iterator.hasNext()) {

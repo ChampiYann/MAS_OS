@@ -1,10 +1,11 @@
 package measure;
 
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Vector;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONPropertyIgnore;
 
 public class MSI {
     /**
@@ -67,14 +68,17 @@ public class MSI {
         return symbol;
     }
 
+    @JSONPropertyIgnore
     public String getSymbolString() {
         return getSymbol(symbol);
     }
 
+    @JSONPropertyIgnore
     public static String getSymbol(int sym) {
         return symbols[sym];
     }
 
+    @JSONPropertyIgnore
     public boolean isBlank() {
         if (symbol == BLANK) {
             return true;
@@ -89,7 +93,7 @@ public class MSI {
      * @param v2 Second vector to compare
      * @return True is MSI's in both vectors are the same, returns false if not.
      */
-    public static boolean VectorEqual(Vector<MSI> v1, Vector<MSI> v2) {
+    public static boolean VectorEqual(ArrayList<MSI> v1, ArrayList<MSI> v2) {
         boolean result = true;
         if(v1.size() != v2.size()) {
             result = false;
@@ -111,7 +115,7 @@ public class MSI {
      * @param input MSI to be converted to JSON String
      * @return JSON String
      */
-    public static String MsiToJson(Vector<MSI> input) {
+    public static String MsiToJson(ArrayList<MSI> input) {
         Iterator<MSI> inputIterator = input.iterator();
         JSONArray outputArray = new JSONArray();
         while(inputIterator.hasNext()) {
