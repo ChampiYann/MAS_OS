@@ -1,20 +1,16 @@
 package agents;
 
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import behaviour.CompilerBehaviour;
-import behaviour.ConfigurationResponder;
-import behaviour.HBReaction;
-import behaviour.HBResponder;
-import behaviour.HBSender;
 import behaviour.HandleMessage;
-import behaviour.HandleMsi;
 import behaviour.TrafficSensing;
 import config.Configuration;
 import jade.core.AID;
@@ -37,12 +33,14 @@ public class osAgent extends Agent {
     public static long minute = 600; // milliseconds
 
     // AIDs for the neighbours of the OS and the central
-    private Configuration upstream;
+    private ArrayList<Configuration> config;
+    private Configuration[] upstream;
     private Configuration local;
-    private Configuration downstream;
+    private Configuration[] downstream;
     private AID central;
 
     // Measures
+    private ArrayList<Measure>[] measures;
     private ArrayList<Measure> localMeasures;
     private ArrayList<Measure> upstreamMeasures;
     private ArrayList<Measure> downstreamMeasures;
@@ -60,6 +58,7 @@ public class osAgent extends Agent {
     private AID topicCentral;
 
     // Retries
+    private long[] timers;
     private long timeUpstream = 0;
     private long timeDownstream = 0;
 
@@ -114,23 +113,40 @@ public class osAgent extends Agent {
             sideMatcher.find();
             this.local.setSide(sideMatcher.group());
 
-            // Create new upstream configuration
-            this.upstream = new Configuration(this);
-            // Create new downstream configuration
-            this.downstream = new Configuration(this);
-            this.downstream.setLocation(Double.POSITIVE_INFINITY);
+            // Create empty config array
+            this.config = new ArrayList<Configuration>();
+            for (int i = 0; i < this.local.getLanes()*2 +1; i++) {
+                this.config.add(i, new Configuration(this));
+                // this.config.add(this.local.getLanes()*2-i, new Configuration(this));
+                if (i > this.local.getLanes()) {
+                    this.config.get(i).setLocation(Double.POSITIVE_INFINITY);
+                }
+            }
+            this.config.set(this.local.getLanes(),this.local);
+            // // Create new upstream configuration
+            // this.upstream = new Configuration[this.local.getLanes()];
+            // // Create new downstream configuration
+            // this.downstream = new Configuration[this.local.getLanes()];
+            // for (int i = 0; i < this.local.getLanes(); i++) {
+            //     this.upstream[i] = new Configuration(this);
+            //     this.downstream[i] = new Configuration(this);
+            //     this.downstream[i].setLocation(Double.POSITIVE_INFINITY);
+            // }
 
             // Declare central agent
             this.central = getAID("central");
 
-            // Create empty set of local measures
-            this.localMeasures = new ArrayList<Measure>();
-            // Create empty set of upstream measures
-            this.upstreamMeasures = new ArrayList<Measure>();
-            // Create empty set of downstream measures
-            this.downstreamMeasures = new ArrayList<Measure>();
+            // // Create empty set of local measures
+            // this.localMeasures = new ArrayList<Measure>();
+            // // Create empty set of upstream measures
+            // this.upstreamMeasures = new ArrayList<Measure>();
+            // // Create empty set of downstream measures
+            // this.downstreamMeasures = new ArrayList<Measure>();
             // Create empty set of central measures
             this.centralMeasures = new ArrayList<Measure>();
+            // Create empty set of arraylist of measures
+            this.measures = (ArrayList<Measure>[]) new ArrayList[this.local.getLanes()*2+1];
+            Arrays.setAll(this.measures, n -> {return new ArrayList<Measure>();});
 
             // Setup MSIs
             this.msi = new MSI[local.getLanes()];
@@ -142,37 +158,40 @@ public class osAgent extends Agent {
             this.congestion = false;
 
             // Reset heartbeat timers
-            resetTimeUpstream();
-            resetTimeDownstream();
+            this.timers = new long[this.local.getLanes()*2+1];
+            Arrays.setAll(this.timers, n -> {return 0;});
+            resetTime();
+            // resetTimeUpstream();
+            // resetTimeDownstream();
 
-            // Behaviour that periodically sends a heartbeat upstream
-            addBehaviour(new HBSender(this, minute/2));
+            // // Behaviour that periodically sends a heartbeat upstream
+            // addBehaviour(new HBSender(this, minute/2));
 
-            // behaviour that responds to a HB
-            addBehaviour(new HBResponder(this, minute/4));
+            // // behaviour that responds to a HB
+            // addBehaviour(new HBResponder(this, minute/4));
 
-            // Behaviour that checks if a HB has been received back
-            addBehaviour(new HBReaction(this, minute/4));
+            // // Behaviour that checks if a HB has been received back
+            // addBehaviour(new HBReaction(this, minute/4));
 
             // General template for a request
             MessageTemplate requestTemplate = MessageTemplate.and(
 				MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST),
                 MessageTemplate.MatchPerformative(ACLMessage.REQUEST));
 
-            // Configure broadcast for configuration
-            try {
-                TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
-                this.topicConfiguration = topicHelper.createTopic("CONFIGURATION");
-                topicHelper.register(this.topicConfiguration);
+            // // Configure broadcast for configuration
+            // try {
+            //     TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
+            //     this.topicConfiguration = topicHelper.createTopic("CONFIGURATION");
+            //     topicHelper.register(this.topicConfiguration);
 
-                MessageTemplate ConfigTemplate = MessageTemplate.and(requestTemplate,
-                MessageTemplate.MatchTopic(this.topicConfiguration));
+            //     MessageTemplate ConfigTemplate = MessageTemplate.and(requestTemplate,
+            //     MessageTemplate.MatchTopic(this.topicConfiguration));
             
-                addBehaviour(new ConfigurationResponder(this, ConfigTemplate));
-            } catch (ServiceException e) {
-                System.out.println("Wrong configuration for " + getAID().getName());
-                doDelete();
-            }
+            //     addBehaviour(new ConfigurationResponder(this, ConfigTemplate));
+            // } catch (ServiceException e) {
+            //     System.out.println("Wrong configuration for " + getAID().getName());
+            //     doDelete();
+            // }
 
             // Traffic sensing behaviour with data from launch class
             setEnabledO2ACommunication(true,0);
@@ -183,7 +202,7 @@ public class osAgent extends Agent {
             // Configure reception of list of measures
             try {
                 TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
-                topicMeasure = topicHelper.createTopic("MEASURE");
+                topicMeasure = topicHelper.createTopic(MEASURE);
                 topicHelper.register(topicMeasure);
 
                 MessageTemplate MeasureTemplate = MessageTemplate.and(requestTemplate,
@@ -196,17 +215,17 @@ public class osAgent extends Agent {
             }
 
             // Change displays
-            addBehaviour(new CompilerBehaviour(this,minute/2));
+            addBehaviour(new CompilerBehaviour(this,minute));
 
-            // Subscribe to central messages
-            try {
-                TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
-                topicCentral = topicHelper.createTopic("CENTRAL");
-                topicHelper.register(topicCentral);
-            } catch (ServiceException e) {
-                System.out.println("Wrong configuration for " + getAID().getName());
-                doDelete();
-            }
+            // // Subscribe to central messages
+            // try {
+            //     TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
+            //     topicCentral = topicHelper.createTopic("CENTRAL");
+            //     topicHelper.register(topicCentral);
+            // } catch (ServiceException e) {
+            //     System.out.println("Wrong configuration for " + getAID().getName());
+            //     doDelete();
+            // }
 
             // Print message stating that the configuration was succefull
             System.out.println("OS " + getAID().getLocalName() + " configured on road " + local.getRoad() + " at km " + local.getLocation() +
@@ -237,20 +256,20 @@ public class osAgent extends Agent {
         send(newMsg);
     }
 
-    /**
-     * Format and send local configuration
-     */
-    public void SendConfig () {
-        ACLMessage configurationRequest = new ACLMessage(ACLMessage.REQUEST);
-        configurationRequest.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-        configurationRequest.setReplyByDate(new Date(System.currentTimeMillis() + minute*4));
-        configurationRequest.addReceiver(this.topicConfiguration);
-        JSONObject msgContent = this.local.configToJSON();
-        configurationRequest.setContent(msgContent.toString());
-        this.addBehaviour(new AchieveREInitiator(this, configurationRequest));
-        resetTimeDownstream();
-        resetTimeUpstream();
-    }
+    // /**
+    //  * Format and send local configuration
+    //  */
+    // public void SendConfig () {
+    //     ACLMessage configurationRequest = new ACLMessage(ACLMessage.REQUEST);
+    //     configurationRequest.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+    //     configurationRequest.setReplyByDate(new Date(System.currentTimeMillis() + minute*4));
+    //     configurationRequest.addReceiver(this.topicConfiguration);
+    //     JSONObject msgContent = this.local.configToJSON();
+    //     configurationRequest.setContent(msgContent.toString());
+    //     this.addBehaviour(new AchieveREInitiator(this, configurationRequest));
+    //     resetTimeDownstream();
+    //     resetTimeUpstream();
+    // }
 
     /**
      * Send current displaying symbols to central
@@ -289,9 +308,15 @@ public class osAgent extends Agent {
         ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
         newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
         newMsg.setOntology(MEASURE);
-        newMsg.addReceiver(this.downstream.getAID());
-        newMsg.addReceiver(this.upstream.getAID());
-        newMsg.setContent(new JSONArray(this.localMeasures).toString());
+        if (this.config.stream().anyMatch(n -> n.getAID() == null)) {
+            newMsg.addReceiver(this.topicMeasure);
+        } else {
+            this.config.stream().filter(n -> !n.getAID().equals(this.local.getAID())).forEach(n -> newMsg.addReceiver(n.getAID()));
+        }
+        JSONObject jsonContent = new JSONObject();
+        jsonContent.put("configuration", this.local.configToJSON());
+        jsonContent.put("measures", new JSONArray(this.localMeasures.stream().filter(n -> n.getType() != Measure.REACTION).collect(Collectors.toList())));
+        newMsg.setContent(jsonContent.toString());
         this.addBehaviour(new AchieveREInitiator(this, newMsg));
     }
 
@@ -316,21 +341,21 @@ public class osAgent extends Agent {
     /**
      * @return the downstream
      */
-    public Configuration getDownstream() {
+    public Configuration[] getDownstream() {
         return downstream;
     }
 
     /**
      * @return the upstream
      */
-    public Configuration getUpstream() {
+    public Configuration[] getUpstream() {
         return upstream;
     }
 
     /**
      * @param upstream the upstream to set
      */
-    public void setUpstream(Configuration upstream) {
+    public void setUpstream(Configuration[] upstream) {
         this.upstream = upstream;
     }
 
@@ -383,6 +408,30 @@ public class osAgent extends Agent {
         this.timeDownstream = System.currentTimeMillis();
     }
 
+    public void resetTime() {
+        Arrays.setAll(this.timers,n -> {return System.currentTimeMillis();});
+    }
+
+    public void resetTime(int index) {
+        this.timers[index] = System.currentTimeMillis();
+    }
+
+    /**
+     * @return the timers
+     */
+    public long[] getTimers() {
+        return timers;
+    }
+
+    /**
+     * 
+     * @param index index of timer to request
+     * @return the timer
+     */
+    public long getTimers(int index) {
+        return timers[index];
+    }    
+
     /**
      * @return the centralMeasures
      */
@@ -428,7 +477,7 @@ public class osAgent extends Agent {
     /**
      * @param downstream the downstream to set
      */
-    public void setDownstream(Configuration downstream) {
+    public void setDownstream(Configuration[] downstream) {
         this.downstream = downstream;
     }
 
@@ -437,5 +486,19 @@ public class osAgent extends Agent {
      */
     public AID getCentral() {
         return central;
+    }
+
+    /**
+     * @return the measures
+     */
+    public ArrayList<Measure>[] getMeasures() {
+        return measures;
+    }
+
+    /**
+     * @return the config
+     */
+    public ArrayList<Configuration> getConfig() {
+        return config;
     }
 }

@@ -11,6 +11,7 @@ public class Measure {
 
     public static final int AID = 1;
     public static final int CENTRAL = 2;
+    public static final int REACTION = 3;
 
     protected long ID;
     protected int type;

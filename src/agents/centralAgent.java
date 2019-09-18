@@ -58,7 +58,7 @@ public class centralAgent extends Agent {
 
         try {
             TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
-            final AID topicConfiguration = topicHelper.createTopic("CONFIGURATION");
+            final AID topicConfiguration = topicHelper.createTopic("MEASURE");
             topicHelper.register(topicConfiguration);
 
             MessageTemplate requestTemplate = MessageTemplate.and(

@@ -8,7 +8,7 @@ import org.json.JSONObject;
 
 import agents.osAgent;
 
-public class Configuration {
+public class Configuration implements Comparable<Configuration>{
 
     final osAgent outer;
 
@@ -80,6 +80,17 @@ public class Configuration {
 
     public static boolean ConfigurationEqual(Configuration c1, Configuration c2) {
         return c1.AID.equals(c2.AID);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        Configuration c = (Configuration) obj;
+        return this.location == c.location;
+    }
+
+    @Override
+    public int compareTo(Configuration c) {
+        return Double.compare(location,c.location);
     }
 
     /**

@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import agents.centralAgent;
 import agents.osAgent;
@@ -92,7 +93,9 @@ public class SetMeasure extends TickerBehaviour {
         newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
         newMsg.addReceiver(outer.getCentralTopic());
         newMsg.setOntology(osAgent.MEASURE);
-        newMsg.setContent(new JSONArray(outer.getMeasures()).toString());
+        JSONObject jsonContent = new JSONObject();
+        jsonContent.put("measures", new JSONArray(outer.getMeasures()));
+        newMsg.setContent(jsonContent.toString());
         myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
     }
 

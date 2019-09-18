@@ -6,7 +6,6 @@ import java.util.Iterator;
 import agents.osAgent;
 import jade.core.Agent;
 import jade.core.behaviours.OneShotBehaviour;
-import jade.core.behaviours.TickerBehaviour;
 import measure.MSI;
 import measure.Measure;
 
@@ -41,7 +40,7 @@ public class HandleMsi extends OneShotBehaviour {
         // check for flashers
         boolean[] flashers = new boolean[newMsi.length];
         Arrays.fill(flashers, true);
-        outer.getUpstreamMeasures().stream().forEach(n -> {for (int i = 0; i < newMsi.length; i++) {
+        outer.getMeasures()[outer.getMeasures().length/2-1].stream().forEach(n -> {for (int i = 0; i < newMsi.length; i++) {
             if (n.getDisplay()[i].getSymbol() <= newMsi[i].getSymbol()) {
                 flashers[i] = false;
             }
