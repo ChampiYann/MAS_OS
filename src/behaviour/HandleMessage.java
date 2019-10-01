@@ -37,29 +37,30 @@ public class HandleMessage extends AchieveREResponder {
         result.setPerformative(ACLMessage.INFORM);
 
         JSONArray jsonContent = new JSONArray(request.getContent());
-        if (request.getSender().equals(outer.getDownstream().getAID())) {
-            Iterator<Object> jsonContentIterator = jsonContent.iterator();
-            outer.getDownstreamMeasures().clear();
-            while (jsonContentIterator.hasNext()) {
-                outer.getDownstreamMeasures().add(new Measure((JSONObject)jsonContentIterator.next()));
-            }
-            // myAgent.addBehaviour(new CompilerBehaviour());
-            return result;
-        } else if (request.getSender().equals(outer.getUpstream().getAID())) {
-            Iterator<Object> jsonContentIterator = jsonContent.iterator();
-            outer.getUpstreamMeasures().clear();
-            while (jsonContentIterator.hasNext()) {
-                outer.getUpstreamMeasures().add(new Measure((JSONObject)jsonContentIterator.next()));
-            }
-            // myAgent.addBehaviour(new CompilerBehaviour());
-            return result;
-        } else if (request.getSender().equals(outer.getCentral())) {
+        // if (request.getSender().equals(outer.getDownstream().getAID())) {
+        //     Iterator<Object> jsonContentIterator = jsonContent.iterator();
+        //     outer.getDownstreamMeasures().clear();
+        //     while (jsonContentIterator.hasNext()) {
+        //         outer.getDownstreamMeasures().add(new Measure((JSONObject)jsonContentIterator.next()));
+        //     }
+        //     // myAgent.addBehaviour(new CompilerBehaviour());
+        //     return result;
+        // } else if (request.getSender().equals(outer.getUpstream().getAID())) {
+        //     Iterator<Object> jsonContentIterator = jsonContent.iterator();
+        //     outer.getUpstreamMeasures().clear();
+        //     while (jsonContentIterator.hasNext()) {
+        //         outer.getUpstreamMeasures().add(new Measure((JSONObject)jsonContentIterator.next()));
+        //     }
+        //     // myAgent.addBehaviour(new CompilerBehaviour());
+        //     return result;
+        // } else 
+        if (request.getSender().equals(outer.getCentral())) {
             Iterator<Object> jsonContentIterator = jsonContent.iterator();
             outer.getCentralMeasures().clear();
             while (jsonContentIterator.hasNext()) {
                 outer.getCentralMeasures().add(new Measure((JSONObject)jsonContentIterator.next()));
             }
-            // myAgent.addBehaviour(new CompilerBehaviour());
+            myAgent.addBehaviour(new CompilerBehaviour(myAgent));
             return result;
         } else {
             return null;

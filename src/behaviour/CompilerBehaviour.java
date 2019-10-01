@@ -10,20 +10,22 @@ import jade.core.behaviours.TickerBehaviour;
 import measure.MSI;
 import measure.Measure;
 
-public class CompilerBehaviour extends TickerBehaviour {
+// public class CompilerBehaviour extends TickerBehaviour {
+public class CompilerBehaviour extends OneShotBehaviour {
 
-    public CompilerBehaviour(Agent a, long period) {
-        super(a, period);
-        // TODO Auto-generated constructor stub
+    // public CompilerBehaviour(Agent a, long period) {
+    //     super(a, period);
+    //     // TODO Auto-generated constructor stub
+    // }
+    public CompilerBehaviour(Agent a) {
+        super(a);
     }
 
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L;
 
     @Override
-    protected void onTick() {
+    // protected void onTick() {
+    public void action () {
         osAgent outer = (osAgent)myAgent;
 
         ArrayList<Measure> newMeasures = new ArrayList<Measure>();
@@ -98,7 +100,7 @@ public class CompilerBehaviour extends TickerBehaviour {
         // send local measures
         if (!newMeasures.equals(outer.getLocalMeasures())) {
             outer.setLocalMeasures(newMeasures);
-            outer.sendMeasures();
+            // outer.sendMeasures();
             myAgent.addBehaviour(new HandleMsi(myAgent));
         }
     }

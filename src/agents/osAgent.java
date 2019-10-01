@@ -14,7 +14,6 @@ import behaviour.HBReaction;
 import behaviour.HBResponder;
 import behaviour.HBSender;
 import behaviour.HandleMessage;
-import behaviour.HandleMsi;
 import behaviour.TrafficSensing;
 import config.Configuration;
 import jade.core.AID;
@@ -196,7 +195,7 @@ public class osAgent extends Agent {
             }
 
             // Change displays
-            addBehaviour(new CompilerBehaviour(this,minute/2));
+            // addBehaviour(new CompilerBehaviour(this,minute/2));
 
             // Subscribe to central messages
             try {
