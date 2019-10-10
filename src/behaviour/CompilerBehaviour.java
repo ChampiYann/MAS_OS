@@ -6,7 +6,7 @@ import java.util.Arrays;
 import agents.osAgent;
 import jade.core.Agent;
 import jade.core.behaviours.OneShotBehaviour;
-import jade.core.behaviours.TickerBehaviour;
+// import jade.core.behaviours.TickerBehaviour;
 import measure.MSI;
 import measure.Measure;
 

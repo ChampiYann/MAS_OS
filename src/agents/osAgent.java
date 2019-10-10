@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import behaviour.CompilerBehaviour;
+// import behaviour.CompilerBehaviour;
 import behaviour.ConfigurationResponder;
 import behaviour.HBReaction;
 import behaviour.HBResponder;
@@ -284,15 +284,15 @@ public class osAgent extends Agent {
     /**
      * send local measures to neighbours
      */
-    public void sendMeasures() {
-        ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
-        newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-        newMsg.setOntology(MEASURE);
-        newMsg.addReceiver(this.downstream.getAID());
-        newMsg.addReceiver(this.upstream.getAID());
-        newMsg.setContent(new JSONArray(this.localMeasures).toString());
-        this.addBehaviour(new AchieveREInitiator(this, newMsg));
-    }
+    // public void sendMeasures() {
+    //     ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
+    //     newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+    //     newMsg.setOntology(MEASURE);
+    //     newMsg.addReceiver(this.downstream.getAID());
+    //     newMsg.addReceiver(this.upstream.getAID());
+    //     newMsg.setContent(new JSONArray(this.localMeasures).toString());
+    //     this.addBehaviour(new AchieveREInitiator(this, newMsg));
+    // }
 
     // public void sendCentralMeasure (String content) {
     //     ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);

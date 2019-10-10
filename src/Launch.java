@@ -101,13 +101,13 @@ public class Launch {
             }
         }
 
-        try {
-            AgentController sniff = cc.createNewAgent("sniff", "jade.tools.sniffer.Sniffer", null);
-            sniff.start(); 
-        } catch (StaleProxyException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }  
+        // try {
+        //     AgentController sniff = cc.createNewAgent("sniff", "jade.tools.sniffer.Sniffer", null);
+        //     sniff.start(); 
+        // } catch (StaleProxyException e) {
+        //     // TODO Auto-generated catch block
+        //     e.printStackTrace();
+        // }  
 
         FileWriter killWriter;
         try {
