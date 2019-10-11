@@ -4,17 +4,11 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,10 +16,8 @@ import java.util.regex.Pattern;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.Timer;
 
 import agents.centralAgent;
-import agents.osAgent;
 import config.Configuration;
 import config.RefConfiguration;
 import gui.CentralBackground;
@@ -49,8 +41,6 @@ public class centralGui extends JFrame {
     private ArrayList<Portal> portalList = new ArrayList<Portal>();
     private ArrayList<RefConfiguration> refConfigList = new ArrayList<RefConfiguration>();
     private ArrayList<RefPortal> refPortalList = new ArrayList<RefPortal>();
-
-    private BufferedReader msiReplay;
 
     private FileWriter logWriter;
 
@@ -80,63 +70,10 @@ public class centralGui extends JFrame {
         timeText.setBounds(margin, 2 * margin + 200, 150, 50);
 
         try {
-            FileReader reader = new FileReader("BEELD1803.csv");
-            msiReplay = new BufferedReader(reader);
-        } catch (FileNotFoundException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
-
-        try {
             logWriter = new FileWriter("log.txt");
         } catch (Exception e) {
             //TODO: handle exception
         }
-
-        ActionListener taskPerformer = new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                if (agent.getTime() != null) {
-                    boolean done = false;
-                    while(!done) {
-                        try {
-                            timeText.setText(agent.getTime().toString());
-                            String line = null;
-                            line = msiReplay.readLine().replaceAll(",", ".");
-                            String[] values = line.split(";");
-                            LocalTime lineTime = LocalTime.parse(values[1]);
-                            if (lineTime.compareTo(agent.getTime().plusMinutes(1)) > -1) {
-                                msiReplay.reset();
-                                done = true;
-                            } else {
-                                msiReplay.mark(1000);
-                                updateRef(new AID(values[4] + " " + values[5],AID.ISLOCALNAME),Arrays.copyOfRange(values,6,8+1));
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (NullPointerException e) {
-                            done = true;
-                        }
-                    }
-                    updateRefCongestion();
-                    Iterator<Portal> portalIterator = portalList.iterator();
-                    Iterator<RefPortal> refPortalIterator = refPortalList.iterator();
-                    while (portalIterator.hasNext() && refPortalIterator.hasNext()) {
-                        Portal portal = portalIterator.next();
-                        RefPortal refPortal = refPortalIterator.next();
-                        try {
-                            logWriter.write(agent.getTime().toString() + "," + refPortal.getLocation() + "," + refPortal.msg[3].getForeground().getBlue() +
-                                "," + refPortal.msg[0].getText() + "," + refPortal.msg[1].getText() + "," + refPortal.msg[2].getText() +
-                                "," + refPortal.getLocation() + "," + portal.msg[0].getText() + "," + portal.msg[1].getText() +
-                                "," + portal.msg[2].getText() + "\n");
-                        } catch (IOException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }
-        };
-        new Timer((int)osAgent.minute, taskPerformer).start();
 
         File folder = new File("config");
         File[] listOfFiles = folder.listFiles();
@@ -251,21 +188,46 @@ public class centralGui extends JFrame {
         }
     }
 
-    public void updateRef(AID id, String[] symbols) {
+    public void updateRef(float location, String[] symbols) {
         Iterator<RefPortal> iterator = refPortalList.iterator();
         while (iterator.hasNext()) {
             RefPortal portal = iterator.next();
-            if (portal.getName().equals(id)) {
+            if (portal.getLocation() == location) {
                 portal.update(symbols);
             }
         }
     }
 
-    public void updateRefCongestion() {
+    public void updateTime(LocalDateTime dateTime) {
+        timeText.setText(dateTime.toString());
+    }
+
+    public void updateCongestion(float location, boolean congestion) {
         Iterator<RefPortal> iterator = refPortalList.iterator();
         while (iterator.hasNext()) {
             RefPortal portal = iterator.next();
-            portal.updateCongestion();
+            if (portal.getLocation() == location) {
+                portal.updateCongestion(congestion);
+            }
+        }
+    }
+
+    public void log() {
+        Iterator<Portal> portalIterator = portalList.iterator();
+        Iterator<RefPortal> refPortalIterator = refPortalList.iterator();
+        while (portalIterator.hasNext() && refPortalIterator.hasNext()) {
+            Portal portal = portalIterator.next();
+            RefPortal refPortal = refPortalIterator.next();
+            try {
+                logWriter.write(myAgent.getDateTime().toString() + "," + refPortal.getLocation() + "," + refPortal.msg[3].getForeground().getBlue() +
+                    "," + refPortal.msg[0].getText() + "," + refPortal.msg[1].getText() + "," + refPortal.msg[2].getText() +
+                    "," + refPortal.getLocation() + "," + portal.msg[0].getText() + "," + portal.msg[1].getText() +
+                    "," + portal.msg[2].getText() + "\n");
+                    logWriter.flush();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
     }
 }

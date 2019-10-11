@@ -44,23 +44,24 @@ public class Configuration {
         lanes = 0;
     }
 
-    public void getConfigFromJSON(String input) {
+    public Configuration(String input) {
         JSONObject content = new JSONObject(input);
-        road = content.getString("road");
-        location = content.getFloat("location");
-        side = content.getString("side");
-        getAID = new AID(content.getString("AID"), AID.ISGUID);
-        lanes = content.getInt("lanes");
+        this.outer = null;
+        this.getAID = new AID(content.getString("AID"), jade.core.AID.ISGUID);
+        this.road = content.getString("road");
+        this.location = content.getFloat("location");
+        this.side = content.getString("side");
+        this.lanes = content.getInt("lanes");
     }
 
-    public String configToJSON() {
+    public JSONObject configToJSON() {
         JSONObject content = new JSONObject();
-        content.put("road", road);
-        content.put("location", location);
-        content.put("side", side);
-        content.put("AID", getAID.getName());
-        content.put("lanes", lanes);
-        return content.toString();
+        content.put("road", this.road);
+        content.put("location", this.location);
+        content.put("side", this.side);
+        content.put("AID", this.getAID.getName());
+        content.put("lanes", this.lanes);
+        return content;
     }
 
     public static Comparator<Configuration> kmCompare = new Comparator<Configuration>() {
@@ -75,4 +76,78 @@ public class Configuration {
             }
         }
     };
+
+    public static boolean ConfigurationEqual(Configuration c1, Configuration c2) {
+        return c1.getAID.equals(c2.getAID);
+    }
+
+     /**
+     * @return the aID
+     */
+    public AID getAID() {
+        return this.getAID;
+    }
+
+    /**
+     * @param aID the aID to set
+     */
+    public void setAID(AID aID) {
+        this.getAID = aID;
+    }
+
+    /**
+     * @return the lanes
+     */
+    public int getLanes() {
+        return this.lanes;
+    }
+
+    /**
+     * @param lanes the lanes to set
+     */
+    public void setLanes(int lanes) {
+        this.lanes = lanes;
+    }
+
+    /**
+     * @return the location
+     */
+    public double getLocation() {
+        return this.location;
+    }
+
+    /**
+     * @param location the location to set
+     */
+    public void setLocation(float location) {
+        this.location = location;
+    }
+
+    /**
+     * @return the road
+     */
+    public String getRoad() {
+        return this.road;
+    }
+
+    /**
+     * @param road the road to set
+     */
+    public void setRoad(String road) {
+        this.road = road;
+    }
+
+    /**
+     * @return the side
+     */
+    public String getSide() {
+        return this.side;
+    }
+
+    /**
+     * @param side the side to set
+     */
+    public void setSide(String side) {
+        this.side = side;
+    }
 }

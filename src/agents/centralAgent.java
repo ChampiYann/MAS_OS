@@ -4,36 +4,32 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Iterator;
 
-import org.json.JSONArray;
-
+import behaviour.CentralConfigurationResponder;
+import behaviour.InputHandlerBehaviour;
+import behaviour.SetMeasure;
+import behaviour.SymbolListener;
 import config.Configuration;
 import gui.centralGui;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.ServiceException;
 import jade.core.behaviours.Behaviour;
-import jade.core.behaviours.TickerBehaviour;
 import jade.core.messaging.TopicManagementHelper;
 import jade.domain.FIPANames;
-import jade.domain.FIPAAgentManagement.FailureException;
-import jade.domain.FIPAAgentManagement.NotUnderstoodException;
-import jade.domain.FIPAAgentManagement.RefuseException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import jade.proto.AchieveREInitiator;
-import jade.proto.AchieveREResponder;
-import measure.CrossMeasure;
 import measure.Measure;
 import measure.NoMeasure;
 
 public class centralAgent extends Agent {
 
+    private static final long serialVersionUID = 1L;
+
     // Measures
-    private ArrayList<CrossMeasure> measures = new ArrayList<CrossMeasure>();
+    private ArrayList<Measure> measures = new ArrayList<Measure>();
 
     // GUI
     transient protected centralGui myGui;
@@ -45,7 +41,7 @@ public class centralAgent extends Agent {
 
     private BufferedReader measureReader;
 
-    private LocalTime time;
+    private LocalDateTime dateTime;
 
     @Override
     protected void setup() {
@@ -70,8 +66,8 @@ public class centralAgent extends Agent {
 
             // COnfiguration response
             MessageTemplate ConfigTemplate = MessageTemplate.and(requestTemplate,
-                MessageTemplate.MatchOntology("CONFIGURATION"));
-            addBehaviour(new ConfigurationResponder(this, ConfigTemplate));
+                MessageTemplate.MatchTopic(topicConfiguration));
+            addBehaviour(new CentralConfigurationResponder(this, ConfigTemplate));
         } catch (ServiceException e) {
             System.out.println("Wrong configuration for " + getAID().getName());
             doDelete();
@@ -81,44 +77,27 @@ public class centralAgent extends Agent {
             TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
             centralTopic = topicHelper.createTopic("CENTRAL");
 
-            setEnabledO2ACommunication(true,0);
-            Behaviour o2aBehaviour = new SetMeasure(this, osAgent.minute);
-            addBehaviour(o2aBehaviour);
-            setO2AManager(o2aBehaviour);
+            
+            addBehaviour(new SetMeasure(this, osAgent.minute/2));
+            
         } catch (ServiceException e) {
             e.printStackTrace();
         }
+
+        setEnabledO2ACommunication(true,0);
+        Behaviour o2aBehaviour = new InputHandlerBehaviour(this);
+        addBehaviour(o2aBehaviour);
+        setO2AManager(o2aBehaviour);
 
         MessageTemplate requestTemplate = MessageTemplate.and(
 				MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST),
                 MessageTemplate.MatchPerformative(ACLMessage.REQUEST));
         MessageTemplate SymbolsTemplate = MessageTemplate.and(requestTemplate,
                 MessageTemplate.MatchOntology("SYMBOLS"));
-        addBehaviour(new AchieveREResponder(this, SymbolsTemplate) {
-            @Override
-            protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
-                return null;
-            }
-
-            @Override
-            protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
-                ACLMessage msg = request.createReply();
-
-                AID sender = request.getSender();
-                JSONArray matrixJson = new JSONArray(request.getContent());
-                int[] symbols = new int[3];
-                for (int i = 0; i < 3; i++) {
-                    symbols[i] = matrixJson.getInt(i);
-                }
-                myGui.update(sender, symbols);
-
-                msg.setPerformative(ACLMessage.INFORM);
-                return msg;
-            }
-        });
+        addBehaviour(new SymbolListener(this, SymbolsTemplate));
 
         try {
-            FileReader reader = new FileReader("measures\\central.txt");
+            FileReader reader = new FileReader("measures\\central.csv");
             measureReader = new BufferedReader(reader);
             measureReader.mark(1000);
         } catch (FileNotFoundException e1) {
@@ -127,115 +106,6 @@ public class centralAgent extends Agent {
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }
-    }
-
-    public class SetMeasure extends TickerBehaviour {
-
-        public SetMeasure(Agent a, long period) {
-            super(a, period);
-        }
-
-        @Override
-        protected void onTick() {
-            Object input = getO2AObject();
-            if (input != null) {
-                time = (LocalTime)input;
-                boolean done = false;
-                while(!done) {
-                    try {
-                        String line = null;
-                        line = measureReader.readLine();
-                        String[] values = line.split(",");
-                        LocalTime lineStartTime = LocalTime.parse(values[1]);
-                        if (lineStartTime.compareTo(time.plusMinutes(1)) > -1) {
-                            measureReader.reset();
-                            done = true;
-                        } else {
-                            measureReader.mark(1000);
-                            // Add measure to list en send it
-                            boolean[] lanes = new boolean[values.length-7];
-                            for (int i = 0; i < lanes.length; i++) {
-                                lanes[i] = Boolean.parseBoolean(values[7+i]);
-                            }
-                            float startKm = Float.parseFloat(values[6]);
-                            float endKm = Float.parseFloat(values[5]);
-                            if (startKm == endKm) {
-                                endKm -= (float)0.001;
-                            }
-                            CrossMeasure mr = new CrossMeasure(getAID(), time, LocalTime.parse(values[3]), values[4], startKm, endKm, lanes);
-                            measures.add(mr);
-                            addMeasure(mr);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (NullPointerException e) {
-                        done = true;
-                    }
-                }
-                // cycle though active measures and cancel those that need cancelling
-                Iterator<CrossMeasure> iterator = measures.iterator();
-                while (iterator.hasNext()) {
-                    CrossMeasure mr = iterator.next();
-                    if (mr.getEndTime().compareTo(time) == 0) {
-                        // remove measure and  send cancel
-                        cancelMeasure(mr);
-                        iterator.remove();
-                    }
-                }
-            }
-        }
-
-        private void addMeasure (CrossMeasure mr) {
-            ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
-            newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-            newMsg.setOntology("ADD");
-            newMsg.setContent(mr.toJSON().toString());
-            newMsg.addReceiver(centralTopic);
-            myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
-        }
-
-        private void cancelMeasure (CrossMeasure mr) {
-            ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
-            newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-            newMsg.setOntology("CANCEL");
-            newMsg.setContent(mr.toJSON().toString());
-            newMsg.addReceiver(centralTopic);
-            myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
-        }
-    }
-
-    public class ConfigurationResponder extends AchieveREResponder {
-
-        
-        public ConfigurationResponder(Agent a, MessageTemplate mt) {
-            super(a, mt);
-            // TODO Auto-generated constructor stub
-        }
-
-        @Override
-        protected ACLMessage prepareResponse(ACLMessage request) throws NotUnderstoodException, RefuseException {
-            return null;
-        }
-        
-        @Override
-        protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
-            Configuration newConfig = new Configuration();
-
-            newConfig.getConfigFromJSON(request.getContent());
-            Iterator<Configuration> iterator = OS.iterator();
-            boolean exists = false;
-            while (iterator.hasNext()) {
-                Configuration config = iterator.next();
-                if (config.getAID.equals(newConfig.getAID)) {
-                    exists = true;
-                }
-            }
-            if (!exists) {
-                OS.add(newConfig);
-                myGui.addPortal();
-            }
-            return null;
         }
     }
 
@@ -272,10 +142,58 @@ public class centralAgent extends Agent {
         myGui.dispose();
     }
 
+    public centralGui getMyGui() {
+        return myGui;
+    }
+
+    public ArrayList<Measure> getMeasures() {
+        return measures;
+    }
+
+    /**
+     * 
+     * @return the centralTopic
+     */
+    public AID getCentralTopic() {
+        return centralTopic;
+    }
+
+    /**
+     * 
+     * @return the measureReader
+     */
+    public BufferedReader getMeasureReader() {
+        return measureReader;
+    }
+
+    /**
+     * @param time the time to set
+     */
+    public void setDateTime(LocalDateTime time) {
+        this.dateTime = time;
+    }
+
     /**
      * @return the time
      */
-    public LocalTime getTime() {
-        return time;
+    public LocalDateTime getDateTime() {
+        return dateTime;
+    }
+
+    public void updateGuiTime(LocalDateTime dateTime) {
+        myGui.updateTime(dateTime);
+        this.dateTime = dateTime;
+    }
+
+    public void updateGuiCongestion(float location, boolean congestion) {
+        myGui.updateCongestion(location,congestion);
+    }
+
+    public void updateGuiMsi(float location, String[] symbols) {
+        myGui.updateRef(location, symbols);
+    }
+
+    public void guiLog() {
+        myGui.log();
     }
 }

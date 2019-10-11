@@ -1,10 +1,16 @@
 import jade.core.Runtime;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Timer;
@@ -18,13 +24,16 @@ import jade.wrapper.*;
 import org.apache.commons.math3.distribution.WeibullDistribution;
 
 import agents.osAgent;
+import behaviour.InputHandlerBehaviour;
 import environment.Outstation;
 
 public class Launch {
 
     public static final long minute = 400;
     static volatile AgentController central = null;
-    static volatile LocalTime time =  LocalTime.of(1, 0, 0);
+    // static volatile LocalTime time =  LocalTime.of(1, 0, 0);
+    // static volatile LocalDate date = LocalDate.of(2018, 3, 1);
+    static volatile LocalDateTime dateTime = LocalDateTime.of(2018, 3, 1, 1, 0);
 
     public static void main(String[] args) {
         // Get a hold on JADE runtime
@@ -95,6 +104,10 @@ public class Launch {
         try {
             killWriter = new FileWriter("kill_log.txt");
 
+            BufferedReader msiReplay;
+            FileReader reader = new FileReader("BEELD1803.csv");
+            msiReplay = new BufferedReader(reader);
+
             WeibullDistribution distribution = new WeibullDistribution(0.4360,792.0608);
             Random rand = new Random();
             Timer timer = new Timer();
@@ -102,26 +115,62 @@ public class Launch {
             
                 @Override
                 public void run() {
-                    try {
-                        central.putO2AObject(time, AgentController.ASYNC);
-                    } catch (StaleProxyException e2) {
-                        // TODO Auto-generated catch block
-                        e2.printStackTrace();
+                    boolean done = false;
+                    while(!done) {
+                        try {
+                            String line = null;
+                            line = msiReplay.readLine().replaceAll(",", ".");
+                            String[] values = line.split(";");
+                            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("d-M-yyyy");
+                            LocalDate lineDate = LocalDate.parse(values[0],dateFormatter);
+                            LocalTime lineTime = LocalTime.parse(values[1]);
+                            LocalDateTime lineDateTime = lineDate.atTime(lineTime);
+                            if (lineDateTime.compareTo(dateTime.plusMinutes(1)) > -1) {
+                                msiReplay.reset();
+                                done = true;
+                            } else {
+                                msiReplay.mark(1000);
+                                Vector<Object> packet = new Vector<Object>();
+                                packet.add(dateTime);
+                                packet.add(InputHandlerBehaviour.MSI);
+                                packet.add(Float.parseFloat(values[5]));
+                                packet.add(Arrays.copyOfRange(values,6,8+1));
+                                central.putO2AObject(packet, AgentController.ASYNC);
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (NullPointerException e) {
+                            done = true;
+                        } catch (StaleProxyException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
                     }
+
+                    
                     Iterator<Outstation> outstationIterator = outstations.iterator();
                     while (outstationIterator.hasNext()) {
                         Outstation nextOutstation = outstationIterator.next();
                         try {
-                            nextOutstation.handleDelay(killWriter, time);
+                            nextOutstation.handleDelay(killWriter, dateTime);
                         } catch (StaleProxyException e) {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
                         try {
-                            nextOutstation.sendCongestion();
-                        } catch (StaleProxyException | IOException e1) {
+                            boolean congestion = nextOutstation.sendCongestion();
+                            Vector<Object> packet = new Vector<Object>();
+                            packet.add(dateTime);
+                            packet.add(InputHandlerBehaviour.CONGESTION);
+                            packet.add(nextOutstation.getLocation());
+                            packet.add(congestion);
+                            central.putO2AObject(packet, AgentController.ASYNC);
+                        } catch (IOException e1) {
                             // TODO Auto-generated catch block
                             // e1.printStackTrace();
+                        } catch (StaleProxyException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
                         }
                         if (rand.nextInt(16117524) < 169) {
                             long restartDelaySeconds = Math.round(distribution.sample()+1);
@@ -130,7 +179,7 @@ public class Launch {
                             try {
                                 nextOutstation.kill(restartDelayMinutes);
                                 try {
-                                    killWriter.write(time.toString() + ",kill," + nextOutstation.getLocation()+ "\n");
+                                    killWriter.write(dateTime.toString() + ",kill," + nextOutstation.getLocation()+ "\n");
                                     killWriter.flush();
                                 } catch (IOException e) {
                                     // TODO Auto-generated catch block
@@ -142,7 +191,19 @@ public class Launch {
                             }
                         }
                     }
-                    time = time.plusMinutes(1);
+
+                    Vector<Object> packet = new Vector<Object>();
+                    packet.add(dateTime);
+                    packet.add(InputHandlerBehaviour.LOG);
+                    try {
+                        central.putO2AObject(packet, AgentController.ASYNC);
+                    } catch (StaleProxyException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+
+                    dateTime = dateTime.plusMinutes(1);
+                    // time = time.plusMinutes(1);
                 }
             };
 

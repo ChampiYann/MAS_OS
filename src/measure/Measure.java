@@ -1,5 +1,8 @@
 package measure;
 
+import java.time.LocalDateTime;
+import java.util.Random;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -25,7 +28,9 @@ public class Measure {
     protected float end;
     protected long ID;
     protected String road;
-    protected boolean[] lanes;
+    protected int[] lanes;
+    protected LocalDateTime startTime;
+    protected LocalDateTime endTime;
 
     protected Measure() { }
 
@@ -38,11 +43,28 @@ public class Measure {
         ID = content.getLong("ID");
         iteration = content.getInt("iteration");
         road = content.getString("road");
-        JSONArray lanesJSON = content.getJSONArray("lanes");
-        lanes = new boolean[lanesJSON.length()];
+        JSONArray lanesJSON = content.getJSONArray("msi");
+        lanes = new int[lanesJSON.length()];
         for (int i = 0; i < lanesJSON.length(); i++) {
-            lanes[i] = lanesJSON.getBoolean(i);
+            lanes[i] = lanesJSON.getInt(i);
         }
+    }
+
+    public Measure(AID o, LocalDateTime st, LocalDateTime et, String r, float s, float e, int[] l) {
+        type = CROSS;
+        origin = o;
+        size = 4;
+        iteration = size;
+        start = s;
+        end = e;
+        road = r;
+        lanes = l;
+        startTime = st;
+        endTime = et;
+
+        Random rand = new Random();
+        int n = rand.nextInt(50);
+        ID = System.currentTimeMillis() + n;
     }
 
     public int getType() {
@@ -61,8 +83,22 @@ public class Measure {
         return ID;
     }
 
-    public boolean getLane(int i) { //throws outofbounds
+    public int getLane(int i) { //throws outofbounds
         return lanes[i];
+    }
+
+    /**
+     * @return the startTime
+     */
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    /**
+     * @return the endTime
+     */
+    public LocalDateTime getEndTime() {
+        return endTime;
     }
 
     public JSONObject toJSON() {
@@ -76,7 +112,7 @@ public class Measure {
         content.put("ID",ID);
         content.put("road", road);
         JSONArray lanesJSON = new JSONArray(lanes);
-        content.put("lanes", lanesJSON);
+        content.put("msi", lanesJSON);
         return content;
     }
 }
