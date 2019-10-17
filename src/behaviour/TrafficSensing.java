@@ -22,12 +22,12 @@ public class TrafficSensing extends TickerBehaviour {
             boolean newCongestion = (Boolean)input;
             if (newCongestion == true && outer.getCongestion() == false) {
                 outer.setCongestion(true);
-                // myAgent.addBehaviour(new CompilerBehaviour());
+                myAgent.addBehaviour(new CompilerBehaviour());
                 System.out.println("Congestion detected!");
 
             } else if (newCongestion == false && outer.getCongestion() == true) {
                 outer.setCongestion(false);
-                // myAgent.addBehaviour(new CompilerBehaviour());
+                myAgent.addBehaviour(new CompilerBehaviour());
                 System.out.println("Congestion cleared!");
 
             }

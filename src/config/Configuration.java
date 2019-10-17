@@ -17,6 +17,7 @@ public class Configuration implements Comparable<Configuration>{
     private double location;
     private String side;
     private int lanes;
+    private long convID;
 
     public Configuration(osAgent outer, AID id, String r, double loc, String s, int la) {
         this.outer = outer;
@@ -34,6 +35,7 @@ public class Configuration implements Comparable<Configuration>{
         this.location = 0;
         this.side = null;
         this.lanes = 0;
+        this.convID = 0;
     }
 
     public Configuration() {
@@ -43,6 +45,7 @@ public class Configuration implements Comparable<Configuration>{
         this.location = 0;
         this.side = null;
         this.lanes = 0;
+        this.convID = 0;
     }
 
     public Configuration(String input) {
@@ -53,6 +56,7 @@ public class Configuration implements Comparable<Configuration>{
         this.location = content.getDouble("location");
         this.side = content.getString("side");
         this.lanes = content.getInt("lanes");
+        this.convID = 0;
     }
 
     public JSONObject configToJSON() {
@@ -161,5 +165,19 @@ public class Configuration implements Comparable<Configuration>{
      */
     public void setSide(String side) {
         this.side = side;
+    }
+
+    /**
+     * @return the convID
+     */
+    public long getConvID() {
+        return convID;
+    }
+
+    /**
+     * @param convID the convID to set
+     */
+    public void setConvID(long convID) {
+        this.convID = convID;
     }
 }
