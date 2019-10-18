@@ -34,7 +34,7 @@ public class osAgent extends Agent {
     private static final long serialVersionUID = 1L;
 
     // Simulation timing
-    public static long minute = 400; // milliseconds 
+    public static long minute = 1000; // milliseconds 
 
     // Number of lanes controlled by the OS
     private int lanes;

@@ -107,6 +107,10 @@ public class centralAgent extends Agent {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+
+        Object[] args = getArguments();
+        LocalDateTime startDateTime = (LocalDateTime) args[0];
+        updateGuiTime(startDateTime);
     }
 
     public int getMeasure (int t, AID o) throws NoMeasure {
