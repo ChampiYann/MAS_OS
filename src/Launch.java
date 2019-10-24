@@ -1,5 +1,3 @@
-import jade.core.Runtime;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -17,15 +15,17 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
 
-import jade.core.Profile;
-import jade.core.ProfileImpl;
-import jade.wrapper.*;
-
 import org.apache.commons.math3.distribution.WeibullDistribution;
 
 import agents.osAgent;
 import behaviour.InputHandlerBehaviour;
 import environment.Outstation;
+import jade.core.Profile;
+import jade.core.ProfileImpl;
+import jade.core.Runtime;
+import jade.wrapper.AgentController;
+import jade.wrapper.ContainerController;
+import jade.wrapper.StaleProxyException;
 
 public class Launch {
 
@@ -38,6 +38,7 @@ public class Launch {
     public static void main(String[] args) {
         // Get a hold on JADE runtime
         Runtime rt = Runtime.instance();
+        rt.setCloseVM(true);
         // Create a default profile
         Profile p = new ProfileImpl();
         p.setParameter(Profile.SERVICES, "jade.core.messaging.TopicManagementService;jade.core.event.NotificationService");
@@ -205,6 +206,14 @@ public class Launch {
 
                     dateTime = dateTime.plusMinutes(1);
                     // time = time.plusMinutes(1);
+                    if (dateTime.isAfter(LocalDateTime.of(2018, 3, 1, 2, 0))) {
+                        try {
+                            cc.kill();
+                        } catch (StaleProxyException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                    }
                 }
             };
             long simStartTime = (long) (Math.ceil(System.currentTimeMillis() / 10000.0) * 10000 + 10000);
