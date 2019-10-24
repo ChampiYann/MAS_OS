@@ -43,9 +43,10 @@ public class HBReaction extends TickerBehaviour {
 
             outer.resetTimeUpstream();
         } else {
-            if (System.currentTimeMillis()-outer.getTimeUpstream() > (long)osAgent.minute*2) {
+            if (System.currentTimeMillis()-outer.getTimeUpstream() > osAgent.timeout) {
                 // System.out.println("Upstream down at " + local.getAID.getLocalName());
                 outer.setUpstream(new Configuration());
+                outer.getHBSenderBehaviour().block();
             }
         }
     }

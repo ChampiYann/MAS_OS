@@ -54,7 +54,7 @@ public class HBResponder extends TickerBehaviour {
             myAgent.send(HBResponse);
             outer.resetTimeDownstream();
         } else {
-            if (System.currentTimeMillis()-outer.getTimeDownstream() > (long)osAgent.minute*2) {
+            if (System.currentTimeMillis()-outer.getTimeDownstream() > osAgent.timeout) {
                 outer.SendConfig();
             }
         }

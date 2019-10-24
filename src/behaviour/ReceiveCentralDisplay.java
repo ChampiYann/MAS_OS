@@ -40,7 +40,7 @@ public class ReceiveCentralDisplay extends AchieveREResponder {
         String msgContent = request.getContent();
         JSONObject jsonContent = new JSONObject(msgContent);
         long ID = jsonContent.getLong("ID");
-        if (request.getOntology().equals("ADD")) {
+        if (request.getOntology().equals("ADD") & outer.getCentralMeasures().stream().noneMatch(n -> n.getID() == ID)) {
             JSONArray jsonVector = jsonContent.getJSONArray("msi");
             float start = jsonContent.getFloat("start");
             float end = jsonContent.getFloat("end");
@@ -51,7 +51,7 @@ public class ReceiveCentralDisplay extends AchieveREResponder {
                 tempVector.add(new MSI(value));
             }
             outer.getCentralMeasures().add(new CentralMeasure(outer, tempVector, start, end, ID));
-        } else {
+        } else if (request.getOntology().equals("CANCEL")) {
             outer.getCentralMeasures().removeIf(n -> (n.getID() == ID));
         }
         myAgent.addBehaviour(new BrainBehaviour((osAgent)myAgent));

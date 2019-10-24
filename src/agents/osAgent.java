@@ -1,10 +1,10 @@
 package agents;
 
 import java.io.BufferedReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,6 +36,8 @@ public class osAgent extends Agent {
     // Simulation timing
     public static long minute = 1000; // milliseconds 
 
+    public static final long timeout = minute/3;
+
     // Number of lanes controlled by the OS
     private int lanes;
 
@@ -51,6 +53,9 @@ public class osAgent extends Agent {
     // Measures
     // private ArrayList<Measure> measures = new ArrayList<Measure>();
 
+    // Behaviours
+    private Behaviour HBSenderBehaviour;
+
     // Flags
     private boolean congestion = false;
 
@@ -59,6 +64,7 @@ public class osAgent extends Agent {
 
     // Topic
     private AID topicConfiguration;
+    private AID topicCentral;
 
     // Retries
     private long timeUpstream = 0;
@@ -160,7 +166,7 @@ public class osAgent extends Agent {
 
             try {
                 TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
-                final AID topicCentral = topicHelper.createTopic("CENTRAL");
+                topicCentral = topicHelper.createTopic("CENTRAL");
                 topicHelper.register(topicCentral);
 
                 MessageTemplate centralTemplate = MessageTemplate.and(requestTemplate,
@@ -188,13 +194,14 @@ public class osAgent extends Agent {
             addBehaviour(new ConfigurationResponder(this, ConfigTemplate));
 
             // Behaviour that periodically sends a heartbeat upstream
-            addBehaviour(new HBSender(this, minute/2));
+            HBSenderBehaviour = new HBSender(this, minute/6);
+            addBehaviour(HBSenderBehaviour);
 
             // Behaviour that checks if a HB has been received back
-            addBehaviour(new HBReaction(this, minute/4));
+            addBehaviour(new HBReaction(this, minute/12));
 
             // behaviour that responds to a HB
-            addBehaviour(new HBResponder(this, minute/4));
+            addBehaviour(new HBResponder(this, minute/12));
 
             // Print message stating that the configuration was succefull
             System.out.println("OS " + getAID().getLocalName() + " configured on road " + local.road + " at km " + local.location +
@@ -266,18 +273,7 @@ public class osAgent extends Agent {
         configurationRequest.setReplyByDate(new Date(System.currentTimeMillis() + minute*4));
         configurationRequest.addReceiver(topicConfiguration);
         configurationRequest.setContent(local.configToJSON().toString());
-        this.addBehaviour(new AchieveREInitiator(this, configurationRequest) {
-            // @Override
-            // protected void handleInform(ACLMessage inform) {
-            //     String messageContent = inform.getContent();
-            //     downstream = new Configuration(messageContent);
-            //     downstreamMsi = new ArrayList<MSI>(downstream.lanes);
-            //     for (int i = 0; i < downstreamMsi.capacity(); i++) {
-            //         downstreamMsi.add(new MSI());
-            //     }
-            //     System.out.println("downstream neighbour for " + local.getAID.getLocalName() + " is " + downstream.getAID.getLocalName());
-            // }
-        });
+        this.addBehaviour(new AchieveREInitiator(this, configurationRequest));
         resetTimeDownstream();
     }
 
@@ -412,5 +408,19 @@ public class osAgent extends Agent {
      */
     public void setDownstream(Configuration downstream) {
         this.downstream = downstream;
+    }
+
+    /**
+     * @return the topicCentral
+     */
+    public AID getTopicCentral() {
+        return topicCentral;
+    }
+
+    /**
+     * @return the hBSenderBehaviour
+     */
+    public Behaviour getHBSenderBehaviour() {
+        return HBSenderBehaviour;
     }
 }

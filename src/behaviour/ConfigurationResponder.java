@@ -32,27 +32,36 @@ public class ConfigurationResponder extends AchieveREResponder {
     protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
         Configuration newConfig = new Configuration(request.getContent());
         if (outer.getLocal().location - newConfig.location < outer.getLocal().location - outer.getUpstream().location && outer.getLocal().location - newConfig.location > 0) {
+            // Update config
             outer.setUpstream(newConfig);
 
+            // Reset associated MSI
             outer.setUpstreamMsi(new ArrayList<MSI>(outer.getUpstream().lanes));
             for (int i = 0; i < outer.getUpstream().lanes; i++) {
                 outer.getUpstreamMsi().add(new MSI());
             }
 
+            // Reset associated timer
             outer.resetTimeUpstream();
 
+            // Restart sender behaviour
+            outer.getHBSenderBehaviour().restart();
+
+            // Recalculate MSI
             outer.addBehaviour(new BrainBehaviour((osAgent)myAgent));
 
-            System.out.println("upstream neighbour for " + outer.getLocal().getAID.getLocalName() + " is " + outer.getUpstream().getAID.getLocalName());
+            // Print statement
+            // System.out.println("upstream neighbour for " + outer.getLocal().getAID.getLocalName() + " is " + outer.getUpstream().getAID.getLocalName());
 
+            // Send current MSI
             outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
 
-            try {
-                outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, outer.getCentralMeasures().get(0).toJSON().toString());
-            } catch (IndexOutOfBoundsException e) {
-                //No measures to send
-            }
+            // Send applicable central measures
+            outer.getCentralMeasures().stream().forEach(n -> {
+                outer.sendMeasure(new Configuration(outer, outer.getTopicCentral(), null, 0, null, 0) , "ADD", n.toJSON().toString());
+            });
 
+            // Reply to message
             ACLMessage result = request.createReply();
             result.setPerformative(ACLMessage.INFORM);
             result.setContent(outer.getLocal().configToJSON().toString());
