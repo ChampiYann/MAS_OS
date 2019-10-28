@@ -53,48 +53,6 @@ public class HBReaction extends TickerBehaviour {
                     outer.resetTime(i);
                 }
             }
-            // JSONObject jsonContent = new JSONObject(HBResponse.getContent());
-            // // check location of sender
-            // JSONObject jsonConfiguration = jsonContent.getJSONObject("configuration");
-            // Configuration newConfig = new Configuration(jsonConfiguration.toString());
-
-            // // boolean inRange = true;
-            // ArrayList<Configuration> allConfig = outer.getConfig();
-            // int index = Collections.binarySearch(allConfig, newConfig);
-            // if (index < 0) {
-            //     // Not in array
-            //     index = -index -1;
-            //     // check where in array
-            //     if (index == 0 | index == allConfig.size()) {
-            //         // first or last element, ditch it
-            //         inRange = false;
-            //     } else {
-            //         // somewhere in the array
-            //         allConfig.add(index, newConfig);
-            //         if (index < allConfig.size()/2) {
-            //             allConfig.remove(0);
-            //         } else {
-            //             allConfig.remove(allConfig.size()-1);
-            //         }
-            //         outer.resetTime(index);
-            //     }
-            // } else if (index != allConfig.size()/2) {
-            //     // In array
-            //     outer.resetTime(index);
-            // } else {
-            //     inRange = false;
-            // }
-
-            // if (inRange) {
-                // JSONArray jsonMeasures = jsonContent.getJSONArray("measures");
-                // Iterator<Object> jsonMeasuresIterator = jsonMeasures.iterator();
-                // outer.getMeasures()[index].clear();
-                // while (jsonMeasuresIterator.hasNext()) {
-                //     outer.getMeasures()[index].add(new Measure((JSONObject)jsonMeasuresIterator.next()));
-                // }
-                // outer.resetTime(index);
-            // }
-
             HBResponse = myAgent.receive(HBTemplate);
         }
 
@@ -103,7 +61,7 @@ public class HBReaction extends TickerBehaviour {
         }
 
         for (int i = 0; i < outer.getTimers().length/2; i++) {
-            if (System.currentTimeMillis()-outer.getTimers()[i] > (long)osAgent.minute*2) {
+            if (System.currentTimeMillis()-outer.getTimers()[i] > osAgent.timeout) {
                 outer.getConfig().remove(i);
                 outer.getConfig().add(0,new Configuration());
             }

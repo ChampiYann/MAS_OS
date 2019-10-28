@@ -1,5 +1,7 @@
 package behaviour;
 
+import java.util.stream.Collectors;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -8,7 +10,6 @@ import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
 import measure.Measure;
-import java.util.stream.Collectors;
 
 public class HBSender extends TickerBehaviour {
 
@@ -35,7 +36,7 @@ public class HBSender extends TickerBehaviour {
             jsonContent.put("configuration", outer.getLocal().configToJSON());
             jsonContent.put("measures", new JSONArray(outer.getLocalMeasures().stream().filter(n -> n.getType() != Measure.REACTION).collect(Collectors.toList())));
             HBRequest.setContent(jsonContent.toString());
-
+            HBRequest.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
             myAgent.send(HBRequest);
         }
     }

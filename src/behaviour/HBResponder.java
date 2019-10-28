@@ -91,7 +91,7 @@ public class HBResponder extends TickerBehaviour {
                 // jsonContent.put("configuration", outer.getLocal().configToJSON());
                 jsonContent.put("measures", new JSONArray(outer.getLocalMeasures().stream().filter(n -> n.getType() != Measure.REACTION).collect(Collectors.toList())));
                 HBResponse.setContent(jsonContent.toString());
-
+                HBResponse.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
                 myAgent.send(HBResponse);
             }
 
@@ -104,8 +104,12 @@ public class HBResponder extends TickerBehaviour {
 
         ArrayList<Integer> timeout = new ArrayList<Integer>();
         for (int i = outer.getTimers().length/2 + 1; i < outer.getTimers().length - 1; i++) {
-            if (System.currentTimeMillis() - outer.getTimers(i) > (long)osAgent.minute*2) {
+            if (System.currentTimeMillis() - outer.getTimers(i) > osAgent.timeout) {
                 timeout.add(i);
+                outer.getConfig().remove(i);
+                Configuration newConfig = new Configuration();
+                newConfig.setLocation(Double.POSITIVE_INFINITY);
+                outer.getConfig().add(newConfig);
             }
         }
         outer.SendConfig(timeout);

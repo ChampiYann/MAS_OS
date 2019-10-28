@@ -42,68 +42,64 @@ public class ConfigurationResponder extends AchieveREResponder {
 
         ArrayList<Configuration> allConfig = outer.getConfig();
         int index = Collections.binarySearch(allConfig, newConfig);
-        if (index < 0) {
-            // Not in array
-            index = -index -1;
-            // check where in array
-            if (index == 0 | index == allConfig.size()) {
-                // first or last element
-                return null;
-            } else {
-                // somewhere in the array
-                allConfig.add(index, newConfig);
-                allConfig.get(index).setConvID(System.currentTimeMillis());
-                if (index < allConfig.size()/2) {
-                    allConfig.remove(0);
-                } else {
-                    allConfig.remove(allConfig.size()-1);
-                }
-                outer.resetTime(index);
-            }
-        // } else if (index != allConfig.size()/2) {
-        //     // In array
-        //     outer.resetTime(index);
+        index = - index - 1;
+        if (index > 0 & index <= allConfig.size()/2) {
+            allConfig.add(index, newConfig);
+            allConfig.get(index).setConvID(System.currentTimeMillis());
+            allConfig.remove(0);
+            outer.resetTime(index-1);
+
+            outer.addBehaviour(new CompilerBehaviour());
+        
+            outer.getCentralMeasures().stream().forEach(n -> {
+                outer.sendMeasure(new Configuration(outer, outer.getTopicCentral(), null, 0, null, 0) , "ADD", n.toJSON().toString());
+            });
+
+            ACLMessage result = request.createReply();
+            result.setPerformative(ACLMessage.INFORM);
+            return result;
         } else {
             return null;
         }
 
-        // System.out.println("upstream neighbour for " + outer.getLocal().getAID().getLocalName() + " is " + outer.getConfig().get(index).getAID().getLocalName());
-
-        ACLMessage result = request.createReply();
-        result.setPerformative(ACLMessage.INFORM);
-        result.setContent(outer.getLocal().configToJSON().toString());
-        return result;
-
-
-        // if (outer.getLocal().location - newConfig.location < outer.getLocal().location - outer.getUpstream().location && outer.getLocal().location - newConfig.location > 0) {
-        //     outer.setUpstream(newConfig);
-
-        //     outer.setUpstreamMsi(new ArrayList<MSI>(outer.getUpstream().lanes));
-        //     for (int i = 0; i < outer.getUpstream().lanes; i++) {
-        //         outer.getUpstreamMsi().add(new MSI());
+        // if (index < 0) {
+        //     // Not in array
+        //     index = -index -1;
+        //     // check where in array
+        //     if (index == 0 | index == allConfig.size()) {
+        //         // first or last element
+        //         return null;
+        //     } else {
+        //         // somewhere in the array
+        //         allConfig.add(index, newConfig);
+        //         allConfig.get(index).setConvID(System.currentTimeMillis());
+        //         if (index < allConfig.size()/2) {
+        //             allConfig.remove(0);
+        //         } else {
+        //             allConfig.remove(allConfig.size()-1);
+        //         }
         //     }
-
-        //     outer.resetTimeUpstream();
-
-        //     outer.addBehaviour(new BrainBehaviour((osAgent)myAgent));
-
-        //     System.out.println("upstream neighbour for " + outer.getLocal().getAID.getLocalName() + " is " + outer.getUpstream().getAID.getLocalName());
-
-        //     outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
-
-        //     try {
-        //         outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, outer.getCentralMeasures().get(0).toJSON().toString());
-        //     } catch (IndexOutOfBoundsException e) {
-        //         //No measures to send
-        //     }
-
-        //     ACLMessage result = request.createReply();
-        //     result.setPerformative(ACLMessage.INFORM);
-        //     result.setContent(outer.getLocal().configToJSON().toString());
-        //     return result;
+        // // } else if (index != allConfig.size()/2) {
+        // //     // In array
+        // //     outer.resetTime(index);
         // } else {
-        //     // throw new FailureException("sub-optimal");
         //     return null;
         // }
+
+        // outer.resetTime(index);
+
+        // // outer.getHBSenderBehaviour().restart();
+
+        // outer.addBehaviour(new CompilerBehaviour());
+        
+        // outer.getCentralMeasures().stream().forEach(n -> {
+        //     outer.sendMeasure(new Configuration(outer, outer.getTopicCentral(), null, 0, null, 0) , "ADD", n.toJSON().toString());
+        // });
+
+        // // System.out.println("upstream neighbour for " + outer.getLocal().getAID().getLocalName() + " is " + outer.getConfig().get(index).getAID().getLocalName());
+
+        // ACLMessage result = request.createReply();
+        // result.setPerformative(ACLMessage.INFORM);
+        // return result;
     }
 }
