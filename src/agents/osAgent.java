@@ -87,7 +87,7 @@ public class osAgent extends Agent {
      */
     protected void setup() {
         // Print out welcome message
-        System.out.println("Hello! OS " + getAID().getName() + " is ready.");
+        System.out.println("Hello! OS " + getAID().getName() + " is ready at " + System.currentTimeMillis() + ".");
 
         // Get arguments (number of lanes, upstream neighbour, downstream neighbour)
         Object[] args = getArguments();
@@ -216,7 +216,6 @@ public class osAgent extends Agent {
 
     protected void takeDown() {
         // Printout a dismissal message
-        System.out.println("OS " + getAID().getName() + " terminating.");
         Iterator<MSI> msiIterator = msi.iterator();
         while (msiIterator.hasNext()) {
             msiIterator.next().setSymbol(MSI.BLANK);
@@ -233,6 +232,7 @@ public class osAgent extends Agent {
         newMsg.addReceiver(central);
         send(newMsg);
         // myGui.dispose();
+        System.out.println("OS " + getAID().getName() + " terminating at " + System.currentTimeMillis() + ".");
     }
 
     public void sendCentralUpdate() {
@@ -246,6 +246,7 @@ public class osAgent extends Agent {
         }
         newMsg.setContent(matrixJson.toString());
         newMsg.addReceiver(central);
+        newMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
         this.addBehaviour(new AchieveREInitiator(this, newMsg));
     }
 
@@ -261,6 +262,7 @@ public class osAgent extends Agent {
         newMsg.setOntology(ont);
         newMsg.setContent(content);
         newMsg.addReceiver(config.getAID);
+        newMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
         this.addBehaviour(new AchieveREInitiator(this, newMsg));
     }
 
@@ -273,6 +275,8 @@ public class osAgent extends Agent {
         configurationRequest.setReplyByDate(new Date(System.currentTimeMillis() + minute*4));
         configurationRequest.addReceiver(topicConfiguration);
         configurationRequest.setContent(local.configToJSON().toString());
+        configurationRequest.setOntology("CONFIGURATION");
+        configurationRequest.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
         this.addBehaviour(new AchieveREInitiator(this, configurationRequest));
         resetTimeDownstream();
     }

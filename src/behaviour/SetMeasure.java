@@ -84,6 +84,7 @@ public class SetMeasure extends TickerBehaviour {
         newMsg.setOntology("ADD");
         newMsg.setContent(mr.toJSON().toString());
         newMsg.addReceiver(outer.getCentralTopic());
+        newMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
         myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
     }
 

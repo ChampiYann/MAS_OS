@@ -23,11 +23,13 @@ public class HBSender extends TickerBehaviour {
         ACLMessage HBRequest = new ACLMessage(ACLMessage.REQUEST);
         HBRequest.setOntology("HB");
         HBRequest.addReceiver(outer.getUpstream().getAID);
+        HBRequest.setPostTimeStamp(System.currentTimeMillis());
         JSONObject jsonContent = new JSONObject();
         jsonContent.put("configuration", outer.getLocal().configToJSON());
         jsonContent.put("msi", outer.getMsi());
         HBRequest.setContent(jsonContent.toString());
 
+        HBRequest.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
         myAgent.send(HBRequest);
     }
 

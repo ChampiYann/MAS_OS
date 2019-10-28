@@ -51,6 +51,7 @@ public class HBResponder extends TickerBehaviour {
             jsonContent.put("msi", outer.getMsi());
             HBResponse.setContent(jsonContent.toString());
 
+            HBResponse.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
             myAgent.send(HBResponse);
             outer.resetTimeDownstream();
         } else {

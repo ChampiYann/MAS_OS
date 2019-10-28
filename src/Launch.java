@@ -38,7 +38,7 @@ public class Launch {
     public static void main(String[] args) {
         // Get a hold on JADE runtime
         Runtime rt = Runtime.instance();
-        rt.setCloseVM(true);
+        rt.setCloseVM(false);
         // Create a default profile
         Profile p = new ProfileImpl();
         p.setParameter(Profile.SERVICES, "jade.core.messaging.TopicManagementService;jade.core.event.NotificationService");
@@ -81,7 +81,8 @@ public class Launch {
         Vector<Outstation> outstations = new Vector<Outstation>(numOS);
 
         for (int i = 0; i < numOS; i++) {
-            name = "agent" + Integer.toString(i+1);
+            name = "agent" + String.format("%02d", i+1);
+            
             // Concatenate arguments
             Object agentArgs[] = new Object[3];
             agentArgs[0] = lanes;
@@ -101,6 +102,17 @@ public class Launch {
                 e.printStackTrace();
             }
         }
+
+        AgentController sniff;
+
+        try {
+            sniff = cc.createNewAgent("sniff", "jade.tools.sniffer.Sniffer", null);
+            sniff.start(); 
+        } catch (StaleProxyException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } 
+
         FileWriter killWriter;
         try {
             killWriter = new FileWriter("kill_log.txt");
@@ -207,12 +219,27 @@ public class Launch {
                     dateTime = dateTime.plusMinutes(1);
                     // time = time.plusMinutes(1);
                     if (dateTime.isAfter(LocalDateTime.of(2018, 3, 1, 2, 0))) {
+                        outstations.stream().forEach(n -> {
+                            try {
+                                n.kill(0);
+                            } catch (StaleProxyException e1) {
+                                // TODO Auto-generated catch block
+                                e1.printStackTrace();
+                            }
+                        });
                         try {
-                            cc.kill();
-                        } catch (StaleProxyException e) {
+                            central.kill();
+                        } catch (StaleProxyException e1) {
                             // TODO Auto-generated catch block
-                            e.printStackTrace();
+                            e1.printStackTrace();
                         }
+                        this.cancel();
+                        // try {
+                        //     cc.kill();
+                        // } catch (StaleProxyException e) {
+                        //     // TODO Auto-generated catch block
+                        //     e.printStackTrace();
+                        // }
                     }
                 }
             };

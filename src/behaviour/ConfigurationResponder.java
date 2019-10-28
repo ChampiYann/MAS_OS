@@ -54,7 +54,7 @@ public class ConfigurationResponder extends AchieveREResponder {
             // System.out.println("upstream neighbour for " + outer.getLocal().getAID.getLocalName() + " is " + outer.getUpstream().getAID.getLocalName());
 
             // Send current MSI
-            outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
+            // outer.sendMeasure(outer.getUpstream(), osAgent.DISPLAY, MSI.MsiToJson(outer.getMsi()));
 
             // Send applicable central measures
             outer.getCentralMeasures().stream().forEach(n -> {
