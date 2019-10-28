@@ -1,8 +1,5 @@
 package behaviour;
 
-import java.util.Iterator;
-
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import agents.osAgent;
@@ -36,34 +33,28 @@ public class HandleMessage extends AchieveREResponder {
         ACLMessage result = request.createReply();
         result.setPerformative(ACLMessage.INFORM);
 
-        JSONArray jsonContent = new JSONArray(request.getContent());
-        // if (request.getSender().equals(outer.getDownstream().getAID())) {
+        // JSONArray jsonContent = new JSONArray(request.getContent());
+        // if (request.getSender().equals(outer.getCentral())) {
         //     Iterator<Object> jsonContentIterator = jsonContent.iterator();
-        //     outer.getDownstreamMeasures().clear();
+        //     outer.getCentralMeasures().clear();
         //     while (jsonContentIterator.hasNext()) {
-        //         outer.getDownstreamMeasures().add(new Measure((JSONObject)jsonContentIterator.next()));
+        //         outer.getCentralMeasures().add(new Measure((JSONObject)jsonContentIterator.next()));
         //     }
-        //     // myAgent.addBehaviour(new CompilerBehaviour());
+        //     myAgent.addBehaviour(new CompilerBehaviour(myAgent));
         //     return result;
-        // } else if (request.getSender().equals(outer.getUpstream().getAID())) {
-        //     Iterator<Object> jsonContentIterator = jsonContent.iterator();
-        //     outer.getUpstreamMeasures().clear();
-        //     while (jsonContentIterator.hasNext()) {
-        //         outer.getUpstreamMeasures().add(new Measure((JSONObject)jsonContentIterator.next()));
-        //     }
-        //     // myAgent.addBehaviour(new CompilerBehaviour());
-        //     return result;
-        // } else 
-        if (request.getSender().equals(outer.getCentral())) {
-            Iterator<Object> jsonContentIterator = jsonContent.iterator();
-            outer.getCentralMeasures().clear();
-            while (jsonContentIterator.hasNext()) {
-                outer.getCentralMeasures().add(new Measure((JSONObject)jsonContentIterator.next()));
-            }
-            myAgent.addBehaviour(new CompilerBehaviour(myAgent));
-            return result;
-        } else {
-            return null;
+        // } else {
+        //     return null;
+        // }
+
+        String msgContent = request.getContent();
+        JSONObject jsonContent = new JSONObject(msgContent);
+        long ID = jsonContent.getLong("ID");
+        if (request.getOntology().equals("ADD") & outer.getCentralMeasures().stream().noneMatch(n -> n.getID() == ID)) {
+            outer.getCentralMeasures().add(new Measure(jsonContent));
+        } else if (request.getOntology().equals("CANCEL")) {
+            outer.getCentralMeasures().removeIf(n -> (n.getID() == ID));
         }
+        myAgent.addBehaviour(new CompilerBehaviour((osAgent)myAgent));
+        return result;
     }
 }

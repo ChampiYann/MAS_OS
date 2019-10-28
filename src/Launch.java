@@ -1,5 +1,3 @@
-import jade.core.Runtime;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -17,15 +15,17 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
 
-import jade.core.Profile;
-import jade.core.ProfileImpl;
-import jade.wrapper.*;
-
 import org.apache.commons.math3.distribution.WeibullDistribution;
 
 import agents.osAgent;
 import behaviour.InputHandlerBehaviour;
 import environment.Outstation;
+import jade.core.Profile;
+import jade.core.ProfileImpl;
+import jade.core.Runtime;
+import jade.wrapper.AgentController;
+import jade.wrapper.ContainerController;
+import jade.wrapper.StaleProxyException;
 
 public class Launch {
 
@@ -46,7 +46,7 @@ public class Launch {
         ContainerController cc = rt.createMainContainer(p);
 
         Object centralArgs[] = new Object[1];
-        centralArgs[0] = (long) (Math.ceil(System.currentTimeMillis() / 10000.0) * 10000 + 10000);
+        centralArgs[0] = dateTime;
 
         try {
             // Initiate RMA (gui)
@@ -54,7 +54,7 @@ public class Launch {
             // Fire up GUI
             rma.start();
             // Initiate central
-            central = cc.createNewAgent("central", "agents.centralAgent", null);
+            central = cc.createNewAgent("central", "agents.centralAgent", centralArgs);
             // Fire up central
             central.start();
         } catch (StaleProxyException e) {
@@ -80,7 +80,7 @@ public class Launch {
         Vector<Outstation> outstations = new Vector<Outstation>(numOS);
 
         for (int i = 0; i < numOS; i++) {
-            name = "agent" + Integer.toString(i+1);
+            name = "agent" + String.format("%02d", i+1);
             // Concatenate arguments
             Object agentArgs[] = new Object[3];
             agentArgs[0] = lanes;
@@ -101,13 +101,15 @@ public class Launch {
             }
         }
 
-        // try {
-        //     AgentController sniff = cc.createNewAgent("sniff", "jade.tools.sniffer.Sniffer", null);
-        //     sniff.start(); 
-        // } catch (StaleProxyException e) {
-        //     // TODO Auto-generated catch block
-        //     e.printStackTrace();
-        // }  
+        AgentController sniff;
+
+        try {
+            sniff = cc.createNewAgent("sniff", "jade.tools.sniffer.Sniffer", null);
+            sniff.start(); 
+        } catch (StaleProxyException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }   
 
         FileWriter killWriter;
         try {
@@ -160,12 +162,12 @@ public class Launch {
                     Iterator<Outstation> outstationIterator = outstations.iterator();
                     while (outstationIterator.hasNext()) {
                         Outstation nextOutstation = outstationIterator.next();
-                        try {
-                            nextOutstation.handleDelay(killWriter, dateTime);
-                        } catch (StaleProxyException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
+                        // try {
+                        //     nextOutstation.handleDelay(killWriter, dateTime);
+                        // } catch (StaleProxyException e) {
+                        //     // TODO Auto-generated catch block
+                        //     e.printStackTrace();
+                        // }
                         try {
                             boolean congestion = nextOutstation.sendCongestion();
                             Vector<Object> packet = new Vector<Object>();
@@ -181,24 +183,24 @@ public class Launch {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
-                        if (rand.nextInt(16117524) < 169) {
-                            long restartDelaySeconds = Math.round(distribution.sample()+1);
-                            // System.out.println(Math.round(distribution.sample()/60)+1);
-                            long restartDelayMinutes = restartDelaySeconds/60;
-                            try {
-                                nextOutstation.kill(restartDelayMinutes);
-                                try {
-                                    killWriter.write(dateTime.toString() + ",kill," + nextOutstation.getLocation()+ "\n");
-                                    killWriter.flush();
-                                } catch (IOException e) {
-                                    // TODO Auto-generated catch block
-                                    e.printStackTrace();
-                                }
-                            } catch (StaleProxyException e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
-                            }
-                        }
+                        // if (rand.nextInt(16117524) < 169) {
+                        //     long restartDelaySeconds = Math.round(distribution.sample()+1);
+                        //     // System.out.println(Math.round(distribution.sample()/60)+1);
+                        //     long restartDelayMinutes = restartDelaySeconds/60;
+                        //     try {
+                        //         nextOutstation.kill(restartDelayMinutes);
+                        //         try {
+                        //             killWriter.write(dateTime.toString() + ",kill," + nextOutstation.getLocation()+ "\n");
+                        //             killWriter.flush();
+                        //         } catch (IOException e) {
+                        //             // TODO Auto-generated catch block
+                        //             e.printStackTrace();
+                        //         }
+                        //     } catch (StaleProxyException e) {
+                        //         // TODO Auto-generated catch block
+                        //         e.printStackTrace();
+                        //     }
+                        // }
                     }
 
                     Vector<Object> packet = new Vector<Object>();
@@ -213,10 +215,33 @@ public class Launch {
 
                     dateTime = dateTime.plusMinutes(1);
                     // time = time.plusMinutes(1);
+                    if (dateTime.isAfter(LocalDateTime.of(2018, 3, 1, 2, 0))) {
+                        outstations.stream().forEach(n -> {
+                            try {
+                                n.kill(0);
+                            } catch (StaleProxyException e1) {
+                                // TODO Auto-generated catch block
+                                e1.printStackTrace();
+                            }
+                        });
+                        try {
+                            central.kill();
+                        } catch (StaleProxyException e1) {
+                            // TODO Auto-generated catch block
+                            e1.printStackTrace();
+                        }
+                        this.cancel();
+                        // try {
+                        //     cc.kill();
+                        // } catch (StaleProxyException e) {
+                        //     // TODO Auto-generated catch block
+                        //     e.printStackTrace();
+                        // }
+                    }
                 }
             };
-
-            long delay = (long)centralArgs[0] - System.currentTimeMillis();
+            long simStartTime = (long) (Math.ceil(System.currentTimeMillis() / 10000.0) * 10000 + 10000);
+            long delay = simStartTime - System.currentTimeMillis();
             timer.scheduleAtFixedRate(task, delay, osAgent.minute);
 
         } catch (IOException e3) {

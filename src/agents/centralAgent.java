@@ -76,7 +76,7 @@ public class centralAgent extends Agent {
 
         try{
             TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
-            centralTopic = topicHelper.createTopic("MEASURE");
+            centralTopic = topicHelper.createTopic("CENTRAL");
 
             addBehaviour(new SetMeasure(this, osAgent.minute/2));
 
@@ -107,6 +107,10 @@ public class centralAgent extends Agent {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+
+        Object[] args = getArguments();
+        LocalDateTime startDateTime = (LocalDateTime) args[0];
+        updateGuiTime(startDateTime);
     }
 
     public ArrayList<Configuration> getOS() {

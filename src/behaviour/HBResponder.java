@@ -49,10 +49,11 @@ public class HBResponder extends TickerBehaviour {
             jsonContent.put("measures",new JSONArray(myOsAgent.getLocalMeasures()));
             HBResponse.setContent(jsonContent.toString());
             
+            HBResponse.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
             myAgent.send(HBResponse);
             myOsAgent.resetTimeDownstream();
         } else {
-            if (System.currentTimeMillis()-myOsAgent.getTimeDownstream() > (long)osAgent.minute*2) {
+            if (System.currentTimeMillis()-myOsAgent.getTimeDownstream() > osAgent.timeout) {
                 myOsAgent.SendConfig();
             }
         }

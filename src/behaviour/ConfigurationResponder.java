@@ -36,15 +36,16 @@ public class ConfigurationResponder extends AchieveREResponder {
             outer.setUpstream(newConfig);
             outer.resetTimeUpstream();
 
+            outer.getHBSenderBehaviour().restart();
+
+            outer.addBehaviour(new CompilerBehaviour((osAgent)myAgent));
+
+            outer.getCentralMeasures().stream().forEach(n -> {
+                outer.sendMeasure(new Configuration(outer, outer.getTopicCentral(), null, 0, null, 0) , "ADD", n.toJSON().toString());
+            }); 
+
             System.out.println("upstream neighbour for " + outer.getLocal().getAID().getLocalName() + " is " + outer.getUpstream().getAID().getLocalName());
             return result;
-        // } else if (newConfig.getLocation() > outer.getLocal().getLocation() && newConfig.getLocation() < outer.getDownstream().getLocation()) {
-
-        //     outer.setDownstream(newConfig);
-        //     outer.resetTimeDownstream();
-
-        //     System.out.println("downstream neighbour for " + outer.getLocal().getAID().getLocalName() + " is " + outer.getDownstream().getAID().getLocalName());
-        //     return result;
         } else {
             return null;
         }

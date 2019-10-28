@@ -40,7 +40,7 @@ public class HBReaction extends TickerBehaviour {
 
             myOsAgent.resetTimeUpstream();
         } else {
-            if (System.currentTimeMillis()-myOsAgent.getTimeUpstream() > (long)osAgent.minute*2) {
+            if (System.currentTimeMillis()-myOsAgent.getTimeUpstream() > osAgent.timeout) {
                 myOsAgent.setUpstream(new Configuration());
             }
         }

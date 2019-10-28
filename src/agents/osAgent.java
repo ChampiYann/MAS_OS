@@ -33,7 +33,9 @@ public class osAgent extends Agent {
     private static final long serialVersionUID = 1L;
 
     // Simulation timing
-    public static long minute = 600; // milliseconds
+    public static long minute = 1000; // milliseconds
+
+    public static final long timeout = minute/3;
 
     // AIDs for the neighbours of the OS and the central
     private Configuration upstream;
@@ -55,7 +57,6 @@ public class osAgent extends Agent {
 
     // Topic
     private AID topicConfiguration;
-    private AID topicMeasure;
     private AID topicCentral;
 
     // Retries
@@ -65,6 +66,9 @@ public class osAgent extends Agent {
     // New variables
     private MSI[] msi;
 
+    // Behaviours
+    private Behaviour HBSenderBehaviour;
+
     /**
      * This function sets up the agent by setting the number of lanes and neighbour
      * based on input arguments. Then declare the MSI's and add behaviours of that
@@ -72,7 +76,7 @@ public class osAgent extends Agent {
      */
     protected void setup() {
         // Print out welcome message
-        System.out.println("Hello! OS " + getAID().getName() + " is ready.");
+        System.out.println("Hello! OS " + getAID().getName() + " is ready at " + System.currentTimeMillis() + ".");
 
         // Get arguments (number of lanes, upstream neighbour, downstream neighbour)
         Object[] args = getArguments();
@@ -145,13 +149,14 @@ public class osAgent extends Agent {
             resetTimeDownstream();
 
             // Behaviour that periodically sends a heartbeat upstream
-            addBehaviour(new HBSender(this, minute/2));
+            HBSenderBehaviour = new HBSender(this, minute/6);
+            addBehaviour(HBSenderBehaviour);
 
             // behaviour that responds to a HB
-            addBehaviour(new HBResponder(this, minute/4));
+            addBehaviour(new HBResponder(this, minute/12));
 
             // Behaviour that checks if a HB has been received back
-            addBehaviour(new HBReaction(this, minute/4));
+            addBehaviour(new HBReaction(this, minute/12));
 
             // General template for a request
             MessageTemplate requestTemplate = MessageTemplate.and(
@@ -182,11 +187,11 @@ public class osAgent extends Agent {
             // Configure reception of list of measures
             try {
                 TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
-                topicMeasure = topicHelper.createTopic("MEASURE");
-                topicHelper.register(topicMeasure);
+                topicCentral = topicHelper.createTopic("CENTRAL");
+                topicHelper.register(topicCentral);
 
                 MessageTemplate MeasureTemplate = MessageTemplate.and(requestTemplate,
-                MessageTemplate.MatchOntology(MEASURE));
+                MessageTemplate.MatchTopic(topicCentral));
 
                 addBehaviour(new HandleMessage(this,MeasureTemplate));
             } catch (ServiceException e) {
@@ -198,14 +203,14 @@ public class osAgent extends Agent {
             // addBehaviour(new CompilerBehaviour(this,minute/2));
 
             // Subscribe to central messages
-            try {
-                TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
-                topicCentral = topicHelper.createTopic("CENTRAL");
-                topicHelper.register(topicCentral);
-            } catch (ServiceException e) {
-                System.out.println("Wrong configuration for " + getAID().getName());
-                doDelete();
-            }
+            // try {
+            //     TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
+            //     topicCentral = topicHelper.createTopic("CENTRAL");
+            //     topicHelper.register(topicCentral);
+            // } catch (ServiceException e) {
+            //     System.out.println("Wrong configuration for " + getAID().getName());
+            //     doDelete();
+            // }
 
             // Print message stating that the configuration was succefull
             System.out.println("OS " + getAID().getLocalName() + " configured on road " + local.getRoad() + " at km " + local.getLocation() +
@@ -234,6 +239,7 @@ public class osAgent extends Agent {
         newMsg.setContent(matrixJson.toString());
         newMsg.addReceiver(central);
         send(newMsg);
+        System.out.println("OS " + getAID().getName() + " terminating at " + System.currentTimeMillis() + ".");
     }
 
     /**
@@ -246,6 +252,8 @@ public class osAgent extends Agent {
         configurationRequest.addReceiver(this.topicConfiguration);
         JSONObject msgContent = this.local.configToJSON();
         configurationRequest.setContent(msgContent.toString());
+        configurationRequest.setOntology("CONFIGURATION");
+        configurationRequest.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
         this.addBehaviour(new AchieveREInitiator(this, configurationRequest));
         resetTimeDownstream();
         resetTimeUpstream();
@@ -264,6 +272,7 @@ public class osAgent extends Agent {
         }
         newMsg.setContent(matrixJson.toString());
         newMsg.addReceiver(central);
+        newMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
         this.addBehaviour(new AchieveREInitiator(this, newMsg));
     }
 
@@ -282,17 +291,20 @@ public class osAgent extends Agent {
     // }
 
     /**
-     * send local measures to neighbours
+     * Send measure to an agent for which we have a configuration
+     * @param config configuration of the receiver
+     * @param ont ontology of the message
+     * @param content content of the message
      */
-    // public void sendMeasures() {
-    //     ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
-    //     newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-    //     newMsg.setOntology(MEASURE);
-    //     newMsg.addReceiver(this.downstream.getAID());
-    //     newMsg.addReceiver(this.upstream.getAID());
-    //     newMsg.setContent(new JSONArray(this.localMeasures).toString());
-    //     this.addBehaviour(new AchieveREInitiator(this, newMsg));
-    // }
+    public void sendMeasure (Configuration config, String ont, String content) {
+        ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
+        newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+        newMsg.setOntology(ont);
+        newMsg.setContent(content);
+        newMsg.addReceiver(config.getAID());
+        newMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
+        this.addBehaviour(new AchieveREInitiator(this, newMsg));
+    }
 
     // public void sendCentralMeasure (String content) {
     //     ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
@@ -436,5 +448,19 @@ public class osAgent extends Agent {
      */
     public AID getCentral() {
         return central;
+    }
+
+    /**
+     * @return the hBSenderBehaviour
+     */
+    public Behaviour getHBSenderBehaviour() {
+        return HBSenderBehaviour;
+    }
+
+    /**
+     * @return the topicCentral
+     */
+    public AID getTopicCentral() {
+        return topicCentral;
     }
 }

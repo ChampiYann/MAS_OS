@@ -29,6 +29,7 @@ public class HBSender extends TickerBehaviour {
         jsonContent.put("configuration", outer.getLocal().configToJSON());
         jsonContent.put("measures",new JSONArray(outer.getLocalMeasures()));
         HBRequest.setContent(jsonContent.toString());
+        HBRequest.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
         myOsAgent.send(HBRequest);
     }
 }

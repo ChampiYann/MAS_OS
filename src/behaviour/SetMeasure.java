@@ -7,10 +7,10 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
 
-import org.json.JSONArray;
+// import org.json.JSONArray;
 
 import agents.centralAgent;
-import agents.osAgent;
+// import agents.osAgent;
 import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
 import jade.domain.FIPANames;
@@ -59,8 +59,8 @@ public class SetMeasure extends TickerBehaviour {
                         LocalDateTime lineEndDateTime = lineEndDate.atTime(lineEndTime);
                         Measure mr = new Measure(lineStartDateTime, lineEndDateTime, values[4], startKm, endKm, lanes);
                         outer.getMeasures().add(mr);
-                        // addMeasure(mr);
-                        sendMeasures();
+                        addMeasure(mr);
+                        // sendMeasures();
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -80,37 +80,39 @@ public class SetMeasure extends TickerBehaviour {
                 Measure mr = iterator.next();
                 if (mr.getEndTime().compareTo(outer.getDateTime()) == 0) {
                     // remove measure and send cancel
-                    // cancelMeasure(mr);
+                    cancelMeasure(mr);
                     iterator.remove();
-                    sendMeasures();
+                    // sendMeasures();
                 }
             }
     }
 
-    private void sendMeasures () {
+    // private void sendMeasures () {
+    //     ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
+    //     newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+    //     newMsg.addReceiver(outer.getCentralTopic());
+    //     newMsg.setOntology(osAgent.MEASURE);
+    //     newMsg.setContent(new JSONArray(outer.getMeasures()).toString());
+    //     newMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
+    //     myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
+    // }
+
+    private void addMeasure (Measure mr) {
         ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
         newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+        newMsg.setOntology("ADD");
+        newMsg.setContent(mr.toJSON().toString());
         newMsg.addReceiver(outer.getCentralTopic());
-        newMsg.setOntology(osAgent.MEASURE);
-        newMsg.setContent(new JSONArray(outer.getMeasures()).toString());
+        newMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
         myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
     }
 
-    // private void addMeasure (Measure mr) {
-    //     ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
-    //     newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-    //     newMsg.setOntology("ADD");
-    //     newMsg.setContent(mr.toJSON().toString());
-    //     newMsg.addReceiver(outer.getCentralTopic());
-    //     myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
-    // }
-
-    // private void cancelMeasure (Measure mr) {
-    //     ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
-    //     newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-    //     newMsg.setOntology("CANCEL");
-    //     newMsg.setContent(mr.toJSON().toString());
-    //     newMsg.addReceiver(outer.getCentralTopic());
-    //     myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
-    // }
+    private void cancelMeasure (Measure mr) {
+        ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
+        newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+        newMsg.setOntology("CANCEL");
+        newMsg.setContent(mr.toJSON().toString());
+        newMsg.addReceiver(outer.getCentralTopic());
+        myAgent.addBehaviour(new AchieveREInitiator(myAgent,newMsg));
+    }
 }
