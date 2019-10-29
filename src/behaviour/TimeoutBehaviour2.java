@@ -23,9 +23,9 @@ public class TimeoutBehaviour2 extends WakerBehaviour {
     @Override
     protected void onWake() {
         osAgent outer = (osAgent)myAgent;
-        neighbour.removeReceiver();
+        // neighbour.removeReceiver();
         outer.getDownstreamNeighbours().remove(neighbour);
-        outer.getDownstreamNeighbours().add(0,new DownstreamNeighbour(outer));
+        outer.getDownstreamNeighbours().add(new DownstreamNeighbour(outer));
 
         outer.SendConfig();
     }

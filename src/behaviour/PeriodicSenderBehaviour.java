@@ -1,5 +1,7 @@
 package behaviour;
 
+import org.json.JSONObject;
+
 import agents.osAgent;
 import config.UpstreamNeighbour;
 import jade.core.Agent;
@@ -28,7 +30,9 @@ public class PeriodicSenderBehaviour extends TickerBehaviour {
         ACLMessage newMsg = new ACLMessage(ACLMessage.REQUEST);
         newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
         newMsg.setOntology("HB");
-        newMsg.setContent(Double.toString(outer.getLocal().getLocation()*10));
+        JSONObject jsonContent = new JSONObject();
+        jsonContent.put("configuration", outer.getLocal().configToJSON());
+        newMsg.setContent(jsonContent.toString());
         newMsg.addReceiver(this.neighbour.getConfig().getAID());
         newMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
 

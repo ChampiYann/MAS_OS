@@ -124,7 +124,7 @@ public class CompilerBehaviour extends OneShotBehaviour{
         //     outer.sendCentralUpdate();
         // }
 
-        outer.setMsi(outer.getDownstreamNeighbours().get(0).getMsi());
+        // outer.setMsi(outer.getDownstreamNeighbours().get(0).getMsi());
         outer.sendCentralUpdate();
     }
 

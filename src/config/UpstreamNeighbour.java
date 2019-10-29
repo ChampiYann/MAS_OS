@@ -14,6 +14,7 @@ public class UpstreamNeighbour extends Neighbour {
         super(agent,Double.NEGATIVE_INFINITY);
         this.periodicSenderBehaviour = new PeriodicSenderBehaviour(agent,osAgent.sendPeriod,this);
         this.timeoutBehaviour = new TimeoutBehaviour(agent, osAgent.timeout, this);
+        addBehaviour();
     }
 
     public UpstreamNeighbour(osAgent agent, Configuration config) {
@@ -34,6 +35,10 @@ public class UpstreamNeighbour extends Neighbour {
 
     public void removeSender() {
         this.outer.removeBehaviour(this.periodicSenderBehaviour);
+    }
+
+    public void removeTimeout() {
+        this.outer.removeBehaviour(this.timeoutBehaviour);
     }
     
 }

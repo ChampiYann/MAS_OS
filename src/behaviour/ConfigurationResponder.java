@@ -43,12 +43,17 @@ public class ConfigurationResponder extends AchieveREResponder {
 
         int index  = Collections.binarySearch(outer.getUpstreamNeighbours(), newNeighbour);
         index = -index-1;
-
         if (index > 0 & index <= osAgent.nsize & newConfig.compareTo(outer.getLocal()) < 0) {
+            // outer.getUpstreamNeighbours().get(index-1).setConfig(newConfig);
+            // outer.getUpstreamNeighbours().get(index-1).resetTimeout();
+            // outer.getUpstreamNeighbours().get(index-1).resetTicker();
             outer.getUpstreamNeighbours().add(index,newNeighbour);
+            outer.getUpstreamNeighbours().get(index).addBehaviour();
+            outer.getUpstreamNeighbours().get(0).removeSender();
+            outer.getUpstreamNeighbours().get(0).removeTimeout();
             outer.getUpstreamNeighbours().remove(0);
 
-            outer.getUpstreamNeighbours().get(index-1).addBehaviour();
+            // outer.getUpstreamNeighbours().get(index-1).addBehaviour();
 
             // Broadcast central measures
 

@@ -25,7 +25,7 @@ public class TimeoutBehaviour extends WakerBehaviour {
         osAgent outer = (osAgent)myAgent;
         neighbour.removeSender();
         outer.getUpstreamNeighbours().remove(neighbour);
-        outer.getUpstreamNeighbours().add(new UpstreamNeighbour(outer));
+        outer.getUpstreamNeighbours().add(0,new UpstreamNeighbour(outer));
     }
     
 }

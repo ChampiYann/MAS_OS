@@ -10,14 +10,11 @@ import org.json.JSONObject;
 
 // import behaviour.CompilerBehaviour;
 import behaviour.ConfigurationResponder;
-import behaviour.HBReaction;
-import behaviour.HBResponder;
-import behaviour.HBSender;
 import behaviour.HandleMessage;
+import behaviour.ResponderBehaviour;
 import behaviour.TrafficSensing;
 import config.Configuration;
 import config.DownstreamNeighbour;
-import config.Neighbour;
 import config.UpstreamNeighbour;
 import jade.core.AID;
 import jade.core.Agent;
@@ -50,7 +47,7 @@ public class osAgent extends Agent {
     private AID central;
 
     // Number of neighbours
-    public static final int nsize = 1;
+    public static final int nsize = 3;
 
     private ArrayList<UpstreamNeighbour> upstreamNeighbours;
     private ArrayList<DownstreamNeighbour> downstreamNeighbours;
@@ -144,6 +141,10 @@ public class osAgent extends Agent {
                 this.downstreamNeighbours.add(new DownstreamNeighbour(this));
             }
 
+            MessageTemplate template = MessageTemplate.and(
+            MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
+            MessageTemplate.MatchOntology("HB"));
+            addBehaviour(new ResponderBehaviour(this, template));
             // // Create empty config array
             // this.config = new ArrayList<Configuration>(nsize);
             // for (int i = 0; i < nsize; i++) {
@@ -169,7 +170,7 @@ public class osAgent extends Agent {
             // Setup MSIs
             this.msi = new MSI[local.getLanes()];
             for (int i = 0; i < msi.length; i++) {
-                this.msi[i] = new MSI();
+                this.msi[i] = new MSI(0);
             }
 
             // Start with no congestion
