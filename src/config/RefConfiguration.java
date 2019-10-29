@@ -1,6 +1,5 @@
 package config;
 
-import agents.osAgent;
 import jade.core.AID;
 
 public class RefConfiguration extends Configuration {

@@ -1,9 +1,16 @@
 package behaviour;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import config.UpstreamNeighbour;
 import jade.core.Agent;
 import jade.lang.acl.ACLMessage;
 import jade.proto.AchieveREInitiator;
+import measure.Measure;
 
 public class SenderBehaviour extends AchieveREInitiator {
 
@@ -22,8 +29,14 @@ public class SenderBehaviour extends AchieveREInitiator {
 
     @Override
     protected void handleInform(ACLMessage inform) {
-        String msgContent = inform.getContent();
-        // Do stuff with the content
+        // get measures
+        JSONObject jsonContent = new JSONObject(inform.getContent());
+        JSONArray jsonMeasures = jsonContent.getJSONArray("measures");
+        Iterator<Object> jsonMeasuresIterator = jsonMeasures.iterator();
+        ArrayList<Measure> newMeasures = new ArrayList<Measure>();
+        while (jsonMeasuresIterator.hasNext()) {
+            newMeasures.add(new Measure((JSONObject)jsonMeasuresIterator.next()));
+        }
 
         // reset timeout
         neighbour.resetTimeout();

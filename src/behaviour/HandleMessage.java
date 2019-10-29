@@ -1,16 +1,8 @@
 package behaviour;
 
-// import java.util.ArrayList;
-// import java.util.Arrays;
-// import java.util.Collection;
-// import java.util.Collections;
-import java.util.Iterator;
-
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import agents.osAgent;
-// import config.Configuration;
 import jade.core.Agent;
 import jade.domain.FIPAAgentManagement.FailureException;
 import jade.domain.FIPAAgentManagement.NotUnderstoodException;
@@ -40,20 +32,6 @@ public class HandleMessage extends AchieveREResponder {
     protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
         ACLMessage result = request.createReply();
         result.setPerformative(ACLMessage.INFORM);
-
-        // JSONObject jsonContent = new JSONObject(request.getContent());
-
-        // if (request.getSender().equals(outer.getCentral())) {
-        //     JSONArray jsonArray = jsonContent.getJSONArray("measures");
-        //     Iterator<Object> jsonContentIterator = jsonArray.iterator();
-        //     outer.getCentralMeasures().clear();
-        //     while (jsonContentIterator.hasNext()) {
-        //         outer.getCentralMeasures().add(new Measure((JSONObject)jsonContentIterator.next()));
-        //     }
-        //     // myAgent.addBehaviour(new CompilerBehaviour());
-        //     return result;
-        // }
-        // return null;
 
         String msgContent = request.getContent();
         JSONObject jsonContent = new JSONObject(msgContent);

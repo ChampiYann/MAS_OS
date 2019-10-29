@@ -16,12 +16,12 @@ import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREResponder;
 // import measure.MSI;
 
-public class ConfigurationResponder extends AchieveREResponder {
+public class ConfigurationResponderBehaviour extends AchieveREResponder {
 
     private static final long serialVersionUID = 1L;
     private osAgent outer;
 
-    public ConfigurationResponder(Agent a, MessageTemplate mt) {
+    public ConfigurationResponderBehaviour(Agent a, MessageTemplate mt) {
         super(a, mt);
         outer = (osAgent)a;
     }
