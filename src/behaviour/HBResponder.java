@@ -1,7 +1,6 @@
 package behaviour;
 
 import java.util.ArrayList;
-// import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.stream.Collectors;
@@ -11,11 +10,11 @@ import org.json.JSONObject;
 
 import agents.osAgent;
 import config.Configuration;
+import config.Neighbour;
 import jade.core.Agent;
 import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-// import measure.MSI;
 import measure.Measure;
 
 public class HBResponder extends TickerBehaviour {
@@ -35,6 +34,40 @@ public class HBResponder extends TickerBehaviour {
             MessageTemplate.MatchPerformative(ACLMessage.REQUEST),
             MessageTemplate.MatchOntology("HB"));
         ACLMessage HBRequest = myAgent.receive(HBTemplate);
+
+        while (HBRequest != null) {
+            // get conversation ID
+            long convId = Long.parseLong(HBRequest.getConversationId());
+            // get content
+            JSONObject jsonContent = new JSONObject(HBRequest.getContent());
+            // get measures
+            JSONArray jsonMeasures = jsonContent.getJSONArray("measures");
+            Iterator<Object> jsonMeasuresIterator = jsonMeasures.iterator();
+            ArrayList<Measure> newMeasures = new ArrayList<Measure>();
+            while (jsonMeasuresIterator.hasNext()) {
+                newMeasures.add(new Measure((JSONObject)jsonMeasuresIterator.next()));
+            }
+            // get configuration
+            JSONObject jsonConfiguration = jsonContent.getJSONObject("configuration");
+            Configuration newConfig = new Configuration(jsonConfiguration.toString());
+            Neighbour newNeighbour = new Neighbour((osAgent)myAgent, newConfig);
+            // get index of presumed location
+            int index = Collections.binarySearch(outer.getDownstreamNeighbours(), newNeighbour);
+
+            if (index > 0) {
+                outer.getDownstreamNeighbours().get(index).setMeasures(newMeasures);
+            } else {
+                index = - index -1;
+                if (index > 0 & index < osAgent.nsize) {
+                    newNeighbour.setConvID(convId);
+                    newNeighbour.setMeasures(newMeasures);
+                    outer.getDownstreamNeighbours().add(index, newNeighbour);
+                    outer.getDownstreamNeighbours().remove(osAgent.nsize);
+                }
+            }
+        }
+    }
+
         boolean update = false;
 
         while (HBRequest != null) {

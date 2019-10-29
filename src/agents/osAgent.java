@@ -16,6 +16,9 @@ import behaviour.HBSender;
 import behaviour.HandleMessage;
 import behaviour.TrafficSensing;
 import config.Configuration;
+import config.DownstreamNeighbour;
+import config.Neighbour;
+import config.UpstreamNeighbour;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.ServiceException;
@@ -33,9 +36,11 @@ public class osAgent extends Agent {
     private static final long serialVersionUID = 1L;
 
     // Simulation timing
-    public static long minute = 1000; // milliseconds
+    public static final long minute = 10000; // milliseconds
 
     public static final long timeout = minute/3;
+
+    public static final long sendPeriod = minute/6;
 
     // AIDs for the neighbours of the OS and the central
     private ArrayList<Configuration> config;
@@ -44,13 +49,17 @@ public class osAgent extends Agent {
     // private Configuration[] downstream;
     private AID central;
 
-    // neighbour size
-    private static final int nsize = 9;
+    // Number of neighbours
+    public static final int nsize = 1;
+
+    private ArrayList<UpstreamNeighbour> upstreamNeighbours;
+    private ArrayList<DownstreamNeighbour> downstreamNeighbours;
+
     // Measures
     private ArrayList<Measure>[] measures;
     private ArrayList<Measure> localMeasures;
-    private ArrayList<Measure> upstreamMeasures;
-    private ArrayList<Measure> downstreamMeasures;
+    // private ArrayList<Measure> upstreamMeasures;
+    // private ArrayList<Measure> downstreamMeasures;
     private ArrayList<Measure> centralMeasures;
 
     // Flags
@@ -123,25 +132,37 @@ public class osAgent extends Agent {
             sideMatcher.find();
             this.local.setSide(sideMatcher.group());
 
-            // Create empty config array
-            this.config = new ArrayList<Configuration>(nsize);
+            // Create empty list of neighbours
+            // Upstream
+            this.upstreamNeighbours = new ArrayList<UpstreamNeighbour>(nsize);
             for (int i = 0; i < nsize; i++) {
-                this.config.add(i, new Configuration(this));
-                // this.config.add(this.local.getLanes()*3-i, new Configuration(this));
-                if (i > nsize/2) {
-                    this.config.get(i).setLocation(Double.POSITIVE_INFINITY);
-                }
+                this.upstreamNeighbours.add(new UpstreamNeighbour(this));
             }
-            this.config.set(nsize/2,this.local);
+            // Downstream
+            this.downstreamNeighbours = new ArrayList<DownstreamNeighbour>(nsize);
+            for (int i = 0; i < nsize; i++) {
+                this.downstreamNeighbours.add(new DownstreamNeighbour(this));
+            }
+
+            // // Create empty config array
+            // this.config = new ArrayList<Configuration>(nsize);
+            // for (int i = 0; i < nsize; i++) {
+            //     this.config.add(i, new Configuration(this));
+            //     // this.config.add(this.local.getLanes()*3-i, new Configuration(this));
+            //     if (i > nsize/2) {
+            //         this.config.get(i).setLocation(Double.POSITIVE_INFINITY);
+            //     }
+            // }
+            // this.config.set(nsize/2,this.local);
 
             // Declare central agent
             this.central = getAID("central");
 
             // Create empty set of central measures
             this.centralMeasures = new ArrayList<Measure>();
-            // Create empty set of arraylist of measures
-            this.measures = (ArrayList<Measure>[]) new ArrayList[nsize];
-            Arrays.setAll(this.measures, n -> {return new ArrayList<Measure>();});
+            // // Create empty set of arraylist of measures
+            // this.measures = (ArrayList<Measure>[]) new ArrayList[nsize];
+            // Arrays.setAll(this.measures, n -> {return new ArrayList<Measure>();});
             // Create empty set of local measures
             this.localMeasures = new ArrayList<Measure>();
 
@@ -154,20 +175,20 @@ public class osAgent extends Agent {
             // Start with no congestion
             this.congestion = false;
 
-            // Reset heartbeat timers
-            this.timers = new long[nsize];
-            Arrays.setAll(this.timers, n -> {return 0;});
-            resetTime();
+            // // Reset heartbeat timers
+            // this.timers = new long[nsize];
+            // Arrays.setAll(this.timers, n -> {return 0;});
+            // resetTime();
 
-            // Behaviour that periodically sends a heartbeat upstream
-            HBSenderBehaviour = new HBSender(this, minute/6);
-            addBehaviour(HBSenderBehaviour);
+            // // Behaviour that periodically sends a heartbeat upstream
+            // HBSenderBehaviour = new HBSender(this, minute/6);
+            // addBehaviour(HBSenderBehaviour);
 
-            // behaviour that responds to a HB
-            addBehaviour(new HBResponder(this, minute/12));
+            // // behaviour that responds to a HB
+            // addBehaviour(new HBResponder(this, minute/12));
 
-            // Behaviour that checks if a HB has been received back
-            addBehaviour(new HBReaction(this, minute/12));
+            // // Behaviour that checks if a HB has been received back
+            // addBehaviour(new HBReaction(this, minute/12));
 
             // General template for a request
             MessageTemplate requestTemplate = MessageTemplate.and(
@@ -194,19 +215,6 @@ public class osAgent extends Agent {
                 System.out.println("Wrong configuration for " + getAID().getName());
                 doDelete();
             }
-
-            // Change displays
-            // addBehaviour(new CompilerBehaviour(this,minute));
-
-            // // Subscribe to central messages
-            // try {
-            //     TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
-            //     topicCentral = topicHelper.createTopic("CENTRAL");
-            //     topicHelper.register(topicCentral);
-            // } catch (ServiceException e) {
-            //     System.out.println("Wrong configuration for " + getAID().getName());
-            //     doDelete();
-            // }
 
             // Configure broadcast for configuration
             try {
@@ -287,8 +295,7 @@ public class osAgent extends Agent {
     /**
      * Format and send local configuration
      */
-    public void SendConfig (ArrayList<Integer> timeout) {
-        if (timeout.size() > 0) {
+    public void SendConfig () {
             ACLMessage configurationRequest = new ACLMessage(ACLMessage.REQUEST);
             configurationRequest.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
             // configurationRequest.setReplyByDate(new Date(System.currentTimeMillis() + minute*4));
@@ -301,11 +308,6 @@ public class osAgent extends Agent {
             configurationRequest.setOntology("CONFIGURATION");
             configurationRequest.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
             this.addBehaviour(new AchieveREInitiator(this, configurationRequest));
-
-            for (int i = 0; i < timeout.size(); i ++) {
-                resetTime(timeout.get(i));
-            }
-        }
     }
 
     /**
@@ -430,19 +432,19 @@ public class osAgent extends Agent {
         this.localMeasures = localMeasures;
     }
 
-    /**
-     * @return the upstreamMeasures
-     */
-    public ArrayList<Measure> getUpstreamMeasures() {
-        return upstreamMeasures;
-    }
+    // /**
+    //  * @return the upstreamMeasures
+    //  */
+    // public ArrayList<Measure> getUpstreamMeasures() {
+    //     return upstreamMeasures;
+    // }
 
-    /**
-     * @return the downstreamMeasures
-     */
-    public ArrayList<Measure> getDownstreamMeasures() {
-        return downstreamMeasures;
-    }
+    // /**
+    //  * @return the downstreamMeasures
+    //  */
+    // public ArrayList<Measure> getDownstreamMeasures() {
+    //     return downstreamMeasures;
+    // }
 
     /**
      * @param congestion the congestion to set
@@ -491,5 +493,19 @@ public class osAgent extends Agent {
      */
     public Behaviour getHBSenderBehaviour() {
         return HBSenderBehaviour;
+    }
+
+    /**
+     * @return the upstreamNeighbours
+     */
+    public ArrayList<UpstreamNeighbour> getUpstreamNeighbours() {
+        return upstreamNeighbours;
+    }
+
+    /**
+     * @return the downstreamNeighbours
+     */
+    public ArrayList<DownstreamNeighbour> getDownstreamNeighbours() {
+        return downstreamNeighbours;
     }
 }

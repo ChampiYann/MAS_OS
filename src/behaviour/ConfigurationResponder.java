@@ -1,12 +1,12 @@
 package behaviour;
 
-import java.util.ArrayList;
 import java.util.Collections;
 
 import org.json.JSONObject;
 
 import agents.osAgent;
 import config.Configuration;
+import config.UpstreamNeighbour;
 import jade.core.Agent;
 import jade.domain.FIPAAgentManagement.FailureException;
 import jade.domain.FIPAAgentManagement.NotUnderstoodException;
@@ -39,67 +39,25 @@ public class ConfigurationResponder extends AchieveREResponder {
         // check location of sender
         JSONObject jsonConfiguration = jsonContent.getJSONObject("configuration");
         Configuration newConfig = new Configuration(jsonConfiguration.toString());
+        UpstreamNeighbour newNeighbour = new UpstreamNeighbour((osAgent)myAgent, newConfig);
 
-        ArrayList<Configuration> allConfig = outer.getConfig();
-        int index = Collections.binarySearch(allConfig, newConfig);
-        index = - index - 1;
-        if (index > 0 & index <= allConfig.size()/2) {
-            allConfig.add(index, newConfig);
-            allConfig.get(index).setConvID(System.currentTimeMillis());
-            allConfig.remove(0);
-            outer.resetTime(index-1);
+        int index  = Collections.binarySearch(outer.getUpstreamNeighbours(), newNeighbour);
+        index = -index-1;
 
-            outer.addBehaviour(new CompilerBehaviour());
-        
-            outer.getCentralMeasures().stream().forEach(n -> {
-                outer.sendMeasure(new Configuration(outer, outer.getTopicCentral(), null, 0, null, 0) , "ADD", n.toJSON().toString());
-            });
+        if (index > 0 & index <= osAgent.nsize & newConfig.compareTo(outer.getLocal()) < 0) {
+            outer.getUpstreamNeighbours().add(index,newNeighbour);
+            outer.getUpstreamNeighbours().remove(0);
 
+            outer.getUpstreamNeighbours().get(index-1).addBehaviour();
+
+            // Broadcast central measures
+
+            // Reply to message
             ACLMessage result = request.createReply();
             result.setPerformative(ACLMessage.INFORM);
             return result;
         } else {
             return null;
         }
-
-        // if (index < 0) {
-        //     // Not in array
-        //     index = -index -1;
-        //     // check where in array
-        //     if (index == 0 | index == allConfig.size()) {
-        //         // first or last element
-        //         return null;
-        //     } else {
-        //         // somewhere in the array
-        //         allConfig.add(index, newConfig);
-        //         allConfig.get(index).setConvID(System.currentTimeMillis());
-        //         if (index < allConfig.size()/2) {
-        //             allConfig.remove(0);
-        //         } else {
-        //             allConfig.remove(allConfig.size()-1);
-        //         }
-        //     }
-        // // } else if (index != allConfig.size()/2) {
-        // //     // In array
-        // //     outer.resetTime(index);
-        // } else {
-        //     return null;
-        // }
-
-        // outer.resetTime(index);
-
-        // // outer.getHBSenderBehaviour().restart();
-
-        // outer.addBehaviour(new CompilerBehaviour());
-        
-        // outer.getCentralMeasures().stream().forEach(n -> {
-        //     outer.sendMeasure(new Configuration(outer, outer.getTopicCentral(), null, 0, null, 0) , "ADD", n.toJSON().toString());
-        // });
-
-        // // System.out.println("upstream neighbour for " + outer.getLocal().getAID().getLocalName() + " is " + outer.getConfig().get(index).getAID().getLocalName());
-
-        // ACLMessage result = request.createReply();
-        // result.setPerformative(ACLMessage.INFORM);
-        // return result;
     }
 }

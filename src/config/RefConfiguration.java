@@ -11,8 +11,8 @@ public class RefConfiguration extends Configuration {
         fileName = null;
     }
 
-    public RefConfiguration(osAgent outer, AID id, String r, float loc, String s, int la, String fn) {
-        super(outer, id, r, loc, s, la);
+    public RefConfiguration(AID id, String r, float loc, String s, int la, String fn) {
+        super(id, r, loc, s, la);
         fileName = fn;
     }
 }

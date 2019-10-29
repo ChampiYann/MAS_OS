@@ -1,22 +1,10 @@
 package behaviour;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-
 import agents.osAgent;
-// import jade.core.Agent;
 import jade.core.behaviours.OneShotBehaviour;
-// import jade.core.behaviours.TickerBehaviour;
 import measure.MSI;
-import measure.Measure;
 
 public class CompilerBehaviour extends OneShotBehaviour{
-
-    // public CompilerBehaviour(Agent a, long period) {
-    //     super(a, period);
-    //     // TODO Auto-generated constructor stub
-    // }
 
     /**
      *
@@ -27,143 +15,117 @@ public class CompilerBehaviour extends OneShotBehaviour{
     public void action() {
         osAgent outer = (osAgent) myAgent;
 
-        ArrayList<Measure> newMeasures = new ArrayList<Measure>();
+        // ArrayList<Measure> newMeasures = new ArrayList<Measure>();
 
-        // Traffic sensing
-        if (outer.getCongestion() == true) {
-            MSI[] congestionMsi = { new MSI(MSI.NF_50), new MSI(MSI.NF_50), new MSI(MSI.NF_50) };
-            newMeasures.add(new Measure(Measure.AID, outer.getLocal().getRoad(), outer.getLocal().getLocation(),
-                    congestionMsi));
-        }
+        // // Traffic sensing
+        // if (outer.getCongestion() == true) {
+        //     MSI[] congestionMsi = { new MSI(MSI.NF_50), new MSI(MSI.NF_50), new MSI(MSI.NF_50) };
+        //     newMeasures.add(new Measure(Measure.AID, outer.getLocal().getRoad(), outer.getLocal().getLocation(),
+        //             congestionMsi));
+        // }
 
-        // Central message
-        outer.getCentralMeasures().forEach(n -> {
-            if ((n.getEnd() <= outer.getLocal().getLocation() && outer.getLocal().getLocation() <= n.getStart())
-                    || (outer.getLocal().getLocation() < n.getStart()
-                            && outer.getConfig().get(outer.getConfig().size() / 2 + 1).getLocation() > n.getEnd())
-                    || (outer.getLocal().getLocation() > n.getEnd()
-                            && outer.getConfig().get(outer.getConfig().size() / 2 - 1).getLocation() < n.getStart())) {
-                newMeasures.add(new Measure(Measure.CENTRAL, outer.getLocal().getRoad(), outer.getLocal().getLocation(),
-                        n.getDisplay()));
-            }
-        });
+        // // Central message
+        // outer.getCentralMeasures().forEach(n -> {
+        //     if ((n.getEnd() <= outer.getLocal().getLocation() && outer.getLocal().getLocation() <= n.getStart())
+        //             || (outer.getLocal().getLocation() < n.getStart()
+        //                     && outer.getConfig().get(outer.getConfig().size() / 2 + 1).getLocation() > n.getEnd())
+        //             || (outer.getLocal().getLocation() > n.getEnd()
+        //                     && outer.getConfig().get(outer.getConfig().size() / 2 - 1).getLocation() < n.getStart())) {
+        //         newMeasures.add(new Measure(Measure.CENTRAL, outer.getLocal().getRoad(), outer.getLocal().getLocation(),
+        //                 n.getDisplay()));
+        //     }
+        // });
 
-        // Neighbour messages
+        // // Neighbour messages
 
-        // EOR
-        // Central measure
-        outer.getMeasures()[outer.getMeasures().length / 2 - 1].stream().filter(n -> n.getType() == Measure.CENTRAL)
-                .forEach(n -> {
-                    MSI[] EORMsi = { new MSI(MSI.EOR), new MSI(MSI.EOR), new MSI(MSI.EOR) };
-                    newMeasures.add(new Measure(n.getID(), Measure.REACTION, outer.getLocal().getRoad(),
-                            outer.getLocal().getLocation(), EORMsi));
-                });
-
-        // AID
-        outer.getMeasures()[outer.getMeasures().length / 2 + 1].stream().filter(n -> n.getType() == Measure.AID)
-                .forEach(n -> {
-                    MSI[] congestionLeadinMsi = { new MSI(MSI.NF_70), new MSI(MSI.NF_70), new MSI(MSI.NF_70) };
-                    newMeasures.add(new Measure(n.getID(), Measure.REACTION, outer.getLocal().getRoad(),
-                            outer.getLocal().getLocation(), congestionLeadinMsi));
-                });
-
-        // Central Measure
-        for (int i = 1; i < outer.getMeasures().length / 2; i++) {
-            ArrayList<Measure> measures = outer.getMeasures()[outer.getMeasures().length / 2 + i];
-            for (int j = 0; j < measures.size(); j++) {
-                if (measures.get(j).getType() == Measure.CENTRAL) {
-                    MSI[] previousMsi = measures.get(j).getDisplay();
-                    MSI[] newMsi = new MSI[previousMsi.length];
-                    for (int k = 0; k < i; k++) {
-                        newMsi = new MSI[previousMsi.length];
-                        Arrays.setAll(newMsi, n -> {
-                            return new MSI();
-                        });
-                        // Determine upstream arrow and cross pattern
-                        ArrowConfig(newMsi, previousMsi);
-
-                        // Determine upstream continuation of measure
-                        MSI[] tempDisplay = Arrays.stream(previousMsi).map(n -> ContV(n)).toArray(MSI[]::new);
-                        for (int l = 0; l < newMsi.length; l++) {
-                            newMsi[l].changeState(tempDisplay[l].getSymbol());
-                        }
-
-                        // dif-v spread measure across road
-                        DifV(newMsi);
-
-                        previousMsi = newMsi;
-                    }
-                    newMeasures.add(new Measure(measures.get(j).getID(), Measure.REACTION, outer.getLocal().getRoad(),
-                            outer.getLocal().getLocation(), newMsi));
-                }
-            }
-        }
-
-        // // Downstream messages
+        // // EOR
         // // Central measure
-        // outer.getDownstreamMeasures().stream()
-        // .filter(n -> n.getType() == Measure.CENTRAL)
-        // .forEach(
-        // n -> {
-        // MSI[] newMsi = {new MSI(MSI.BLANK), new MSI(MSI.BLANK), new MSI(MSI.BLANK)};
-        // // Determine upstream arrow and cross pattern
-        // ArrowConfig(newMsi,n.getDisplay());
+        // outer.getMeasures()[outer.getMeasures().length / 2 - 1].stream().filter(n -> n.getType() == Measure.CENTRAL)
+        //         .forEach(n -> {
+        //             MSI[] EORMsi = { new MSI(MSI.EOR), new MSI(MSI.EOR), new MSI(MSI.EOR) };
+        //             newMeasures.add(new Measure(n.getID(), Measure.REACTION, outer.getLocal().getRoad(),
+        //                     outer.getLocal().getLocation(), EORMsi));
+        //         });
 
-        // // Determine upstream continuation of measure
-        // MSI[] tempDisplay = Arrays.stream(n.getDisplay())
-        // .map(m -> ContV(m))
-        // .toArray(MSI[]::new);
+        // // AID
+        // outer.getMeasures()[outer.getMeasures().length / 2 + 1].stream().filter(n -> n.getType() == Measure.AID)
+        //         .forEach(n -> {
+        //             MSI[] congestionLeadinMsi = { new MSI(MSI.NF_70), new MSI(MSI.NF_70), new MSI(MSI.NF_70) };
+        //             newMeasures.add(new Measure(n.getID(), Measure.REACTION, outer.getLocal().getRoad(),
+        //                     outer.getLocal().getLocation(), congestionLeadinMsi));
+        //         });
+
+        // // Central Measure
+        // for (int i = 1; i < outer.getMeasures().length / 2; i++) {
+        //     ArrayList<Measure> measures = outer.getMeasures()[outer.getMeasures().length / 2 + i];
+        //     for (int j = 0; j < measures.size(); j++) {
+        //         if (measures.get(j).getType() == Measure.CENTRAL) {
+        //             MSI[] previousMsi = measures.get(j).getDisplay();
+        //             MSI[] newMsi = new MSI[previousMsi.length];
+        //             for (int k = 0; k < i; k++) {
+        //                 newMsi = new MSI[previousMsi.length];
+        //                 Arrays.setAll(newMsi, n -> {
+        //                     return new MSI();
+        //                 });
+        //                 // Determine upstream arrow and cross pattern
+        //                 ArrowConfig(newMsi, previousMsi);
+
+        //                 // Determine upstream continuation of measure
+        //                 MSI[] tempDisplay = Arrays.stream(previousMsi).map(n -> ContV(n)).toArray(MSI[]::new);
+        //                 for (int l = 0; l < newMsi.length; l++) {
+        //                     newMsi[l].changeState(tempDisplay[l].getSymbol());
+        //                 }
+
+        //                 // dif-v spread measure across road
+        //                 DifV(newMsi);
+
+        //                 previousMsi = newMsi;
+        //             }
+        //             newMeasures.add(new Measure(measures.get(j).getID(), Measure.REACTION, outer.getLocal().getRoad(),
+        //                     outer.getLocal().getLocation(), newMsi));
+        //         }
+        //     }
+        // }
+
+        // // send local measures
+        // outer.setLocalMeasures(newMeasures);
+        // // Initialize new MSI array
+        // MSI[] newMsi = new MSI[outer.getLocal().getLanes()];
         // for (int i = 0; i < newMsi.length; i++) {
-        // newMsi[i].changeState(tempDisplay[i].getSymbol());
+        //     newMsi[i] = new MSI();
         // }
 
-        // // dif-v spread measure across road
-        // DifV(newMsi);
-
-        // newMeasures.add(new Measure(n.getID(), Measure.REACTION,
-        // outer.getLocal().getRoad(), outer.getLocal().getLocation(), newMsi));
+        // // Go through measure to can most restricive symbol
+        // Iterator<Measure> measureIterator = outer.getLocalMeasures().iterator();
+        // while(measureIterator.hasNext()) {
+        //     MSI[] nextMeasureDisplay = measureIterator.next().getDisplay();
+        //     for (int i = 0; i < newMsi.length; i++) {
+        //         newMsi[i].changeState(nextMeasureDisplay[i].getSymbol());
+        //     }
         // }
-        // );
 
-        // send local measures
-        // if (!newMeasures.equals(outer.getLocalMeasures())) {
-        outer.setLocalMeasures(newMeasures);
-        // outer.sendMeasures();
-        // Initialize new MSI array
-        MSI[] newMsi = new MSI[outer.getLocal().getLanes()];
-        for (int i = 0; i < newMsi.length; i++) {
-            newMsi[i] = new MSI();
-        }
-
-        // Go through measure to can most restricive symbol
-        Iterator<Measure> measureIterator = outer.getLocalMeasures().iterator();
-        while(measureIterator.hasNext()) {
-            MSI[] nextMeasureDisplay = measureIterator.next().getDisplay();
-            for (int i = 0; i < newMsi.length; i++) {
-                newMsi[i].changeState(nextMeasureDisplay[i].getSymbol());
-            }
-        }
-
-        // check for flashers
-        boolean[] flashers = new boolean[newMsi.length];
-        Arrays.fill(flashers, true);
-        outer.getMeasures()[outer.getMeasures().length/2-1].stream().forEach(n -> {for (int i = 0; i < newMsi.length; i++) {
-            if (n.getDisplay()[i].getSymbol() <= newMsi[i].getSymbol()) {
-                flashers[i] = false;
-            }
-        }});
-        for (int i = 0; i < newMsi.length; i++) {
-            if (flashers[i] == true && MSI.F_50 < newMsi[i].getSymbol() && newMsi[i].getSymbol() <= MSI.NF_90) {
-                newMsi[i].changeState(newMsi[i].getSymbol()-1);
-            }
-        }
-
-        // Update MSI
-        if (!Arrays.equals(newMsi, outer.getMsi())) {
-            outer.setMsi(newMsi);
-            outer.sendCentralUpdate();
-        }
+        // // check for flashers
+        // boolean[] flashers = new boolean[newMsi.length];
+        // Arrays.fill(flashers, true);
+        // outer.getMeasures()[outer.getMeasures().length/2-1].stream().forEach(n -> {for (int i = 0; i < newMsi.length; i++) {
+        //     if (n.getDisplay()[i].getSymbol() <= newMsi[i].getSymbol()) {
+        //         flashers[i] = false;
+        //     }
+        // }});
+        // for (int i = 0; i < newMsi.length; i++) {
+        //     if (flashers[i] == true && MSI.F_50 < newMsi[i].getSymbol() && newMsi[i].getSymbol() <= MSI.NF_90) {
+        //         newMsi[i].changeState(newMsi[i].getSymbol()-1);
+        //     }
         // }
+
+        // // Update MSI
+        // if (!Arrays.equals(newMsi, outer.getMsi())) {
+        //     outer.setMsi(newMsi);
+        //     outer.sendCentralUpdate();
+        // }
+
+        outer.setMsi(outer.getDownstreamNeighbours().get(0).getMsi());
+        outer.sendCentralUpdate();
     }
 
     /**
