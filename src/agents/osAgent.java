@@ -137,7 +137,7 @@ public class osAgent extends Agent {
             // Setup MSIs
             this.msi = new MSI[local.getLanes()];
             for (int i = 0; i < msi.length; i++) {
-                this.msi[i] = new MSI(0);
+                this.msi[i] = new MSI();
             }
 
             // Start with no congestion

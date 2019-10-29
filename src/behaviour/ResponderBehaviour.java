@@ -58,12 +58,9 @@ public class ResponderBehaviour extends AchieveREResponder {
             }
 
             try {
-                // outer.getMsi()[index] = new MSI((int)(newConfig.getLocation()*10));
-                // outer.getDownstreamNeighbours().get(index).setConfig(newConfig);
                 outer.getDownstreamNeighbours().get(index).resetTimeout();
                 outer.getDownstreamNeighbours().get(index).setMeasures(newMeasures);
             } catch (ArrayIndexOutOfBoundsException e) {
-                // outer.getMsi()[indexRev] = new MSI((int)(newConfig.getLocation()*10));
                 outer.getDownstreamNeighbours().get(indexRev).setConfig(newConfig);
                 outer.getDownstreamNeighbours().get(indexRev).resetTimeout();
                 outer.getDownstreamNeighbours().get(indexRev).setMeasures(newMeasures);

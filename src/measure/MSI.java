@@ -82,8 +82,8 @@ public class MSI {
 
     @JSONPropertyIgnore
     public static String getSymbol(int sym) {
-        // return symbols[sym];
-        return Integer.toString(sym);
+        return symbols[sym];
+        // return Integer.toString(sym);
     }
 
     @JSONPropertyIgnore
