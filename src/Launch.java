@@ -215,29 +215,29 @@ public class Launch {
 
                     dateTime = dateTime.plusMinutes(1);
                     // time = time.plusMinutes(1);
-                    if (dateTime.isAfter(LocalDateTime.of(2018, 3, 1, 2, 0))) {
-                        outstations.stream().forEach(n -> {
-                            try {
-                                n.kill(0);
-                            } catch (StaleProxyException e1) {
-                                // TODO Auto-generated catch block
-                                e1.printStackTrace();
-                            }
-                        });
-                        try {
-                            central.kill();
-                        } catch (StaleProxyException e1) {
-                            // TODO Auto-generated catch block
-                            e1.printStackTrace();
-                        }
-                        this.cancel();
-                        // try {
-                        //     cc.kill();
-                        // } catch (StaleProxyException e) {
-                        //     // TODO Auto-generated catch block
-                        //     e.printStackTrace();
-                        // }
-                    }
+                    // if (dateTime.isAfter(LocalDateTime.of(2018, 3, 1, 2, 0))) {
+                    //     outstations.stream().forEach(n -> {
+                    //         try {
+                    //             n.kill(0);
+                    //         } catch (StaleProxyException e1) {
+                    //             // TODO Auto-generated catch block
+                    //             e1.printStackTrace();
+                    //         }
+                    //     });
+                    //     try {
+                    //         central.kill();
+                    //     } catch (StaleProxyException e1) {
+                    //         // TODO Auto-generated catch block
+                    //         e1.printStackTrace();
+                    //     }
+                    //     this.cancel();
+                    //     // try {
+                    //     //     cc.kill();
+                    //     // } catch (StaleProxyException e) {
+                    //     //     // TODO Auto-generated catch block
+                    //     //     e.printStackTrace();
+                    //     // }
+                    // }
                 }
             };
 

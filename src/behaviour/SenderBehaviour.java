@@ -38,6 +38,8 @@ public class SenderBehaviour extends AchieveREInitiator {
             newMeasures.add(new Measure((JSONObject)jsonMeasuresIterator.next()));
         }
 
+        this.neighbour.setMeasures(newMeasures);
+
         // reset timeout
         neighbour.resetTimeout();
         // calculate new MSI

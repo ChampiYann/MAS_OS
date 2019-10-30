@@ -1,6 +1,7 @@
 package agents;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,7 +24,6 @@ import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
-import measure.CentralMeasure;
 import measure.MSI;
 import measure.Measure;
 
@@ -32,7 +32,7 @@ public class osAgent extends Agent {
     private static final long serialVersionUID = 1L;
 
     // Simulation timing
-    public static final long minute = 10000; // milliseconds
+    public static final long minute = 1000; // milliseconds
 
     public static final long timeout = minute/3;
 
@@ -250,18 +250,19 @@ public class osAgent extends Agent {
      * Format and send local configuration
      */
     public void SendConfig () {
-            ACLMessage configurationRequest = new ACLMessage(ACLMessage.REQUEST);
-            configurationRequest.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-            // configurationRequest.setReplyByDate(new Date(System.currentTimeMillis() + minute*4));
-            configurationRequest.addReceiver(topicConfiguration);
-            JSONObject jsonContent = new JSONObject();
-            jsonContent.put("configuration", local.configToJSON());
-            // jsonContent.put("measures", new JSONArray(outer.getLocalMeasures().stream().filter(n -> n.getType() != Measure.REACTION).collect(Collectors.toList())));
-            // HBResponse.setContent(jsonContent.toString());
-            configurationRequest.setContent(jsonContent.toString());
-            configurationRequest.setOntology("CONFIGURATION");
-            configurationRequest.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
-            this.addBehaviour(new AchieveREInitiator(this, configurationRequest));
+        ACLMessage configurationRequest = new ACLMessage(ACLMessage.REQUEST);
+        configurationRequest.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+        // configurationRequest.setReplyByDate(new Date(System.currentTimeMillis() + minute*4));
+        configurationRequest.addReceiver(topicConfiguration);
+        JSONObject jsonContent = new JSONObject();
+        jsonContent.put("configuration", local.configToJSON());
+        // jsonContent.put("measures", new JSONArray(outer.getLocalMeasures().stream().filter(n -> n.getType() != Measure.REACTION).collect(Collectors.toList())));
+        // HBResponse.setContent(jsonContent.toString());
+        configurationRequest.setContent(jsonContent.toString());
+        configurationRequest.setOntology("CONFIGURATION");
+        configurationRequest.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
+        configurationRequest.setReplyByDate(new Date(System.currentTimeMillis()+osAgent.timeout));
+        this.addBehaviour(new AchieveREInitiator(this, configurationRequest));
     }
 
     /**

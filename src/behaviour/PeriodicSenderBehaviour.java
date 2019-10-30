@@ -1,5 +1,6 @@
 package behaviour;
 
+import java.util.Date;
 import java.util.stream.Collectors;
 
 import org.json.JSONArray;
@@ -40,6 +41,15 @@ public class PeriodicSenderBehaviour extends TickerBehaviour {
         newMsg.setContent(jsonContent.toString());
         newMsg.addReceiver(this.neighbour.getConfig().getAID());
         newMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
+        newMsg.setReplyByDate(new Date(System.currentTimeMillis()+osAgent.timeout));
+
+        // System.out.println(outer.getUpstreamNeighbours().get(0).getConfig().getLocation() + " "
+        //     + outer.getUpstreamNeighbours().get(1).getConfig().getLocation() + " "
+        //     + outer.getUpstreamNeighbours().get(2).getConfig().getLocation() + " "
+        //     + outer.getLocal().getLocation() + " "
+        //     + outer.getDownstreamNeighbours().get(0).getConfig().getLocation() + " "
+        //     + outer.getDownstreamNeighbours().get(1).getConfig().getLocation() + " "
+        //     + outer.getDownstreamNeighbours().get(2).getConfig().getLocation() + " ");
 
         myAgent.addBehaviour(new SenderBehaviour(myAgent, newMsg, neighbour));
     }

@@ -26,12 +26,16 @@ public class DownstreamNeighbour extends Neighbour {
         this.timeoutBehaviour = new TimeoutBehaviour2(agent, osAgent.timeout, this);
     }
 
+    public void addBehaviour() {
+        this.outer.addBehaviour(this.timeoutBehaviour);
+    }
+
     @Override
     public void resetTimeout() {
         this.timeoutBehaviour.reset(osAgent.timeout);
     }
     
-    // public void removeReceiver() {
-    //     this.outer.removeBehaviour(this.responderBehaviour);
-    // }
+    public void removeTimeout() {
+        this.outer.removeBehaviour(this.timeoutBehaviour);
+    }
 }
