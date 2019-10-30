@@ -1,93 +1,108 @@
 package measure;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Random;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import jade.core.AID;
-
 public class Measure {
 
-    public static final int AIDet      = 0;
-    public static final int CROSS      = 1;
+    public static final int AID = 1;
+    public static final int CENTRAL = 2;
+    public static final int REACTION = 3;
 
-    private static final String[] Measures = new String[2];
-    static {
-        Measures[AIDet] = "AID";
-        Measures[CROSS] = "CROSS";
-    }
-
-
-    protected AID origin;
-    protected int type;
-    protected int size;
-    protected int iteration;
-    protected float start;
-    protected float end;
     protected long ID;
+    protected int type;
     protected String road;
-    protected int[] lanes;
-    protected LocalDateTime startTime;
-    protected LocalDateTime endTime;
+    protected MSI[] display;
+    protected double start;
+    protected double end;
 
-    protected Measure() { }
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
 
-    public Measure(JSONObject content) {
-        type = content.getInt("type");
-        origin = new AID(content.getString("origin"),AID.ISGUID);
-        size = content.getInt("size");
-        start = content.getFloat("start");
-        end = content.getFloat("end");
-        ID = content.getLong("ID");
-        iteration = content.getInt("iteration");
-        road = content.getString("road");
-        JSONArray lanesJSON = content.getJSONArray("msi");
-        lanes = new int[lanesJSON.length()];
-        for (int i = 0; i < lanesJSON.length(); i++) {
-            lanes[i] = lanesJSON.getInt(i);
-        }
-    }
+    protected Measure() {}
 
-    public Measure(AID o, LocalDateTime st, LocalDateTime et, String r, float s, float e, int[] l) {
-        type = CROSS;
-        origin = o;
-        size = 4;
-        iteration = size;
-        start = s;
-        end = e;
-        road = r;
-        lanes = l;
-        startTime = st;
-        endTime = et;
+    public Measure(LocalDateTime startTime, LocalDateTime endTime, String road, double start, double end, MSI[] lanes) {
+        this.road = road;
+        this.start = start;
+        this.end = end;
+        this.display = lanes;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.type = 0;
 
         Random rand = new Random();
         int n = rand.nextInt(50);
-        ID = System.currentTimeMillis() + n;
+        this.ID = System.currentTimeMillis() + n;
     }
 
-    public int getType() {
-        return type;
+    public Measure(int type, String road, double start, MSI[] lanes) {
+        this.type = type;
+        this.road = road;
+        this.start = start;
+        this.end = start;
+        this.display = lanes;
+        this.startTime = null;
+        this.endTime = null;
+
+        Random rand = new Random();
+        int n = rand.nextInt(50);
+        this.ID = System.currentTimeMillis() + n;
     }
 
-    public int getIteration() {
-        return iteration;
+    public Measure(long ID, int type, String road, double start, MSI[] lanes) {
+        this.type = type;
+        this.road = road;
+        this.start = start;
+        this.end = start;
+        this.display = lanes;
+        this.startTime = null;
+        this.endTime = null;
+        this.ID = ID;
     }
 
-    public AID getOrigin() {
-        return origin;
+    public Measure(JSONObject content) {
+        this.ID = content.getLong("ID");
+        this.road = content.getString("road");
+        this.start = content.getDouble("start");
+        this.end = content.getDouble("end");
+        this.type = content.getInt("type");
+        this.display = new MSI[content.getJSONArray("display").length()];
+        for (int i = 0; i < content.getJSONArray("display").length(); i++) {
+            this.display[i] = new MSI(content.getJSONArray("display").getJSONObject(i));
+        }
     }
 
+    public JSONObject toJSON() {
+        JSONObject content = new JSONObject();
+        content.put("start", start);
+        content.put("end", end);
+        content.put("ID",ID);
+        content.put("road", road);
+        content.put("type",type);
+        JSONArray jsonDisplay = new JSONArray(display);
+        content.put("display", jsonDisplay);
+        return content;
+    }
+
+	/**
+     * @return the iD
+     */
     public long getID() {
         return ID;
     }
 
-    public int getLane(int i) { //throws outofbounds
-        return lanes[i];
+    /**
+     * @return the lanes
+     */
+    public MSI[] getDisplay() {
+        return display;
     }
 
-    /**
+	/**
      * @return the startTime
      */
     public LocalDateTime getStartTime() {
@@ -101,18 +116,37 @@ public class Measure {
         return endTime;
     }
 
-    public JSONObject toJSON() {
-        JSONObject content = new JSONObject();
-        content.put("origin", origin.getName());
-        content.put("type", type);
-        content.put("size", size);
-        content.put("iteration", iteration);
-        content.put("start", start);
-        content.put("end", end);
-        content.put("ID",ID);
-        content.put("road", road);
-        JSONArray lanesJSON = new JSONArray(lanes);
-        content.put("msi", lanesJSON);
-        return content;
+    /**
+     * @return the type
+     */
+    public int getType() {
+        return type;
+    }
+
+    /**
+     * @return the end
+     */
+    public double getEnd() {
+        return end;
+    }
+
+    /**
+     * @return the start
+     */
+    public double getStart() {
+        return start;
+    }
+
+    /**
+     * @return the road
+     */
+    public String getRoad() {
+        return road;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        Measure s = (Measure) obj;
+        return this.ID == s.ID && this.type == s.type && Arrays.equals(this.display,s.display);
     }
 }

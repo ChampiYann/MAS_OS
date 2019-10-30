@@ -9,7 +9,7 @@ import jade.core.AID;
 
 public class RefPortal extends Portal {
 
-    public RefPortal(AID id, float km, JPanel portal, GridBagConstraints gbc, String fn) {
+    public RefPortal(AID id, double km, JPanel portal, GridBagConstraints gbc, String fn) {
         super(id, km, portal, gbc);
     }
     

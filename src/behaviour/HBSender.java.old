@@ -1,0 +1,26 @@
+package behaviour;
+
+import org.json.JSONObject;
+
+import agents.osAgent;
+import jade.core.Agent;
+import jade.core.behaviours.TickerBehaviour;
+
+public class HBSender extends TickerBehaviour {
+
+    private static final long serialVersionUID = 1L;
+    
+    private osAgent outer;
+
+    public HBSender(Agent a, long period) {
+        super(a, period);
+        outer = (osAgent)a;
+    }
+    
+    @Override
+    protected void onTick() {
+        for (int i = 0; i < outer.getUpstreamNeighbours().size(); i++) {
+            outer.getUpstreamNeighbours().get(i).sendRequest();
+        }
+    }
+}

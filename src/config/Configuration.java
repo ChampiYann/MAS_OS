@@ -1,55 +1,50 @@
 package config;
 
+import jade.core.AID;
+
 import java.util.Comparator;
 
 import org.json.JSONObject;
 
 import agents.osAgent;
-import jade.core.AID;
 
-public class Configuration {
+public class Configuration implements Comparable<Configuration>{
 
-    final osAgent outer;
+    private AID AID;
+    private String road;
+    private double location;
+    private String side;
+    private int lanes;
 
-    public AID getAID;
-    public String road;
-    public float location;
-    public String side;
-    public int lanes;
-
-    public Configuration(osAgent outer, AID id, String r, float loc, String s, int la) {
-        this.outer = outer;
-        getAID = id;
-        road = r;
-        location = loc;
-        side = s;
-        lanes = la;
+    public Configuration(AID id, String r, double loc, String s, int la) {
+        this.AID = id;
+        this.road = r;
+        this.location = loc;
+        this.side = s;
+        this.lanes = la;
     }
 
     public Configuration(osAgent outer) {
-        this.outer = outer;
-        getAID = null;
-        road = null;
-        location = 0;
-        side = null;
-        lanes = 0;
+        this.AID = null;
+        this.road = null;
+        this.location = 0;
+        this.side = null;
+        this.lanes = 0;
     }
 
     public Configuration() {
-        this.outer = null;
-        getAID = null;
-        road = null;
-        location = 0;
-        side = null;
-        lanes = 0;
+        this.AID = null;
+        this.road = null;
+        this.location = 0;
+        this.side = null;
+        this.lanes = 0;
     }
 
     public Configuration(String input) {
         JSONObject content = new JSONObject(input);
-        this.outer = null;
-        this.getAID = new AID(content.getString("AID"), jade.core.AID.ISGUID);
+        this.AID = new AID(content.getString("AID"), jade.core.AID.ISGUID);
         this.road = content.getString("road");
-        this.location = content.getFloat("location");
+        this.location = content.getDouble("location");
         this.side = content.getString("side");
         this.lanes = content.getInt("lanes");
     }
@@ -59,7 +54,7 @@ public class Configuration {
         content.put("road", this.road);
         content.put("location", this.location);
         content.put("side", this.side);
-        content.put("AID", this.getAID.getName());
+        content.put("AID", this.AID.getName());
         content.put("lanes", this.lanes);
         return content;
     }
@@ -78,21 +73,32 @@ public class Configuration {
     };
 
     public static boolean ConfigurationEqual(Configuration c1, Configuration c2) {
-        return c1.getAID.equals(c2.getAID);
+        return c1.AID.equals(c2.AID);
     }
 
-     /**
+    @Override
+    public boolean equals(Object obj) {
+        Configuration c = (Configuration) obj;
+        return this.location == c.location;
+    }
+
+    @Override
+    public int compareTo(Configuration c) {
+        return Double.compare(location,c.location);
+    }
+
+    /**
      * @return the aID
      */
     public AID getAID() {
-        return this.getAID;
+        return this.AID;
     }
 
     /**
      * @param aID the aID to set
      */
     public void setAID(AID aID) {
-        this.getAID = aID;
+        this.AID = aID;
     }
 
     /**
@@ -119,7 +125,7 @@ public class Configuration {
     /**
      * @param location the location to set
      */
-    public void setLocation(float location) {
+    public void setLocation(double location) {
         this.location = location;
     }
 

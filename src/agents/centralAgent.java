@@ -22,7 +22,6 @@ import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import measure.Measure;
-import measure.NoMeasure;
 
 public class centralAgent extends Agent {
 
@@ -45,6 +44,8 @@ public class centralAgent extends Agent {
 
     @Override
     protected void setup() {
+
+        // Object[] args = getArguments();
         
         // Print out welcome message
         System.out.println("Hello! Central agent is ready.");
@@ -77,9 +78,8 @@ public class centralAgent extends Agent {
             TopicManagementHelper topicHelper = (TopicManagementHelper) getHelper(TopicManagementHelper.SERVICE_NAME);
             centralTopic = topicHelper.createTopic("CENTRAL");
 
-            
             addBehaviour(new SetMeasure(this, osAgent.minute/2));
-            
+
         } catch (ServiceException e) {
             e.printStackTrace();
         }
@@ -107,28 +107,10 @@ public class centralAgent extends Agent {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-    }
 
-    public int getMeasure (int t, AID o) throws NoMeasure {
-
-        for (int i = 0; i < measures.size(); i++) {
-            Measure mr = measures.get(i);
-            if (mr.getType() == t && mr.getOrigin().equals(o)) {
-                return i;
-            }
-        }
-        throw new NoMeasure();
-    }
-
-    public int getMeasure (long id) throws NoMeasure {
-
-        for (int i = 0; i < measures.size(); i++) {
-            Measure mr = measures.get(i);
-            if (mr.getID() == id) {
-                return i;
-            }
-        }
-        throw new NoMeasure();
+        Object[] args = getArguments();
+        LocalDateTime startDateTime = (LocalDateTime) args[0];
+        updateGuiTime(startDateTime);
     }
 
     public ArrayList<Configuration> getOS() {
@@ -167,10 +149,10 @@ public class centralAgent extends Agent {
     }
 
     /**
-     * @param time the time to set
+     * @param dateTime the time to set
      */
-    public void setDateTime(LocalDateTime time) {
-        this.dateTime = time;
+    public void setDateTime(LocalDateTime dateTime) {
+        this.dateTime = dateTime;
     }
 
     /**

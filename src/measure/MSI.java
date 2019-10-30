@@ -50,8 +50,15 @@ public class MSI {
         symbol = BLANK;
     }
 
+    public MSI(JSONObject jsonContent) {
+        this.symbol = jsonContent.getInt("symbol");
+    }
+
     public void changeState(int sym) {
 
+        if (sym > BLANK) {
+            sym = BLANK;
+        }
         if (getSymbol() >= sym) {
             symbol = sym;
         }     
@@ -76,6 +83,7 @@ public class MSI {
     @JSONPropertyIgnore
     public static String getSymbol(int sym) {
         return symbols[sym];
+        // return Integer.toString(sym);
     }
 
     @JSONPropertyIgnore
@@ -85,6 +93,10 @@ public class MSI {
         } else {
             return false;
         }
+    }
+
+    public JSONObject toJSON() {
+        return new JSONObject().put("symbol", this.symbol);
     }
 
     /**
@@ -124,5 +136,11 @@ public class MSI {
         JSONObject content = new JSONObject();
         content.put("msi", outputArray);
         return content.toString();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        MSI s = (MSI) obj;
+        return this.symbol == s.symbol;
     }
 }

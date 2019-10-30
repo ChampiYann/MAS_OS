@@ -2,6 +2,9 @@ package behaviour;
 
 import java.util.Iterator;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import agents.centralAgent;
 import config.Configuration;
 import jade.core.Agent;
@@ -30,18 +33,24 @@ public class CentralConfigurationResponder extends AchieveREResponder {
     
     @Override
     protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
-        Configuration newConfig = new Configuration(request.getContent());
-        Iterator<Configuration> iterator = outer.getOS().iterator();
-        boolean exists = false;
-        while (iterator.hasNext()) {
-            Configuration config = iterator.next();
-            if (config.getAID.equals(newConfig.getAID)) {
-                exists = true;
+        JSONObject jsonContent = new JSONObject(request.getContent());
+        // jsonContent.remove("measures");
+        try {
+            Configuration newConfig = new Configuration(jsonContent.getJSONObject("configuration").toString());
+            Iterator<Configuration> iterator = outer.getOS().iterator();
+            boolean exists = false;
+            while (iterator.hasNext()) {
+                Configuration config = iterator.next();
+                if (config.getAID().equals(newConfig.getAID())) {
+                    exists = true;
+                }
             }
-        }
-        if (!exists) {
-            outer.getOS().add(newConfig);
-            outer.getMyGui().addPortal();
+            if (!exists) {
+                outer.getOS().add(newConfig);
+                outer.getMyGui().addPortal();
+            }
+        } catch (JSONException e) {
+            //TODO: handle exception
         }
         return null;
     }
