@@ -33,9 +33,9 @@ public class CompilerBehaviour extends OneShotBehaviour{
         outer.getCentralMeasures().forEach(n -> {
             if ((n.getEnd() <= outer.getLocal().getLocation() && outer.getLocal().getLocation() <= n.getStart())
                     || (outer.getLocal().getLocation() < n.getStart()
-                            && outer.getConfig().get(outer.getConfig().size() / 2 + 1).getLocation() > n.getEnd())
+                            && outer.getDownstreamNeighbours().get(0).getConfig().getLocation() > n.getEnd())
                     || (outer.getLocal().getLocation() > n.getEnd()
-                            && outer.getConfig().get(outer.getConfig().size() / 2 - 1).getLocation() < n.getStart())) {
+                            && outer.getUpstreamNeighbours().get(osAgent.nsize-1).getConfig().getLocation() < n.getStart())) {
                 newMeasures.add(new Measure(Measure.CENTRAL, outer.getLocal().getRoad(), outer.getLocal().getLocation(),
                         n.getDisplay()));
             }
@@ -67,7 +67,7 @@ public class CompilerBehaviour extends OneShotBehaviour{
                 if (measures.get(j).getType() == Measure.CENTRAL) {
                     MSI[] previousMsi = measures.get(j).getDisplay();
                     MSI[] newMsi = new MSI[previousMsi.length];
-                    for (int k = 0; k < i; k++) {
+                    for (int k = 0; k <= i; k++) {
                         newMsi = new MSI[previousMsi.length];
                         Arrays.setAll(newMsi, n -> {
                             return new MSI();
@@ -86,8 +86,8 @@ public class CompilerBehaviour extends OneShotBehaviour{
 
                         previousMsi = newMsi;
                     }
-                    newMeasures.add(new Measure(measures.get(j).getID(), Measure.REACTION, outer.getLocal().getRoad(),
-                            outer.getLocal().getLocation(), newMsi));
+                    Measure newMeasure = new Measure(measures.get(j).getID(), Measure.REACTION, outer.getLocal().getRoad(),outer.getLocal().getLocation(), newMsi);
+                    newMeasures.add(newMeasure);
                 }
             }
         }
@@ -101,7 +101,8 @@ public class CompilerBehaviour extends OneShotBehaviour{
         }
 
         // Go through measure to can most restricive symbol
-        Iterator<Measure> measureIterator = outer.getLocalMeasures().iterator();
+        // Iterator<Measure> measureIterator = outer.getLocalMeasures().iterator();
+        Iterator<Measure> measureIterator = newMeasures.iterator();
         while(measureIterator.hasNext()) {
             MSI[] nextMeasureDisplay = measureIterator.next().getDisplay();
             for (int i = 0; i < newMsi.length; i++) {
@@ -128,9 +129,6 @@ public class CompilerBehaviour extends OneShotBehaviour{
             outer.setMsi(newMsi);
             outer.sendCentralUpdate();
         }
-
-        // outer.setMsi(outer.getDownstreamNeighbours().get(0).getMsi());
-        // outer.sendCentralUpdate();
     }
 
     /**

@@ -61,8 +61,16 @@ public class ResponderBehaviour extends AchieveREResponder {
                 outer.getDownstreamNeighbours().get(index).resetTimeout();
                 outer.getDownstreamNeighbours().get(index).setMeasures(newMeasures);
             } catch (ArrayIndexOutOfBoundsException e) {
-                outer.getDownstreamNeighbours().get(indexRev).setConfig(newConfig);
-                outer.getDownstreamNeighbours().get(indexRev).resetTimeout();
+                // add new nieghbour
+                outer.getDownstreamNeighbours().add(indexRev, newNeighbour);
+                outer.getDownstreamNeighbours().get(indexRev).addBehaviour();
+                // System.out.println("new neighbour at agent " + outer.getLocal().getLocation() + ", index: " + indexRev + ", location " + newNeighbour.getConfig().getLocation());
+                // remove old timer
+                outer.getDownstreamNeighbours().get(osAgent.nsize).removeTimeout();
+                // remove old neighbour
+                outer.getDownstreamNeighbours().remove(osAgent.nsize);
+                // outer.getDownstreamNeighbours().get(indexRev).setConfig(newConfig);
+                // outer.getDownstreamNeighbours().get(indexRev).resetTimeout();
                 outer.getDownstreamNeighbours().get(indexRev).setMeasures(newMeasures);
             }
 
