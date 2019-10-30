@@ -27,12 +27,6 @@ import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import jade.wrapper.StaleProxyException;
 
-import org.apache.commons.math3.distribution.WeibullDistribution;
-
-import agents.osAgent;
-import behaviour.InputHandlerBehaviour;
-import environment.Outstation;
-
 public class Launch {
 
     public static final long minute = 400;
