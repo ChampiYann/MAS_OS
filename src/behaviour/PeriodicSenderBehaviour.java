@@ -37,7 +37,8 @@ public class PeriodicSenderBehaviour extends TickerBehaviour {
         newMsg.setOntology("HB");
         JSONObject jsonContent = new JSONObject();
         jsonContent.put("configuration", outer.getLocal().configToJSON());
-        jsonContent.put("measures", new JSONArray(outer.getLocalMeasures().stream().filter(n -> n.getType() != Measure.REACTION).collect(Collectors.toList())));
+        // jsonContent.put("measures", new JSONArray(outer.getLocalMeasures().stream().filter(n -> n.getType() != Measure.REACTION).collect(Collectors.toList())));
+        jsonContent.put("msi", outer.getMsi());
         newMsg.setContent(jsonContent.toString());
         newMsg.addReceiver(this.neighbour.getConfig().getAID());
         newMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));

@@ -18,6 +18,7 @@ import jade.domain.FIPAAgentManagement.RefuseException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREResponder;
+import measure.MSI;
 import measure.Measure;
 
 public class ResponderBehaviour extends AchieveREResponder {
@@ -49,17 +50,26 @@ public class ResponderBehaviour extends AchieveREResponder {
         int indexRev = - index - 1;
 
         if ((index >= 0 & index <= osAgent.nsize-1) | (indexRev >= 0 & indexRev <= osAgent.nsize-1)) {
-            // get measures
-            JSONArray jsonMeasures = jsonContent.getJSONArray("measures");
-            Iterator<Object> jsonMeasuresIterator = jsonMeasures.iterator();
-            ArrayList<Measure> newMeasures = new ArrayList<Measure>();
-            while (jsonMeasuresIterator.hasNext()) {
-                newMeasures.add(new Measure((JSONObject)jsonMeasuresIterator.next()));
+            // // Get measures
+            // JSONArray jsonMeasures = jsonContent.getJSONArray("measures");
+            // Iterator<Object> jsonMeasuresIterator = jsonMeasures.iterator();
+            // ArrayList<Measure> newMeasures = new ArrayList<Measure>();
+            // while (jsonMeasuresIterator.hasNext()) {
+            //     newMeasures.add(new Measure((JSONObject)jsonMeasuresIterator.next()));
+            // }
+            // Get MSI
+            JSONArray jsonMsi = jsonContent.getJSONArray("msi");
+            Iterator<Object> jsonMsiIterator = jsonMsi.iterator();
+            ArrayList<MSI> newMsiArrayList = new ArrayList<MSI>();
+            while (jsonMsiIterator.hasNext()) {
+                newMsiArrayList.add(new MSI((JSONObject)jsonMsiIterator.next()));
             }
 
             try {
                 outer.getDownstreamNeighbours().get(index).resetTimeout();
-                outer.getDownstreamNeighbours().get(index).setMeasures(newMeasures);
+                // outer.getDownstreamNeighbours().get(index).setMeasures(newMeasures);
+                outer.getDownstreamNeighbours().get(index).setMsi(newMsiArrayList.toArray(new MSI[outer.getLocal().getLanes()]));
+
             } catch (ArrayIndexOutOfBoundsException e) {
                 // add new nieghbour
                 outer.getDownstreamNeighbours().add(indexRev, newNeighbour);
@@ -71,7 +81,8 @@ public class ResponderBehaviour extends AchieveREResponder {
                 outer.getDownstreamNeighbours().remove(osAgent.nsize);
                 // outer.getDownstreamNeighbours().get(indexRev).setConfig(newConfig);
                 // outer.getDownstreamNeighbours().get(indexRev).resetTimeout();
-                outer.getDownstreamNeighbours().get(indexRev).setMeasures(newMeasures);
+                // outer.getDownstreamNeighbours().get(indexRev).setMeasures(newMeasures);
+                outer.getDownstreamNeighbours().get(indexRev).setMsi(newMsiArrayList.toArray(new MSI[outer.getLocal().getLanes()]));
             }
 
             // run new msi calculations
@@ -81,7 +92,8 @@ public class ResponderBehaviour extends AchieveREResponder {
             result.setPerformative(ACLMessage.INFORM);
             // add measures as content
             jsonContent = new JSONObject();
-            jsonContent.put("measures", new JSONArray(outer.getLocalMeasures().stream().filter(n -> n.getType() != Measure.REACTION).collect(Collectors.toList())));
+            // jsonContent.put("measures", new JSONArray(outer.getLocalMeasures().stream().filter(n -> n.getType() != Measure.REACTION).collect(Collectors.toList())));
+            jsonContent.put("msi", outer.getMsi());
             result.setContent(jsonContent.toString());
             result.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
             return result;

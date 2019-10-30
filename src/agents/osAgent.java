@@ -44,7 +44,7 @@ public class osAgent extends Agent {
     private AID central;
 
     // Number of neighbours
-    public static final int nsize = 3;
+    public static final int nsize = 1;
 
     private ArrayList<UpstreamNeighbour> upstreamNeighbours;
     private ArrayList<DownstreamNeighbour> downstreamNeighbours;

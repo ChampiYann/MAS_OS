@@ -36,7 +36,7 @@ public class Neighbour implements Comparable<Neighbour>{
 
         this.msi = new MSI[agent.getLocal().getLanes()];
         for (int i = 0; i < agent.getLocal().getLanes(); i ++) {
-            this.msi[i] = new MSI(0);
+            this.msi[i] = new MSI();
         }
 
         this.timeout = 0;
@@ -53,7 +53,7 @@ public class Neighbour implements Comparable<Neighbour>{
 
         this.msi = new MSI[agent.getLocal().getLanes()];
         for (int i = 0; i < agent.getLocal().getLanes(); i ++) {
-            this.msi[i] = new MSI(0);
+            this.msi[i] = new MSI();
         }
 
         this.timeout = 0;
@@ -70,7 +70,7 @@ public class Neighbour implements Comparable<Neighbour>{
 
         this.msi = new MSI[agent.getLocal().getLanes()];
         for (int i = 0; i < agent.getLocal().getLanes(); i ++) {
-            this.msi[i] = new MSI(0);
+            this.msi[i] = new MSI();
         }
 
         this.timeout = 0;
