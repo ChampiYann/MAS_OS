@@ -242,6 +242,7 @@ public class osAgent extends Agent {
         newMsg.setOntology(ont);
         newMsg.setContent(content);
         newMsg.addReceiver(config.getAID());
+        newMsg.setReplyByDate(new Date(System.currentTimeMillis()+osAgent.timeout));
         newMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
         this.addBehaviour(new AchieveREInitiator(this, newMsg));
     }
@@ -260,8 +261,8 @@ public class osAgent extends Agent {
         // HBResponse.setContent(jsonContent.toString());
         configurationRequest.setContent(jsonContent.toString());
         configurationRequest.setOntology("CONFIGURATION");
-        configurationRequest.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
         configurationRequest.setReplyByDate(new Date(System.currentTimeMillis()+osAgent.timeout));
+        configurationRequest.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
         this.addBehaviour(new AchieveREInitiator(this, configurationRequest));
     }
 

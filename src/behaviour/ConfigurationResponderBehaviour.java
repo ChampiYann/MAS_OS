@@ -56,6 +56,9 @@ public class ConfigurationResponderBehaviour extends AchieveREResponder {
             // outer.getUpstreamNeighbours().get(index-1).addBehaviour();
 
             // Broadcast central measures
+            outer.getCentralMeasures().stream().forEach(n -> {
+                outer.sendMeasure(new Configuration(outer.getTopicCentral(), null, 0, null, 0) , "ADD", n.toJSON().toString());
+            });
 
             // Reply to message
             ACLMessage result = request.createReply();
