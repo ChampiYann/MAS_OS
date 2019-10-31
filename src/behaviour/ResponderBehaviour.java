@@ -81,7 +81,7 @@ public class ResponderBehaviour extends AchieveREResponder {
             result.setPerformative(ACLMessage.INFORM);
             // add measures as content
             jsonContent = new JSONObject();
-            jsonContent.put("measures", new JSONArray(outer.getLocalMeasures().stream().filter(n -> n.getType() != Measure.REACTION).collect(Collectors.toList())));
+            jsonContent.put("measures",new JSONArray(outer.getLocalMeasures()));
             result.setContent(jsonContent.toString());
             result.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
             return result;
