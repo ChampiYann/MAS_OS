@@ -65,7 +65,7 @@ public class Outstation {
         }
     }
 
-    public boolean sendCongestion() throws IOException {
+    public boolean sendCongestion(FileWriter killWriter) throws IOException {
         boolean newCongestion = false;
         String newLine = null;
         newLine = reader.readLine();
@@ -75,6 +75,8 @@ public class Outstation {
             try {
                 System.out.println("kill agent");
                 controller.kill();
+                killWriter.write("kill,"+this.name+","+System.currentTimeMillis()+"\n");
+                killWriter.flush();
             } catch (StaleProxyException e) {
                 //TODO: handle exception
             }
@@ -82,6 +84,8 @@ public class Outstation {
             try {
                 System.out.println("start agent");
                 start();
+                killWriter.write("start,"+this.name+","+System.currentTimeMillis()+"\n");
+                killWriter.flush();
             } catch (StaleProxyException e) {
                 //TODO: handle exception
             }
