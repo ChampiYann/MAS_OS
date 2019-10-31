@@ -169,7 +169,7 @@ public class Launch {
                         //     e.printStackTrace();
                         // }
                         try {
-                            boolean congestion = nextOutstation.sendCongestion();
+                            boolean congestion = nextOutstation.sendCongestion(killWriter);
                             Vector<Object> packet = new Vector<Object>();
                             packet.add(dateTime);
                             packet.add(InputHandlerBehaviour.CONGESTION);
@@ -241,8 +241,9 @@ public class Launch {
                 }
             };
 
-            long simStartTime = (long) (Math.ceil(System.currentTimeMillis() / 10000.0) * 10000 + 10000);
-            long delay = simStartTime - System.currentTimeMillis();
+            // long simStartTime = (long) (Math.ceil(System.currentTimeMillis() / 10000.0) * 10000 + 10000);
+            // long delay = simStartTime - System.currentTimeMillis();
+            long delay = 3000;
             timer.scheduleAtFixedRate(task, delay, osAgent.minute);
 
         } catch (IOException e3) {
