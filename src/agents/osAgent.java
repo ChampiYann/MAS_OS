@@ -32,7 +32,7 @@ public class osAgent extends Agent {
     private static final long serialVersionUID = 1L;
 
     // Simulation timing
-    public static final long minute = 1000; // milliseconds
+    public static final long minute = 1500; // milliseconds
 
     public static final long timeout = minute/3;
 
