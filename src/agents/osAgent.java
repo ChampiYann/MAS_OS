@@ -1,5 +1,7 @@
 package agents;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.regex.Matcher;
@@ -32,7 +34,7 @@ public class osAgent extends Agent {
     private static final long serialVersionUID = 1L;
 
     // Simulation timing
-    public static final long minute = 1500; // milliseconds
+    public static final long minute = 500; // milliseconds
 
     public static final long timeout = minute/3;
 
@@ -62,6 +64,9 @@ public class osAgent extends Agent {
 
     // New variables
     private MSI[] msi;
+
+    // message logger
+    private FileWriter bwWriter;
 
     /**
      * This function sets up the agent by setting the number of lanes and neighbour
@@ -186,6 +191,13 @@ public class osAgent extends Agent {
                 doDelete();
             }
 
+            try {
+                bwWriter = new FileWriter("bw/" + getLocalName() + ".txt");
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
             // Print message stating that the configuration was succefull
             System.out.println("OS " + getAID().getLocalName() + " configured on road " + local.getRoad() + " at km " + local.getLocation() +
                 " on side " + local.getSide() + " with " + local.getLanes() + " lanes");
@@ -228,6 +240,13 @@ public class osAgent extends Agent {
             matrixJson.put(this.msi[i].getSymbol());
         }
         newMsg.setContent(matrixJson.toString());
+        try {
+            getBwWriter().write(newMsg.getContent() + "\n");
+            getBwWriter().flush();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         newMsg.addReceiver(central);
         newMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
         this.addBehaviour(new AchieveREInitiator(this, newMsg));
@@ -241,6 +260,13 @@ public class osAgent extends Agent {
         newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
         newMsg.setOntology(ont);
         newMsg.setContent(content);
+        try {
+            getBwWriter().write(newMsg.getContent() + "\n");
+            getBwWriter().flush();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         newMsg.addReceiver(config.getAID());
         newMsg.setReplyByDate(new Date(System.currentTimeMillis()+osAgent.timeout));
         newMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
@@ -260,6 +286,13 @@ public class osAgent extends Agent {
         // jsonContent.put("measures", new JSONArray(outer.getLocalMeasures().stream().filter(n -> n.getType() != Measure.REACTION).collect(Collectors.toList())));
         // HBResponse.setContent(jsonContent.toString());
         configurationRequest.setContent(jsonContent.toString());
+        try {
+            getBwWriter().write(configurationRequest.getContent() + "\n");
+            getBwWriter().flush();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         configurationRequest.setOntology("CONFIGURATION");
         configurationRequest.setReplyByDate(new Date(System.currentTimeMillis()+osAgent.timeout));
         configurationRequest.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
@@ -355,5 +388,12 @@ public class osAgent extends Agent {
      */
     public ArrayList<DownstreamNeighbour> getDownstreamNeighbours() {
         return downstreamNeighbours;
+    }
+
+    /**
+     * @return the bwWriter
+     */
+    public FileWriter getBwWriter() {
+        return bwWriter;
     }
 }

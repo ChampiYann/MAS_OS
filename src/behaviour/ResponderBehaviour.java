@@ -1,5 +1,6 @@
 package behaviour;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -95,6 +96,13 @@ public class ResponderBehaviour extends AchieveREResponder {
             // jsonContent.put("measures", new JSONArray(outer.getLocalMeasures().stream().filter(n -> n.getType() != Measure.REACTION).collect(Collectors.toList())));
             jsonContent.put("msi", outer.getMsi());
             result.setContent(jsonContent.toString());
+            try {
+                outer.getBwWriter().write(result.getContent() + "\n");
+                outer.getBwWriter().flush();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
             result.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
             return result;
         } else {
