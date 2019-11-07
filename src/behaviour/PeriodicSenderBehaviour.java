@@ -1,5 +1,6 @@
 package behaviour;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.stream.Collectors;
 
@@ -39,6 +40,12 @@ public class PeriodicSenderBehaviour extends TickerBehaviour {
         jsonContent.put("configuration", outer.getLocal().configToJSON());
         jsonContent.put("measures",new JSONArray(outer.getLocalMeasures()));
         newMsg.setContent(jsonContent.toString());
+        try {
+            outer.getBwWriter().write(newMsg.getContent() + "\n");
+            outer.getBwWriter().flush();
+        } catch (IOException e) {
+            //TODO: handle exception
+        }
         newMsg.addReceiver(this.neighbour.getConfig().getAID());
         newMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
         newMsg.setReplyByDate(new Date(System.currentTimeMillis()+osAgent.timeout));
