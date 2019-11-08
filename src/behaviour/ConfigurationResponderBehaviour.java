@@ -1,6 +1,7 @@
 package behaviour;
 
 import java.util.Collections;
+import java.util.Date;
 
 import org.json.JSONObject;
 
@@ -8,11 +9,13 @@ import agents.osAgent;
 import config.Configuration;
 import config.UpstreamNeighbour;
 import jade.core.Agent;
+import jade.domain.FIPANames;
 import jade.domain.FIPAAgentManagement.FailureException;
 import jade.domain.FIPAAgentManagement.NotUnderstoodException;
 import jade.domain.FIPAAgentManagement.RefuseException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.proto.AchieveREInitiator;
 import jade.proto.AchieveREResponder;
 // import measure.MSI;
 
@@ -44,6 +47,15 @@ public class ConfigurationResponderBehaviour extends AchieveREResponder {
         int index  = Collections.binarySearch(outer.getUpstreamNeighbours(), newNeighbour);
         index = -index-1;
         if (index > 0 & index <= osAgent.nsize & newConfig.compareTo(outer.getLocal()) < 0) {
+            //send dump message
+            ACLMessage dumpMsg = new ACLMessage(ACLMessage.REQUEST);
+            dumpMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+            dumpMsg.setOntology("DUMP");
+            dumpMsg.addReceiver(outer.getUpstreamNeighbours().get(index-1).getConfig().getAID());
+            dumpMsg.setReplyByDate(new Date(System.currentTimeMillis()+osAgent.timeout));
+            dumpMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
+            outer.addBehaviour(new AchieveREInitiator(outer, dumpMsg));
+
             // outer.getUpstreamNeighbours().get(index-1).setConfig(newConfig);
             // outer.getUpstreamNeighbours().get(index-1).resetTimeout();
             // outer.getUpstreamNeighbours().get(index-1).resetTicker();
@@ -52,8 +64,6 @@ public class ConfigurationResponderBehaviour extends AchieveREResponder {
             outer.getUpstreamNeighbours().get(0).removeSender();
             outer.getUpstreamNeighbours().get(0).removeTimeout();
             outer.getUpstreamNeighbours().remove(0);
-
-            // outer.getUpstreamNeighbours().get(index-1).addBehaviour();
 
             // Broadcast central measures
             outer.getCentralMeasures().stream().forEach(n -> {

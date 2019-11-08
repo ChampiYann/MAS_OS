@@ -101,15 +101,15 @@ public class Launch {
             }
         }
 
-        // AgentController sniff;
+        AgentController sniff;
 
-        // try {
-        //     sniff = cc.createNewAgent("sniff", "jade.tools.sniffer.Sniffer", null);
-        //     sniff.start(); 
-        // } catch (StaleProxyException e) {
-        //     // TODO Auto-generated catch block
-        //     e.printStackTrace();
-        // }
+        try {
+            sniff = cc.createNewAgent("sniff", "jade.tools.sniffer.Sniffer", null);
+            sniff.start(); 
+        } catch (StaleProxyException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
         FileWriter killWriter;
         try {
@@ -215,7 +215,7 @@ public class Launch {
 
                     dateTime = dateTime.plusMinutes(1);
 
-                    if (dateTime.isAfter(LocalDateTime.of(2018, 3, 8, 1, 0))) {
+                    if (dateTime.isAfter(LocalDateTime.of(2018, 3, 1, 2, 0))) {
                         outstations.stream().forEach(n -> {
                             try {
                                 n.kill(0);
@@ -231,12 +231,12 @@ public class Launch {
                             e1.printStackTrace();
                         }
                         this.cancel();
-                        try {
-                            cc.kill();
-                        } catch (StaleProxyException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
+                        // try {
+                        //     cc.kill();
+                        // } catch (StaleProxyException e) {
+                        //     // TODO Auto-generated catch block
+                        //     e.printStackTrace();
+                        // }
                     }
                 }
             };
