@@ -71,25 +71,25 @@ public class Outstation {
         newLine = reader.readLine();
         String[] values = newLine.split(",");
         String[] elements = values[1].split(" ");
-        if (Integer.parseInt(values[2])==1) {
-            try {
-                System.out.println("kill agent");
-                controller.kill();
-                killWriter.write("kill,"+this.name+","+System.currentTimeMillis()+"\n");
-                killWriter.flush();
-            } catch (StaleProxyException e) {
-                //TODO: handle exception
-            }
-        } else if (Integer.parseInt(values[2])==2) {
-            try {
-                System.out.println("start agent");
-                start();
-                killWriter.write("start,"+this.name+","+System.currentTimeMillis()+"\n");
-                killWriter.flush();
-            } catch (StaleProxyException e) {
-                //TODO: handle exception
-            }
-        }
+        // if (Integer.parseInt(values[2])==1) {
+        //     try {
+        //         System.out.println("kill agent");
+        //         controller.kill();
+        //         killWriter.write("kill,"+this.name+","+System.currentTimeMillis()+"\n");
+        //         killWriter.flush();
+        //     } catch (StaleProxyException e) {
+        //         //TODO: handle exception
+        //     }
+        // } else if (Integer.parseInt(values[2])==2) {
+        //     try {
+        //         System.out.println("start agent");
+        //         start();
+        //         killWriter.write("start,"+this.name+","+System.currentTimeMillis()+"\n");
+        //         killWriter.flush();
+        //     } catch (StaleProxyException e) {
+        //         //TODO: handle exception
+        //     }
+        // }
         for (int i = 0; i < elements.length; i++) {
             if (Integer.parseInt(elements[i]) == 1) {
                 newCongestion = true;
