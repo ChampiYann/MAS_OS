@@ -9,11 +9,16 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.commons.math3.distribution.WeibullDistribution;
 
@@ -31,7 +36,7 @@ public class Launch {
 
     public static final long minute = 400;
     static volatile AgentController central = null;
-    // static volatile LocalTime time =  LocalTime.of(1, 0, 0);
+    // static volatile LocalTime time = LocalTime.of(1, 0, 0);
     // static volatile LocalDate date = LocalDate.of(2018, 3, 1);
     static volatile LocalDateTime dateTime = LocalDateTime.of(2018, 3, 1, 1, 0);
 
@@ -40,7 +45,8 @@ public class Launch {
         Runtime rt = Runtime.instance();
         // Create a default profile
         Profile p = new ProfileImpl();
-        p.setParameter(Profile.SERVICES, "jade.core.messaging.TopicManagementService;jade.core.event.NotificationService");
+        p.setParameter(Profile.SERVICES,
+                "jade.core.messaging.TopicManagementService;jade.core.event.NotificationService");
         // Create a new non-main container, connecting to the default
         // main container (i.e. on this host, port 1099)
         ContainerController cc = rt.createMainContainer(p);
@@ -62,6 +68,13 @@ public class Launch {
             e.printStackTrace();
         }
 
+        try {
+            TimeUnit.SECONDS.sleep(2);
+        } catch (InterruptedException e2) {
+            // TODO Auto-generated catch block
+            e2.printStackTrace();
+        }
+
         // Set arguments
         // All OS will have 3 lanes
         String lanes = "3";
@@ -75,9 +88,13 @@ public class Launch {
             configurations[i] = configurations[i].substring(0, configurations[i].length() - 4);
         }
 
-        // Create 5 new osAgents
+        // Create new osAgents
         int numOS = configurations.length;
         Vector<Outstation> outstations = new Vector<Outstation>(numOS);
+
+        List<Integer> range = IntStream.rangeClosed(0, numOS-1)
+            .boxed().collect(Collectors.toList());
+        Collections.shuffle(range);
 
         for (int i = 0; i < numOS; i++) {
             name = "agent" + String.format("%02d", i+1);
@@ -93,23 +110,31 @@ public class Launch {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
-                // Fire up the agent
-                outstations.get(i).start();
             } catch (StaleProxyException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
 
-        // AgentController sniff;
+        for (int i = 0; i < numOS; i++) {
+            // Fire up the agent
+            try {
+                outstations.get(range.get(i)).start();
+            } catch (StaleProxyException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
 
-        // try {
-        //     sniff = cc.createNewAgent("sniff", "jade.tools.sniffer.Sniffer", null);
-        //     sniff.start(); 
-        // } catch (StaleProxyException e) {
-        //     // TODO Auto-generated catch block
-        //     e.printStackTrace();
-        // }
+        AgentController sniff;
+
+        try {
+            sniff = cc.createNewAgent("sniff", "jade.tools.sniffer.Sniffer", null);
+            sniff.start(); 
+        } catch (StaleProxyException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
         FileWriter killWriter;
         try {
@@ -215,7 +240,7 @@ public class Launch {
 
                     dateTime = dateTime.plusMinutes(1);
 
-                    if (dateTime.isAfter(LocalDateTime.of(2018, 3, 8, 1, 0))) {
+                    if (dateTime.isAfter(LocalDateTime.of(2018, 3, 1, 2, 0))) {
                         outstations.stream().forEach(n -> {
                             try {
                                 n.kill(0);
@@ -231,12 +256,12 @@ public class Launch {
                             e1.printStackTrace();
                         }
                         this.cancel();
-                        try {
-                            cc.kill();
-                        } catch (StaleProxyException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
+                        // try {
+                        //     cc.kill();
+                        // } catch (StaleProxyException e) {
+                        //     // TODO Auto-generated catch block
+                        //     e.printStackTrace();
+                        // }
                     }
                 }
             };

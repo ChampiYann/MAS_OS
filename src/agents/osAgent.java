@@ -11,6 +11,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import behaviour.ConfigurationResponderBehaviour;
+import behaviour.DumpReceiverBehaviour;
 import behaviour.HandleMessage;
 import behaviour.ResponderBehaviour;
 import behaviour.TrafficSensing;
@@ -34,7 +35,7 @@ public class osAgent extends Agent {
     private static final long serialVersionUID = 1L;
 
     // Simulation timing
-    public static final long minute = 500; // milliseconds
+    public static final long minute = 1000; // milliseconds
 
     public static final long timeout = minute/3;
 
@@ -191,12 +192,18 @@ public class osAgent extends Agent {
                 doDelete();
             }
 
+            MessageTemplate dumpTemplate = MessageTemplate.and(requestTemplate,
+                MessageTemplate.MatchOntology("DUMP"));
+            addBehaviour(new DumpReceiverBehaviour(this, dumpTemplate));
+
             try {
                 bwWriter = new FileWriter("bw/" + getLocalName() + ".txt");
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
+
+            SendConfig();
 
             // Print message stating that the configuration was succefull
             System.out.println("OS " + getAID().getLocalName() + " configured on road " + local.getRoad() + " at km " + local.getLocation() +
