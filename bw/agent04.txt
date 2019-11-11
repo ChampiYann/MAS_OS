@@ -1,6 +1,6 @@
 {"configuration":{"side":"R","road":"RW013","lanes":3,"location":13.7,"AID":"agent04@10.45.40.240:1099/JADE"}}
 [5,0,0]
-{"road":"RW013","display":[{"symbol":6},{"symbol":0},{"symbol":0}],"start":13.7,"end":12.7,"ID":1573472151415,"type":0}
+{"road":"RW013","display":[{"symbol":6},{"symbol":0},{"symbol":0}],"start":13.7,"end":12.7,"ID":1573491538173,"type":0}
 {"msi":[{"symbol":5},{"symbol":0},{"symbol":0}]}
 {"msi":[{"symbol":5},{"symbol":0},{"symbol":0}],"configuration":{"side":"R","road":"RW013","lanes":3,"location":13.7,"AID":"agent04@10.45.40.240:1099/JADE"}}
 [6,0,0]
@@ -20,9 +20,6 @@
 {"msi":[{"symbol":6},{"symbol":0},{"symbol":0}],"configuration":{"side":"R","road":"RW013","lanes":3,"location":13.7,"AID":"agent04@10.45.40.240:1099/JADE"}}
 {"msi":[{"symbol":6},{"symbol":0},{"symbol":0}]}
 {"msi":[{"symbol":6},{"symbol":0},{"symbol":0}],"configuration":{"side":"R","road":"RW013","lanes":3,"location":13.7,"AID":"agent04@10.45.40.240:1099/JADE"}}
-{"msi":[{"symbol":6},{"symbol":0},{"symbol":0}],"configuration":{"side":"R","road":"RW013","lanes":3,"location":13.7,"AID":"agent04@10.45.40.240:1099/JADE"}}
-{"msi":[{"symbol":6},{"symbol":0},{"symbol":0}]}
-{"msi":[{"symbol":6},{"symbol":0},{"symbol":0}],"configuration":{"side":"R","road":"RW013","lanes":3,"location":13.7,"AID":"agent04@10.45.40.240:1099/JADE"}}
 {"msi":[{"symbol":6},{"symbol":0},{"symbol":0}]}
 {"msi":[{"symbol":6},{"symbol":0},{"symbol":0}],"configuration":{"side":"R","road":"RW013","lanes":3,"location":13.7,"AID":"agent04@10.45.40.240:1099/JADE"}}
 {"msi":[{"symbol":6},{"symbol":0},{"symbol":0}]}
@@ -181,9 +178,6 @@
 {"msi":[{"symbol":6},{"symbol":0},{"symbol":0}],"configuration":{"side":"R","road":"RW013","lanes":3,"location":13.7,"AID":"agent04@10.45.40.240:1099/JADE"}}
 {"msi":[{"symbol":6},{"symbol":0},{"symbol":0}]}
 {"msi":[{"symbol":6},{"symbol":0},{"symbol":0}],"configuration":{"side":"R","road":"RW013","lanes":3,"location":13.7,"AID":"agent04@10.45.40.240:1099/JADE"}}
-{"msi":[{"symbol":6},{"symbol":0},{"symbol":0}]}
-{"msi":[{"symbol":6},{"symbol":0},{"symbol":0}],"configuration":{"side":"R","road":"RW013","lanes":3,"location":13.7,"AID":"agent04@10.45.40.240:1099/JADE"}}
-{"msi":[{"symbol":6},{"symbol":0},{"symbol":0}]}
 {"msi":[{"symbol":6},{"symbol":0},{"symbol":0}],"configuration":{"side":"R","road":"RW013","lanes":3,"location":13.7,"AID":"agent04@10.45.40.240:1099/JADE"}}
 {"msi":[{"symbol":6},{"symbol":0},{"symbol":0}]}
 {"msi":[{"symbol":6},{"symbol":0},{"symbol":0}],"configuration":{"side":"R","road":"RW013","lanes":3,"location":13.7,"AID":"agent04@10.45.40.240:1099/JADE"}}
