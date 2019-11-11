@@ -11,6 +11,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import behaviour.ConfigurationResponderBehaviour;
+import behaviour.DumpReceiverBehaviour;
 import behaviour.HandleMessage;
 import behaviour.ResponderBehaviour;
 import behaviour.TrafficSensing;
@@ -191,11 +192,17 @@ public class osAgent extends Agent {
                 doDelete();
             }
 
+            MessageTemplate dumpTemplate = MessageTemplate.and(requestTemplate,
+                MessageTemplate.MatchOntology("DUMP"));
+            addBehaviour(new DumpReceiverBehaviour(this, dumpTemplate));
+
             try {
                 bwWriter = new FileWriter("bw/" + getLocalName() + ".txt");
             } catch (IOException e) {
                 //TODO: handle exception
             }
+
+            SendConfig();
 
             // Print message stating that the configuration was succefull
             System.out.println("OS " + getAID().getLocalName() + " configured on road " + local.getRoad() + " at km " + local.getLocation() +
