@@ -92,7 +92,6 @@
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
-{"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
@@ -100,9 +99,7 @@
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
-{"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
-{"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
@@ -289,7 +286,6 @@
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
-{"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
@@ -342,9 +338,7 @@
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
-{"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
-{"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
@@ -365,7 +359,6 @@
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
-{"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
@@ -555,7 +548,6 @@
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
-{"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
@@ -576,5 +568,3 @@
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
 {"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
-{"measures":[],"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
-{"configuration":{"side":"R","road":"RW013","lanes":3,"location":15.035,"AID":"agent01@10.45.40.240:1099/JADE"}}
