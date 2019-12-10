@@ -34,7 +34,7 @@ import jade.wrapper.StaleProxyException;
 
 public class Launch {
 
-    public static final long minute = 400;
+    // public static final long minute = 400;
     static volatile AgentController central = null;
     // static volatile LocalTime time = LocalTime.of(1, 0, 0);
     // static volatile LocalDate date = LocalDate.of(2018, 3, 1);
@@ -126,18 +126,20 @@ public class Launch {
             }
         }
 
-        AgentController sniff;
+        // AgentController sniff;
 
-        try {
-            sniff = cc.createNewAgent("sniff", "jade.tools.sniffer.Sniffer", null);
-            sniff.start(); 
-        } catch (StaleProxyException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        // try {
+        //     sniff = cc.createNewAgent("sniff", "jade.tools.sniffer.Sniffer", null);
+        //     sniff.start(); 
+        // } catch (StaleProxyException e) {
+        //     // TODO Auto-generated catch block
+        //     e.printStackTrace();
+        // }
 
         FileWriter killWriter;
         try {
+            dateTime.minusHours(1);
+
             killWriter = new FileWriter("kill_log.txt");
 
             BufferedReader msiReplay;
@@ -151,6 +153,19 @@ public class Launch {
             
                 @Override
                 public void run() {
+
+                    Vector<Object> packet2 = new Vector<Object>();
+                    packet2.add(dateTime);
+                    packet2.add(InputHandlerBehaviour.LOG);
+                    try {
+                        central.putO2AObject(packet2, AgentController.ASYNC);
+                    } catch (StaleProxyException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+
+                    dateTime = dateTime.plusMinutes(1);
+
                     boolean done = false;
                     while(!done) {
                         try {
@@ -228,19 +243,19 @@ public class Launch {
                         // }
                     }
 
-                    Vector<Object> packet = new Vector<Object>();
-                    packet.add(dateTime);
-                    packet.add(InputHandlerBehaviour.LOG);
-                    try {
-                        central.putO2AObject(packet, AgentController.ASYNC);
-                    } catch (StaleProxyException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
+                    // Vector<Object> packet = new Vector<Object>();
+                    // packet.add(dateTime);
+                    // packet.add(InputHandlerBehaviour.LOG);
+                    // try {
+                    //     central.putO2AObject(packet, AgentController.ASYNC);
+                    // } catch (StaleProxyException e) {
+                    //     // TODO Auto-generated catch block
+                    //     e.printStackTrace();
+                    // }
 
-                    dateTime = dateTime.plusMinutes(1);
+                    // dateTime = dateTime.plusMinutes(1);
 
-                    if (dateTime.isAfter(LocalDateTime.of(2018, 3, 1, 2, 0))) {
+                    if (dateTime.isAfter(LocalDateTime.of(2018, 4, 1, 1, 0))) {
                         outstations.stream().forEach(n -> {
                             try {
                                 n.kill(0);
