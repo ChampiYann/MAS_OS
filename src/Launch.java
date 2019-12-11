@@ -138,7 +138,7 @@ public class Launch {
 
         FileWriter killWriter;
         try {
-            dateTime.minusHours(1);
+            dateTime.minusMinutes(1);
 
             killWriter = new FileWriter("kill_log.txt");
 
