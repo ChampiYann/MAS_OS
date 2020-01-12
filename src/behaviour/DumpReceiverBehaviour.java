@@ -35,6 +35,7 @@ public class DumpReceiverBehaviour extends AchieveREResponder {
     protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response) throws FailureException {
         // find neighbour for which neighbour we received a dump message
         System.out.println("dump request received at " + outer.getLocalName());
+        outer.setFlag(false);
         Iterator<DownstreamNeighbour> downstreamNeighbourIterator = outer.getDownstreamNeighbours().iterator();
         while (downstreamNeighbourIterator.hasNext()) {
             DownstreamNeighbour nextDownstreamNeighbour = downstreamNeighbourIterator.next();
