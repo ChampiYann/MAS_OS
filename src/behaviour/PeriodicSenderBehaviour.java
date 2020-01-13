@@ -40,12 +40,12 @@ public class PeriodicSenderBehaviour extends TickerBehaviour {
         jsonContent.put("configuration", outer.getLocal().configToJSON());
         jsonContent.put("measures", new JSONArray(outer.getLocalMeasures().stream().filter(n -> n.getType() != Measure.REACTION).collect(Collectors.toList())));
         newMsg.setContent(jsonContent.toString());
-        try {
-            outer.getBwWriter().write(newMsg.getContent() + "\n");
-            outer.getBwWriter().flush();
-        } catch (IOException e) {
-            //TODO: handle exception
-        }
+        // try {
+        //     outer.getBwWriter().write(newMsg.getContent() + "\n");
+        //     outer.getBwWriter().flush();
+        // } catch (IOException e) {
+        //     //TODO: handle exception
+        // }
         newMsg.addReceiver(this.neighbour.getConfig().getAID());
         newMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
         newMsg.setReplyByDate(new Date(System.currentTimeMillis()+osAgent.timeout));

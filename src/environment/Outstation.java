@@ -125,4 +125,11 @@ public class Outstation {
     public float getLocation() {
         return location;
     }
+
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
 }

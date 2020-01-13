@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
+// import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.commons.math3.distribution.WeibullDistribution;
+// import org.apache.commons.math3.distribution.WeibullDistribution;
 
 import agents.osAgent;
 import behaviour.InputHandlerBehaviour;
@@ -110,7 +110,7 @@ public class Launch {
                     e.printStackTrace();
                 }
                 // Fire up the agent
-                outstations.get(i).start();
+                // outstations.get(i).start();
             } catch (StaleProxyException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -121,6 +121,12 @@ public class Launch {
             // Fire up the agent
             try {
                 outstations.get(range.get(i)).start();
+                try {
+                    TimeUnit.MILLISECONDS.sleep(200);
+                } catch (InterruptedException e2) {
+                    // TODO Auto-generated catch block
+                    e2.printStackTrace();
+                }
             } catch (StaleProxyException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -139,6 +145,8 @@ public class Launch {
         // }
 
         FileWriter killWriter;
+
+        int failNum = 9;
         try {
             dateTime.minusMinutes(1);
 
@@ -148,8 +156,8 @@ public class Launch {
             FileReader reader = new FileReader("BEELD1803.csv");
             msiReplay = new BufferedReader(reader);
 
-            WeibullDistribution distribution = new WeibullDistribution(0.4360,792.0608);
-            Random rand = new Random();
+            // WeibullDistribution distribution = new WeibullDistribution(0.4360,792.0608);
+            // Random rand = new Random();
             Timer timer = new Timer();
             TimerTask task = new TimerTask(){
             
@@ -224,27 +232,44 @@ public class Launch {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
-                        // if (rand.nextInt(16117524) < 169) {
-                        //     long restartDelaySeconds = Math.round(distribution.sample()+1);
-                        //     // System.out.println(Math.round(distribution.sample()/60)+1);
-                        //     long restartDelayMinutes = restartDelaySeconds/60;
-                        //     try {
-                        //         nextOutstation.kill(restartDelayMinutes);
-                        //         try {
-                        //             killWriter.write(dateTime.toString() + ",kill," + nextOutstation.getLocation()+ "\n");
-                        //             killWriter.flush();
-                        //         } catch (IOException e) {
-                        //             // TODO Auto-generated catch block
-                        //             e.printStackTrace();
-                        //         }
-                        //     } catch (StaleProxyException e) {
-                        //         // TODO Auto-generated catch block
-                        //         e.printStackTrace();
-                        //     }
-                        // }
                     }
 
-                    if (dateTime.isAfter(LocalDateTime.of(2018, 4, 1, 1, 0))) {
+                    if (dateTime.isAfter(LocalDateTime.of(2018, 3, 1, 1, 14)) & dateTime.getMinute()%10==5) {
+                        Collections.shuffle(range);
+                        for(int i = 0; i < failNum; i++) {
+                            try {
+                                outstations.get(range.get(i)).kill(0);
+                                try {
+                                    killWriter.write("kill,"+outstations.get(range.get(i)).getName()+","+System.currentTimeMillis()+"\n");
+                                    killWriter.flush();
+                                } catch (IOException e) {
+                                    //TODO: handle exception
+                                }
+                            } catch (StaleProxyException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+
+                    if (dateTime.isAfter(LocalDateTime.of(2018, 3, 1, 1, 14)) & dateTime.getMinute()%10==0) {
+                        for(int i = 0; i < failNum; i++) {
+                            try {
+                                outstations.get(range.get(i)).start();
+                                try {
+                                    killWriter.write("start,"+outstations.get(range.get(i)).getName()+","+System.currentTimeMillis()+"\n");
+                                    killWriter.flush();
+                                } catch (IOException e) {
+                                    //TODO: handle exception
+                                }
+                            } catch (StaleProxyException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+
+                    if (dateTime.isAfter(LocalDateTime.of(2018, 3, 1, 2, 53))) {
                         outstations.stream().forEach(n -> {
                             try {
                                 n.kill(0);

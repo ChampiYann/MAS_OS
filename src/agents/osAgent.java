@@ -35,7 +35,7 @@ public class osAgent extends Agent {
     private static final long serialVersionUID = 1L;
 
     // Simulation timing
-    public static final long minute = 1500; // milliseconds
+    public static final long minute = 1000; // milliseconds
 
     public static final long timeout = minute/3;
 
@@ -197,7 +197,7 @@ public class osAgent extends Agent {
             addBehaviour(new DumpReceiverBehaviour(this, dumpTemplate));
 
             try {
-                bwWriter = new FileWriter("bw/" + getLocalName() + ".txt");
+                bwWriter = new FileWriter("bw/" + getLocalName() + ".txt",true);
             } catch (IOException e) {
                 // TODO: handle exception
             }
@@ -246,12 +246,12 @@ public class osAgent extends Agent {
             matrixJson.put(this.msi[i].getSymbol());
         }
         newMsg.setContent(matrixJson.toString());
-        try {
-            getBwWriter().write(newMsg.getContent() + "\n");
-            getBwWriter().flush();
-        } catch (IOException e) {
-            //TODO: handle exception
-        }
+        // try {
+        //     getBwWriter().write(newMsg.getContent() + "\n");
+        //     getBwWriter().flush();
+        // } catch (IOException e) {
+        //     //TODO: handle exception
+        // }
         newMsg.addReceiver(central);
         newMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
         this.addBehaviour(new AchieveREInitiator(this, newMsg));
@@ -265,12 +265,12 @@ public class osAgent extends Agent {
         newMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
         newMsg.setOntology(ont);
         newMsg.setContent(content);
-        try {
-            getBwWriter().write(newMsg.getContent() + "\n");
-            getBwWriter().flush();
-        } catch (IOException e) {
-            //TODO: handle exception
-        }
+        // try {
+        //     getBwWriter().write(newMsg.getContent() + "\n");
+        //     getBwWriter().flush();
+        // } catch (IOException e) {
+        //     //TODO: handle exception
+        // }
         newMsg.addReceiver(config.getAID());
         newMsg.setReplyByDate(new Date(System.currentTimeMillis()+osAgent.timeout));
         newMsg.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
@@ -290,12 +290,12 @@ public class osAgent extends Agent {
         // jsonContent.put("measures", new JSONArray(outer.getLocalMeasures().stream().filter(n -> n.getType() != Measure.REACTION).collect(Collectors.toList())));
         // HBResponse.setContent(jsonContent.toString());
         configurationRequest.setContent(jsonContent.toString());
-        try {
-            getBwWriter().write(configurationRequest.getContent() + "\n");
-            getBwWriter().flush();
-        } catch (IOException e) {
-            //TODO: handle exception
-        }
+        // try {
+        //     getBwWriter().write(configurationRequest.getContent() + "\n");
+        //     getBwWriter().flush();
+        // } catch (IOException e) {
+        //     //TODO: handle exception
+        // }
         configurationRequest.setOntology("CONFIGURATION");
         configurationRequest.setReplyByDate(new Date(System.currentTimeMillis()+osAgent.timeout));
         configurationRequest.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));

@@ -84,11 +84,18 @@ public class ResponderBehaviour extends AchieveREResponder {
             jsonContent = new JSONObject();
             jsonContent.put("measures", new JSONArray(outer.getLocalMeasures().stream().filter(n -> n.getType() != Measure.REACTION).collect(Collectors.toList())));
             result.setContent(jsonContent.toString());
+            // try {
+            //     outer.getBwWriter().write(result.getContent() + "\n");
+            //     outer.getBwWriter().flush();
+            // } catch (IOException e) {
+            //     //TODO: handle exception
+            // }
             try {
-                outer.getBwWriter().write(result.getContent() + "\n");
+                outer.getBwWriter().write(request.getSender().getLocalName() + "," + System.currentTimeMillis() + "\n");
                 outer.getBwWriter().flush();
             } catch (IOException e) {
-                //TODO: handle exception
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
             result.addUserDefinedParameter("time", Long.toString(System.currentTimeMillis()));
             return result;
